@@ -607,7 +607,6 @@ Performance test completed for 60 seconds with 50 thread(s) - TPS: 1250.45, QPS:
 🟡 **P1 - InnoDB Log File Size Too Small**
 - **Current**: innodb_log_file_size = 48MB
 - **Impact**: High log write activity, potential write bottleneck
-- **Recommendation**: Increase to 256MB
 - **Expected Impact**: 10-15% TPS improvement for write-heavy workloads
 - **Risk**: Medium (requires MySQL restart)
 
