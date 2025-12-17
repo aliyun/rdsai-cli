@@ -1,0 +1,82 @@
+# MCP (Model Context Protocol) Configuration Example
+# Use this file as a template for your own MCP configuration.
+# Pass it to the CLI with: rdsai --mcp-config mcp.yaml
+
+mcp:
+  # Enable/disable MCP integration
+  enabled: false
+
+  # List of MCP servers to connect to
+  servers:
+    # Example 1: AlibabaCloud RDS OpenAPI MCP server (stdio transport)
+    # Provides rds instance for manage
+    - name: rds
+      transport: stdio
+      command: uvx
+      args:
+        - "alibabacloud-rds-openapi-mcp-server@latest"
+      env:
+        ALIBABA_CLOUD_ACCESS_KEY_ID: "${ACCESS_ID}"
+        ALIBABA_CLOUD_ACCESS_KEY_SECRET: "${ACCESS_KEY}"
+      # Optional: only include specific tools
+      include_tools:
+        - describe_db_instances
+        - describe_db_instance_attribute
+        - describe_db_instance_performance
+        - describe_monitor_metrics
+        - modify_security_ips
+        - modify_parameter
+        - create_db_instance
+        - modify_db_instance_spec
+        - describe_vpcs
+        - describe_vswitches
+        - describe_available_zones
+
+      # Example 2: Filesystem server (stdio transport)
+      # Provides tools for reading/writing files
+#    - name: filesystem
+#      transport: stdio
+#      command: uvx
+#      args:
+#        - "-y"
+#        - "@modelcontextprotocol/server-filesystem"
+#        - "/path/to/allowed/directory"
+#        Optional: only include specific tools
+#      include_tools:
+#        - read_file
+#        - list_directory
+#      Optional: exclude specific tools
+#      exclude_tools:
+#        - write_file
+#        Optional:
+#        custom prefix for tool names (default: server name)
+#      tool_prefix: fs
+
+
+    # Example 3: GitHub server (stdio transport)
+    # Requires GITHUB_TOKEN environment variable
+#    - name: github
+#      transport: stdio
+#      command: npx
+#      args:
+#        - "-y"
+#        - "@modelcontextprotocol/server-github"
+#      env:
+#        GITHUB_TOKEN: "${GITHUB_TOKEN}"
+
+    # Example 4: Custom HTTP server (SSE transport)
+#    - name: custom_sse
+#      transport: sse
+#      url: "http://localhost:8000/mcp/sse"
+#      include_tools:
+#        - search
+#        - query
+
+    # Example 5: Streamable HTTP transport (recommended for HTTP-based servers)
+#    - name: custom_http
+#      transport: streamable_http
+#      url: "http://localhost:8000/mcp"
+#      headers:
+#        Authorization: "Bearer ${API_TOKEN}"
+#        X-Custom-Header: "value"
+

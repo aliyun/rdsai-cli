@@ -1,0 +1,24 @@
+version: 1
+agent:
+  name: ""
+  system_prompt_path: ./system.md
+  tools:
+    - "tools.todo:TodoList"
+    # MySQL Database Analysis Tools
+    - "tools.mysql.explain:MySQLExplain"
+    - "tools.mysql.process:ShowProcess"
+    - "tools.mysql.slow_log:SlowLog"
+    - "tools.mysql.general_log:GeneralLog"
+#    - "tools.mysql.table_status:TableStatus"
+    - "tools.mysql.parameter:KernelParameter"
+    - "tools.mysql.index:TableIndex"
+#    - "tools.mysql.information_schema:InformationSchema"
+    - "tools.mysql.innodb_status:InnodbStatus"
+    - "tools.mysql.table_structure:TableStructure"
+#    - "tools.mysql.transaction:Transaction"
+#    - "tools.mysql.performance_schema:PerformanceSchema"
+#    - "tools.mysql.perf_statistics:PerfStatistics"
+    - "tools.mysql.replica_status:ReplicaStatus"
+    - "tools.mysql.sql_ddl:DDLExecutor"
+    # Subagent Tool
+    - "tools.subagent.subagent:Subagent"

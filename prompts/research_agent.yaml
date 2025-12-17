@@ -1,0 +1,4 @@
+version: 1
+agent:
+  name: "Research Agent"
+  system_prompt_path: ./research_system.md
