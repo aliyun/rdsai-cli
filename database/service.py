@@ -26,7 +26,7 @@ from .types import (
     RESULT_SET_QUERY_TYPES,
 )
 from .client import DatabaseClient, DatabaseClientFactory, TransactionState, validate_identifier
-from .errors import DatabaseError, handle_database_error
+from .errors import ConnectionError, DatabaseError, handle_database_error
 from .history import QueryHistory
 from utils.logging import logger
 
