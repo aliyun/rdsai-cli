@@ -70,11 +70,20 @@ COMPOSING_TEXTS = [
 ]
 
 
+EXPLAIN_COMPOSING_TEXTS = [
+    "Explaining...",
+    "Summarizing...",
+    "Clarifying...",
+    "Describing...",
+]
+
+
 async def visualize(
     stream: StreamUISide,
     *,
     initial_status: StatusSnapshot,
     cancel_event: asyncio.Event | None = None,
+    agent_type: str = "normal",
 ):
     """
     A loop to consume agent events and visualize the agent behavior.
@@ -83,15 +92,23 @@ async def visualize(
         stream: Communication channel with the agent
         initial_status: Initial status snapshot
         cancel_event: Event that can be set (e.g., by ESC key) to cancel the run
+        agent_type: Type of agent ("normal" or "explain") to use different spinner styles
     """
-    view = _LiveView(initial_status, cancel_event)
+    view = _LiveView(initial_status, cancel_event, agent_type=agent_type)
     await view.visualize_loop(stream)
 
 
 class _ContentBlock:
-    def __init__(self, is_think: bool):
+    def __init__(self, is_think: bool, agent_type: str = "normal"):
         self.is_think = is_think
-        text = random.choice(THINKING_TEXTS if is_think else COMPOSING_TEXTS)
+        self.agent_type = agent_type
+        
+        # Select spinner text based on agent type
+        if agent_type == "explain":
+            text = random.choice(EXPLAIN_COMPOSING_TEXTS)
+        else:
+            text = random.choice(THINKING_TEXTS if is_think else COMPOSING_TEXTS)
+        
         self._spinner = Spinner("dots2", text)
         self.raw_text = ""
 
@@ -486,8 +503,9 @@ async def _keyboard_listener(handler: Callable[[KeyEvent], None]):
 
 
 class _LiveView:
-    def __init__(self, initial_status: StatusSnapshot, cancel_event: asyncio.Event | None = None):
+    def __init__(self, initial_status: StatusSnapshot, cancel_event: asyncio.Event | None = None, agent_type: str = "normal"):
         self._cancel_event = cancel_event
+        self._agent_type = agent_type
 
         self._mooning_spinner: Spinner | None = None
         self._compacting_spinner: Spinner | None = None
@@ -567,7 +585,10 @@ class _LiveView:
 
         if isinstance(msg, StepBegin):
             self.cleanup(is_interrupt=False)
-            self._mooning_spinner = Spinner("moon", "")
+            if self._agent_type == "explain":
+                self._mooning_spinner = Spinner("bouncingBar", "")
+            else:
+                self._mooning_spinner = Spinner("moon", "")
             self.refresh_soon()
             return
 
@@ -725,11 +746,11 @@ class _LiveView:
                 is_think = isinstance(part, ThinkPart)
                 if self._current_content_block is None:
                     self._flush_trailing_newline()
-                    self._current_content_block = _ContentBlock(is_think)
+                    self._current_content_block = _ContentBlock(is_think, agent_type=self._agent_type)
                     self.refresh_soon()
                 elif self._current_content_block.is_think != is_think:
                     self.flush_content()
-                    self._current_content_block = _ContentBlock(is_think)
+                    self._current_content_block = _ContentBlock(is_think, agent_type=self._agent_type)
                     self.refresh_soon()
                 self._current_content_block.append(text)
             case _:

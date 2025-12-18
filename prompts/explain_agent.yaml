@@ -1,0 +1,6 @@
+version: 1
+agent:
+  name: "SQL Result Explainer"
+  system_prompt_path: ./explain_system.md
+  tools: []
+

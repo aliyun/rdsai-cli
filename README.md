@@ -9,6 +9,7 @@ RDSAI CLI is a next-generation, AI-powered RDS CLI that transforms how you inter
 
 - **AI Assistant for MySQL** — Ask in natural language (English / 中文均可), get optimized SQL, diagnostics, and explanations
 - **Smart SQL Handling** — Auto-detects SQL vs natural language, supports SQL completer, query history, etc. 
+- **Instant SQL Result Explanation** — Press `Ctrl+E` after any SQL query to get AI-powered explanations of results or errors, helping you understand query outcomes and troubleshoot issues quickly
 - **Multi-Model LLM Support** — Work with multiple providers and models (Qwen, OpenAI, DeepSeek, Anthropic, Gemini, OpenAI-compatible) and switch via `/model`, with thinking mode support for transparent reasoning and decision-making processes
 - **Database Schema Analysis** — Generate comprehensive database analysis reports with AI-powered schema review, index optimization suggestions, compliance checking against Alibaba Database Development Standards, and actionable recommendations
 - **Sysbench Performance Benchmarking** — AI-powered performance testing with automated workflow (prepare → run → cleanup), comprehensive analysis reports including MySQL configuration analysis, InnoDB status analysis, bottleneck identification, and optimization recommendations
@@ -134,6 +135,13 @@ mysql> EXPLAIN SELECT * FROM users WHERE email = 'test@example.com';
 mysql> SELECT * FROM users LIMIT 10\G   -- vertical format
 ```
 
+**Quick Explain with Ctrl+E**: After executing any SQL query, press `Ctrl+E` to get an AI-powered explanation of the result or error. This helps you understand:
+- What the query result means
+- Why a query might be slow or return unexpected results
+- The cause of SQL errors and how to fix them
+
+The explain hint (`💡 Ctrl+E: Explain result` or `💡 Ctrl+E: Explain error`) is automatically shown after each query execution.
+
 ### Natural Language
 
 Just type what you need; the agent will call tools, run DDL SQL (with confirmation), and explain results:
@@ -187,6 +195,7 @@ You can still run shell commands via the built-in shell mode when prefixed appro
 
 ### Usage Scenarios
 
+- **[SQL Result Explanation with Ctrl+E](docs/scenarios/sql-result-explanation.md)** — Get instant AI-powered explanations of query results and errors using the `Ctrl+E` shortcut
 - **[Slow Query Analysis & Optimization](docs/scenarios/slow-query-analysis.md)** — Identify and optimize slow queries using AI-powered analysis
 - **[Lock Wait & Deadlock Troubleshooting](docs/scenarios/lock-troubleshooting.md)** — Diagnose and resolve lock contention issues
 - **[Database Schema Analysis & Compliance Review](docs/scenarios/schema-analysis.md)** — Comprehensive schema review with compliance checking

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -166,16 +166,15 @@ class CustomPromptSession:
         self,
         *,
         status_provider: Callable[[], StatusSnapshot],
-        model_capabilities: set[ModelCapability],
         db_service: DatabaseService | None = None,
         on_thinking_toggle: Callable[[bool], None] | None = None,
+        on_explain_result: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         history_dir = get_share_dir() / "user-history"
         history_dir.mkdir(parents=True, exist_ok=True)
         work_dir_id = md5(str(Path.cwd()).encode(encoding="utf-8")).hexdigest()
         self._history_file = (history_dir / work_dir_id).with_suffix(".jsonl")
         self._status_provider = status_provider
-        self._model_capabilities = model_capabilities
         self._db_service = db_service
         self._last_history_content: str | None = None
         self._mode: PromptMode = PromptMode.AGENT
@@ -183,6 +182,8 @@ class CustomPromptSession:
         self._should_exit = False
         self._thinking_enabled = False
         self._on_thinking_toggle = on_thinking_toggle
+        self._on_explain_result = on_explain_result
+        self._explain_result_requested = False
 
         history_entries = _load_history_entries(self._history_file)
         history = InMemoryHistory()
@@ -248,6 +249,14 @@ class CustomPromptSession:
             pass  # Do nothing
 
         shortcut_hints.append("ctrl-c: exit/interrupt")
+
+        # Ctrl-E to explain last SQL result
+        @_kb.add("c-e", eager=True)
+        def _explain_result(event: KeyPressEvent) -> None:
+            """Explain last SQL result when Ctrl-E is pressed."""
+            self._explain_result_requested = True
+            # Exit the prompt to return control to the event loop
+            event.app.exit()
 
         # Tab key to toggle thinking mode when buffer is empty
         def _is_buffer_empty_no_completions() -> bool:
@@ -368,9 +377,20 @@ class CustomPromptSession:
         if self._should_exit:
             raise EOFError()
         
+        self._explain_result_requested = False
         with patch_stdout(raw=True):
             command = str(await self._session.prompt_async()).strip()
             command = command.replace("\x00", "")  # just in case null bytes are somehow inserted
+        
+        # Check if Ctrl-E was pressed to explain result
+        if self._explain_result_requested and self._on_explain_result:
+            await self._on_explain_result()
+            # Return empty input to continue the loop
+            return UserInput(
+                mode=self._mode,
+                content=[],
+                command="",
+            )
         
         # Check again after prompt returns (in case Ctrl-C was pressed during prompt)
         if self._should_exit:

@@ -112,11 +112,7 @@ def extract_first_value(row: Any) -> Any | None:
 
 def format_query_context_for_agent(context: LastQueryContext, max_display_rows: int = 50) -> str:
     """Format the last query context as a string for agent injection."""
-    lines = []
-    lines.append("[Recent Query Result]")
-    lines.append(f"SQL: {context.sql}")
-    lines.append(f"Status: {context.status.value}")
-
+    lines = ["[Recent Query Result]", f"SQL: {context.sql}", f"Status: {context.status.value}"]
     if context.execution_time is not None:
         lines.append(f"Execution Time: {context.execution_time:.3f}s")
 

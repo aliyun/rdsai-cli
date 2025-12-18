@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Dict, Optional, Tuple
-from datetime import datetime
+from typing import Any, List, Dict, Tuple
 
 from rich.table import Table
-from rich.panel import Panel
 from rich.text import Text
 
 from database import QueryResult, QueryType, SchemaInfo, DatabaseError, format_error
 from ui.console import console
-
-# Backward compatibility alias
 format_error_for_console = format_error
 
+# Explain hint constants
+EXPLAIN_HINT_RESULT = "💡 [dim]Ctrl+E: Explain result[/dim]"
+EXPLAIN_HINT_ERROR = "💡 [dim]Ctrl+E: Explain error[/dim]"
 
 def _format_cell(cell):
     if cell is None:
@@ -83,9 +82,13 @@ class DatabaseResultFormatter:
     def _display_query_data(result: QueryResult, sql: str, use_vertical: bool) -> None:
         """Display results from SELECT-type queries."""
         if not result.has_data:
-            console.print(f"[dim]Empty set ({result.execution_time:.3f} sec)[/dim]")
+            empty_text = f"Empty set ({result.execution_time:.3f} sec)"
+            from ui.repl import ShellREPL
+            if ShellREPL.is_llm_configured():
+                console.print(f"{empty_text} {EXPLAIN_HINT_RESULT}")
+            else:
+                console.print(empty_text)
             return
-
         # Use the vertical format flag determined by caller
 
         if use_vertical:
@@ -134,7 +137,11 @@ class DatabaseResultFormatter:
         # Show query stats if available
         if result.execution_time:
             timing_text = f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} in {result.execution_time:.3f} sec)"
-            console.print(f"[dim]{timing_text}[/dim]")
+            from ui.repl import ShellREPL
+            if ShellREPL.is_llm_configured():
+                console.print(f"{timing_text} {EXPLAIN_HINT_RESULT}")
+            else:
+                console.print(timing_text)
 
     @staticmethod
     def _display_command_result(result: QueryResult) -> None:
@@ -153,12 +160,21 @@ class DatabaseResultFormatter:
             row_text = "Query OK"
         if result.execution_time:
             row_text += f" ({result.execution_time:.3f} sec)"
-        console.print(f"[green]✓[/green] {row_text}")
+        from ui.repl import ShellREPL
+        if ShellREPL.is_llm_configured():
+            console.print(f"[green]✓[/green] {row_text} {EXPLAIN_HINT_RESULT}")
+        else:
+            console.print(f"[green]✓[/green] {row_text}")
 
     @staticmethod
     def _display_query_error(result: QueryResult) -> None:
         """Display query execution error."""
-        console.print(f"[red]ERROR: {result.error}[/red]")
+        error_text = f"ERROR: {result.error}"
+        from ui.repl import ShellREPL
+        if ShellREPL.is_llm_configured():
+            console.print(f"[red]{error_text}[/red] {EXPLAIN_HINT_ERROR}")
+        else:
+            console.print(f"[red]{error_text}[/red]")
 
 
 class ConnectionInfoFormatter:
@@ -349,4 +365,9 @@ def display_connection_info(info: Dict[str, Any]) -> None:
 
 def display_database_error(error: DatabaseError) -> None:
     """Convenience function to display database error."""
-    ErrorFormatter.display_error(error)
+    formatted_msg = format_error_for_console(error)
+    from ui.repl import ShellREPL
+    if ShellREPL.is_llm_configured():
+        console.print(f"[red]{formatted_msg}[/red] {EXPLAIN_HINT_ERROR}")
+    else:
+        console.print(f"[red]{formatted_msg}[/red]")
