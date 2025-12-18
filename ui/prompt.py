@@ -166,7 +166,6 @@ class CustomPromptSession:
         self,
         *,
         status_provider: Callable[[], StatusSnapshot],
-        model_capabilities: set[ModelCapability],
         db_service: DatabaseService | None = None,
         on_thinking_toggle: Callable[[bool], None] | None = None,
         on_explain_result: Callable[[], Awaitable[None]] | None = None,
@@ -176,7 +175,6 @@ class CustomPromptSession:
         work_dir_id = md5(str(Path.cwd()).encode(encoding="utf-8")).hexdigest()
         self._history_file = (history_dir / work_dir_id).with_suffix(".jsonl")
         self._status_provider = status_provider
-        self._model_capabilities = model_capabilities
         self._db_service = db_service
         self._last_history_content: str | None = None
         self._mode: PromptMode = PromptMode.AGENT

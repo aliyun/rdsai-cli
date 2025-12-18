@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Dict, Optional, Tuple
-from datetime import datetime
+from typing import Any, List, Dict, Tuple
 
 from rich.table import Table
-from rich.panel import Panel
 from rich.text import Text
 
 from database import QueryResult, QueryType, SchemaInfo, DatabaseError, format_error
 from ui.console import console
-
-# Backward compatibility alias
 format_error_for_console = format_error
 
+# Explain hint constants
+EXPLAIN_HINT_RESULT = "💡 [dim]Ctrl+E: Explain result[/dim]"
+EXPLAIN_HINT_ERROR = "💡 [dim]Ctrl+E: Explain error[/dim]"
 
 def _format_cell(cell):
     if cell is None:
@@ -86,7 +85,7 @@ class DatabaseResultFormatter:
             empty_text = f"Empty set ({result.execution_time:.3f} sec)"
             from ui.repl import ShellREPL
             if ShellREPL.is_llm_configured():
-                console.print(f"{empty_text} 💡 [dim]Ctrl+E: Explain result[/dim]")
+                console.print(f"{empty_text} {EXPLAIN_HINT_RESULT}")
             else:
                 console.print(empty_text)
             return
@@ -140,7 +139,7 @@ class DatabaseResultFormatter:
             timing_text = f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} in {result.execution_time:.3f} sec)"
             from ui.repl import ShellREPL
             if ShellREPL.is_llm_configured():
-                console.print(f"{timing_text} 💡 [dim]Ctrl+E: Explain result[/dim]")
+                console.print(f"{timing_text} {EXPLAIN_HINT_RESULT}")
             else:
                 console.print(timing_text)
 
@@ -163,7 +162,7 @@ class DatabaseResultFormatter:
             row_text += f" ({result.execution_time:.3f} sec)"
         from ui.repl import ShellREPL
         if ShellREPL.is_llm_configured():
-            console.print(f"[green]✓[/green] {row_text} 💡 [dim]Ctrl+E: Explain result[/dim]")
+            console.print(f"[green]✓[/green] {row_text} {EXPLAIN_HINT_RESULT}")
         else:
             console.print(f"[green]✓[/green] {row_text}")
 
@@ -173,7 +172,7 @@ class DatabaseResultFormatter:
         error_text = f"ERROR: {result.error}"
         from ui.repl import ShellREPL
         if ShellREPL.is_llm_configured():
-            console.print(f"[red]{error_text}[/red] 💡 [dim]Ctrl+E: Explain error[/dim]")
+            console.print(f"[red]{error_text}[/red] {EXPLAIN_HINT_ERROR}")
         else:
             console.print(f"[red]{error_text}[/red]")
 
@@ -369,6 +368,6 @@ def display_database_error(error: DatabaseError) -> None:
     formatted_msg = format_error_for_console(error)
     from ui.repl import ShellREPL
     if ShellREPL.is_llm_configured():
-        console.print(f"[red]{formatted_msg}[/red] 💡 [dim]Ctrl+E: Explain error[/dim]")
+        console.print(f"[red]{formatted_msg}[/red] {EXPLAIN_HINT_ERROR}")
     else:
         console.print(f"[red]{formatted_msg}[/red]")

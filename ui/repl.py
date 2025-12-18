@@ -78,69 +78,6 @@ class ShellREPL:
         """Check if database is connected."""
         return self._db_service is not None and self._db_service.is_connected()
 
-    def _on_thinking_toggle(self, enabled: bool) -> None:
-        """Handle thinking mode toggle from prompt session."""
-        if isinstance(self.loop, NeoLoop) and self.loop.runtime.llm:
-            self.loop.runtime.llm.set_thinking_enabled(enabled)
-
-    async def _explain_last_sql_result(self) -> None:
-        """Explain the last SQL execution result using a dedicated agent."""
-        # Check if LLM is configured
-        if not isinstance(self.loop, NeoLoop) or not self.loop.runtime.llm:
-            console.print("[yellow]LLM not configured. Use /setup to configure a model.[/yellow]")
-            return
-        
-        # Get last query context
-        if not self._db_service:
-            console.print("[yellow]No database service available.[/yellow]")
-            return
-        
-        last_context = self._db_service.get_last_query_context()
-        if not last_context:
-            console.print("[yellow]No SQL result to explain.[/yellow]")
-            return
-        
-        # Format query context
-        from database.service import format_query_context_for_agent
-        context_str = format_query_context_for_agent(last_context)
-        
-        # Load or get cached explain agent
-        if self._explain_agent is None:
-            try:
-                explain_agent_file = Path(__file__).parent.parent / "prompts" / "explain_agent.yaml"
-                explain_agent = await load_agent(explain_agent_file, self.loop.runtime)
-                self._explain_agent = NeoLoop(explain_agent)
-            except Exception as e:
-                logger.exception("Failed to load explain agent")
-                console.print(f"[red]Failed to load explain agent: {e}[/red]")
-                return
-        
-        # Reset context for fresh conversation
-        self._explain_agent.reset_context()
-        
-        # Build user message
-        from database import QueryStatus
-        if last_context.status == QueryStatus.ERROR:
-            user_message = "Please explain the cause of this SQL error.\n\n" + context_str
-        else:
-            user_message = "Please explain the meaning of this SQL execution result.\n\n" + context_str
-        
-        # Run the explain agent
-        try:
-            cancel_event = asyncio.Event()
-            await run_loop(
-                self._explain_agent,
-                user_message,
-                lambda stream: visualize(
-                    stream,
-                    initial_status=self._explain_agent.status,
-                    cancel_event=cancel_event,
-                ),
-                cancel_event,
-            )
-        except Exception as e:
-            logger.exception("Failed to explain SQL result")
-            console.print(f"[red]Failed to explain result: {e}[/red]")
 
     async def run(self) -> bool:
         console.clear()
@@ -152,7 +89,6 @@ class ShellREPL:
         try:
             with CustomPromptSession(
                 status_provider=lambda: self.loop.status,
-                model_capabilities=self.loop.model_capabilities or set(),
                 db_service=self._db_service,
                 on_thinking_toggle=self._on_thinking_toggle,
                 on_explain_result=self._explain_last_sql_result,
@@ -246,6 +182,70 @@ class ShellREPL:
 
         return True
 
+    def _on_thinking_toggle(self, enabled: bool) -> None:
+        """Handle thinking mode toggle from prompt session."""
+        if isinstance(self.loop, NeoLoop) and self.loop.runtime.llm:
+            self.loop.runtime.llm.set_thinking_enabled(enabled)
+
+    async def _explain_last_sql_result(self) -> None:
+        """Explain the last SQL execution result using a dedicated agent."""
+        # Check if LLM is configured
+        if not self.llm_configured:
+            console.print("[yellow]LLM not configured. Use /setup to configure a model.[/yellow]")
+            return
+
+        # Get last query context
+        if not self._db_service:
+            console.print("[yellow]No database service available.[/yellow]")
+            return
+
+        last_context = self._db_service.get_last_query_context()
+        if not last_context:
+            console.print("[yellow]No SQL result to explain.[/yellow]")
+            return
+
+        # Format query context
+        from database.service import format_query_context_for_agent
+        context_str = format_query_context_for_agent(last_context)
+
+        # Load or get cached explain agent
+        if self._explain_agent is None:
+            try:
+                explain_agent_file = Path(__file__).parent.parent / "prompts" / "explain_agent.yaml"
+                explain_agent = await load_agent(explain_agent_file, self.loop.runtime)
+                self._explain_agent = NeoLoop(explain_agent)
+            except Exception as e:
+                logger.exception("Failed to load explain agent")
+                console.print(f"[red]Failed to load explain agent: {e}[/red]")
+                return
+
+        # Reset context for fresh conversation
+        self._explain_agent.reset_context()
+
+        # Build user message
+        from database import QueryStatus
+        if last_context.status == QueryStatus.ERROR:
+            user_message = "Please explain the cause of this SQL error.\n\n" + context_str
+        else:
+            user_message = "Please explain the meaning of this SQL execution result.\n\n" + context_str
+
+        # Run the explain agent
+        try:
+            cancel_event = asyncio.Event()
+            await run_loop(
+                self._explain_agent,
+                user_message,
+                lambda stream: visualize(
+                    stream,
+                    initial_status=self._explain_agent.status,
+                    cancel_event=cancel_event,
+                    agent_type="explain",
+                ),
+                cancel_event,
+            )
+        except Exception as e:
+            logger.exception("Failed to explain SQL result")
+            console.print(f"[red]Failed to explain result: {e}[/red]")
 
     async def _run_meta_command(self, command_str: str):
         from exception import Reload
@@ -373,7 +373,7 @@ class ShellREPL:
             console.print("[red]No database connection. Use /connect to connect.[/red]")
             return
         
-        from database import QueryType, DatabaseError, QueryStatus
+        from database import DatabaseError, QueryStatus
         from database.service import get_service
         from ui.formatters.database_formatter import format_and_display_result
         
@@ -448,13 +448,7 @@ class ShellREPL:
             # Handle unexpected errors
             if self._query_history:
                 self._query_history.record_query(sql, 'error', error_message=str(e))
-            from ui.formatters.database_formatter import is_llm_configured
-            error_text = f"SQL Error: {e}"
-            if is_llm_configured():
-                console.print(f"[red]{error_text}[/red] 💡 [dim]Ctrl+E: Explain error[/dim]")
-            else:
-                console.print(f"[red]{error_text}[/red]")
-            logger.exception("SQL execution failed")
+
 
     def _handle_transaction_control(self, tx_type: Any) -> None:
         """Handle transaction control statements (BEGIN/COMMIT/ROLLBACK)."""
