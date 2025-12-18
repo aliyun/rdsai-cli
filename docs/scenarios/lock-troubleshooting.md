@@ -1,5 +1,7 @@
 # Scenario: Lock Wait & Deadlock Troubleshooting
 
+[English](lock-troubleshooting.md) | [中文](lock-troubleshooting_zh.md)
+
 This scenario shows how RDSAI CLI helps diagnose and resolve lock contention issues in MySQL.
 
 ## Example

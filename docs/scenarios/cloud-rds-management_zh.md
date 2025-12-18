@@ -1,16 +1,16 @@
-# Scenario: Cloud RDS Management with MCP
+# 场景：使用 MCP 进行云 RDS 管理
 
 [English](cloud-rds-management.md) | [中文](cloud-rds-management_zh.md)
 
-This scenario demonstrates how to use MCP integration to manage cloud RDS instances directly from RDSAI CLI.
+本场景演示如何使用 MCP 集成直接从 RDSAI CLI 管理云 RDS 实例。
 
-## Prerequisites
+## 前置要求
 
-- MCP server configured (see [MCP Integration](../features/mcp.md))
-- Alibaba Cloud RDS OpenAPI MCP Server installed
-- Valid AccessKey ID and Secret configured
+- 已配置 MCP 服务器（请参阅 [MCP 集成](../features/mcp_zh.md)）
+- 已安装阿里云 RDS OpenAPI MCP 服务器
+- 已配置有效的 AccessKey ID 和 Secret
 
-## Example
+## 示例
 
 ```text
 mysql> /mcp list
@@ -57,29 +57,29 @@ Proceed? [y/N]: y
 ✓ Security IP whitelist updated successfully
 ```
 
-## Capabilities
+## 功能
 
-With MCP integration, you can:
+通过 MCP 集成，您可以：
 
-- **Query RDS instances** — List, describe, and monitor cloud RDS instances
-- **Performance monitoring** — Get real-time metrics, slow logs, and SQL insights
-- **Instance management** — Create, modify specs, restart instances
-- **Security management** — Manage IP whitelists, parameters, and configurations
-- **Resource planning** — Query available zones, instance classes, and VPCs
+- **查询 RDS 实例** — 列出、描述和监控云 RDS 实例
+- **性能监控** — 获取实时指标、慢日志和 SQL 洞察
+- **实例管理** — 创建、修改规格、重启实例
+- **安全管理** — 管理 IP 白名单、参数和配置
+- **资源规划** — 查询可用区、实例规格和 VPC
 
-## Available Tools
+## 可用工具
 
-The [Alibaba Cloud RDS OpenAPI MCP Server](https://github.com/aliyun/alibabacloud-rds-openapi-mcp-server) provides:
+[阿里云 RDS OpenAPI MCP 服务器](https://github.com/aliyun/alibabacloud-rds-openapi-mcp-server) 提供：
 
-- **Instance Management**: `create_db_instance`, `describe_db_instances`, `describe_db_instance_attribute`, `modify_db_instance_spec`, etc.
-- **Monitoring & Logs**: `describe_db_instance_performance`, `describe_monitor_metrics`, `describe_error_logs`, etc.
-- **Configuration**: `modify_parameter`, `describe_db_instance_parameters`, `modify_security_ips`, etc.
-- **Network & Connection**: `describe_db_instance_net_info`, `allocate_instance_public_connection`, etc.
-- **Resources & Planning**: `describe_available_zones`, `describe_available_classes`, `describe_vpcs`, `describe_vswitches`, etc.
+- **实例管理**：`create_db_instance`、`describe_db_instances`、`describe_db_instance_attribute`、`modify_db_instance_spec` 等
+- **监控和日志**：`describe_db_instance_performance`、`describe_monitor_metrics`、`describe_error_logs` 等
+- **配置**：`modify_parameter`、`describe_db_instance_parameters`、`modify_security_ips` 等
+- **网络和连接**：`describe_db_instance_net_info`、`allocate_instance_public_connection` 等
+- **资源和规划**：`describe_available_zones`、`describe_available_classes`、`describe_vpcs`、`describe_vswitches` 等
 
-## Natural Language Queries
+## 自然语言查询
 
-You can use natural language to interact with MCP tools:
+您可以使用自然语言与 MCP 工具交互：
 
 ```text
 mysql> list all my RDS instances
@@ -90,7 +90,7 @@ mysql> create a new MySQL 8.0 instance with 4C8G
 mysql> restart mysql-prod-01
 ```
 
-## Related Documentation
+## 相关文档
 
-See [MCP Integration](../features/mcp.md) for detailed setup and configuration instructions.
+详细的设置和配置说明请参阅 [MCP 集成](../features/mcp_zh.md)。
 

@@ -1,5 +1,7 @@
 # RDSAI CLI
 
+[English](README.md) | [中文](README_zh.md)
+
 ---
 ![img.png](docs/assets/img.png)
 

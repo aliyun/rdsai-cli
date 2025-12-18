@@ -1,5 +1,7 @@
 # Sysbench Performance Benchmarking (`/benchmark`)
 
+[English](benchmark.md) | [中文](benchmark_zh.md)
+
 The `/benchmark` command runs comprehensive database performance tests using sysbench, with AI-powered analysis and optimization recommendations.
 
 ## What It Does
