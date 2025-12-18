@@ -25,7 +25,6 @@ from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.patch_stdout import patch_stdout
 from pydantic import BaseModel, ValidationError
 
-from config import ModelCapability
 from config import get_share_dir
 from loop import StatusSnapshot
 from loop.types import ContentPart, TextPart
@@ -327,7 +326,7 @@ class CustomPromptSession:
                 if tx_state != 'NOT_IN_TRANSACTION':
                     db_indicator += "[TX]"
                     
-        return FormattedText([("bold", f"{Path.cwd().name}{db_indicator}{symbol} ")])
+        return FormattedText([("bold", f"rdsai{db_indicator}{symbol} ")])
 
 
     def __enter__(self) -> CustomPromptSession:
