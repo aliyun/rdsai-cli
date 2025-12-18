@@ -1,5 +1,7 @@
 # Database Schema Analysis (`/research`)
 
+[English](research.md) | [中文](research_zh.md)
+
 The `/research` command generates comprehensive database analysis reports powered by AI. It analyzes your database schema, checks compliance against Alibaba Database Development Standards, and provides actionable recommendations.
 
 ## What It Analyzes

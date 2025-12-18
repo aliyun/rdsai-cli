@@ -1,5 +1,7 @@
 # Scenario: Slow Query Analysis & Optimization
 
+[English](slow-query-analysis.md) | [中文](slow-query-analysis_zh.md)
+
 This scenario demonstrates how RDSAI CLI helps you identify and optimize slow queries using AI-powered analysis.
 
 ## Example

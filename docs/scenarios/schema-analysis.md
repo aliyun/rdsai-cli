@@ -1,5 +1,7 @@
 # Scenario: Database Schema Analysis & Compliance Review
 
+[English](schema-analysis.md) | [中文](schema-analysis_zh.md)
+
 This scenario demonstrates using the `/research` command to perform comprehensive database schema analysis and compliance checking.
 
 ## Example

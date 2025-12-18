@@ -1,5 +1,7 @@
 # Scenario: SQL Result Explanation with Ctrl+E
 
+[English](sql-result-explanation.md) | [中文](sql-result-explanation_zh.md)
+
 This scenario demonstrates how to use the `Ctrl+E` shortcut to get instant AI-powered explanations of SQL query results and errors, helping you understand query outcomes and troubleshoot issues quickly.
 
 ## Example

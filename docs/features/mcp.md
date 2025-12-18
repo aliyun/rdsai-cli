@@ -1,5 +1,7 @@
 # MCP (Model Context Protocol) Integration
 
+[English](mcp.md) | [中文](mcp_zh.md)
+
 RDSAI CLI supports connecting to external MCP servers to extend its capabilities. This enables cloud RDS management, API integrations, and more.
 
 ## Quick Start

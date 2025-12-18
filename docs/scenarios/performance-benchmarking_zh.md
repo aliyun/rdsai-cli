@@ -1,10 +1,10 @@
-# Scenario: Performance Benchmarking & Optimization
+# 场景：性能基准测试与优化
 
 [English](performance-benchmarking.md) | [中文](performance-benchmarking_zh.md)
 
-This scenario demonstrates using the `/benchmark` command to run comprehensive performance tests and get AI-powered optimization recommendations.
+本场景演示如何使用 `/benchmark` 命令运行全面的性能测试并获得 AI 驱动的优化建议。
 
-## Example
+## 示例
 
 ```text
 mysql> CREATE DATABASE benchmark_test;
@@ -118,24 +118,24 @@ Performance test completed for 60 seconds with 50 thread(s) - TPS: 1250.45, QPS:
 ✓ Benchmark completed.
 ```
 
-## Use Cases
+## 使用场景
 
-- **Performance Baseline** — Establish performance baseline before optimization
-- **Configuration Tuning** — Test impact of MySQL parameter changes
-- **Capacity Planning** — Understand database capacity under different workloads
-- **Optimization Validation** — Verify performance improvements after optimizations
-- **Load Testing** — Test database behavior under high concurrency
-- **Bottleneck Analysis** — Identify CPU, I/O, memory, or lock contention issues
+- **性能基线** — 在优化前建立性能基线
+- **配置调优** — 测试 MySQL 参数更改的影响
+- **容量规划** — 了解不同工作负载下的数据库容量
+- **优化验证** — 验证优化后的性能改进
+- **负载测试** — 测试高并发下的数据库行为
+- **瓶颈分析** — 识别 CPU、I/O、内存或锁竞争问题
 
-## What You Get
+## 您将获得
 
-With `/benchmark`, you can:
-- **Run automated benchmarks** — Complete workflow from data preparation to cleanup
-- **Get AI-powered analysis** — Comprehensive reports with bottleneck identification
-- **Receive optimization recommendations** — Prioritized suggestions with expected impact
-- **Validate improvements** — Re-run benchmarks to verify optimization results
+使用 `/benchmark`，您可以：
+- **运行自动化基准测试** — 从数据准备到清理的完整工作流程
+- **获得 AI 驱动的分析** — 包含瓶颈识别的全面报告
+- **接收优化建议** — 按优先级分类的建议，包含预期影响
+- **验证改进** — 重新运行基准测试以验证优化结果
 
-## Related Documentation
+## 相关文档
 
-See [Sysbench Performance Benchmarking (`/benchmark`)](../features/benchmark.md) for detailed documentation.
+详细文档请参阅 [Sysbench 性能基准测试 (`/benchmark`)](../features/benchmark_zh.md)。
 
