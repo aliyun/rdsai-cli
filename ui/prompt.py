@@ -258,8 +258,6 @@ class CustomPromptSession:
             # Exit the prompt to return control to the event loop
             event.app.exit()
 
-        shortcut_hints.append("ctrl-e: explain result")
-
         # Tab key to toggle thinking mode when buffer is empty
         def _is_buffer_empty_no_completions() -> bool:
             """Check if buffer is empty and no completions are shown."""
