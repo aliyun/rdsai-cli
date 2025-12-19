@@ -108,6 +108,9 @@ async def connect(app: ShellREPL, args: list[str]):
             # Update ShellREPL's db_service and query_history references
             app._db_service = connection.db_service
             app._query_history = connection.query_history
+            # Update prompt session's db_service reference to refresh prompt display
+            if app.prompt_session:
+                app.prompt_session.refresh_db_service(connection.db_service)
             logger.info(
                 "Connected to database via /connect: {display_name}",
                 display_name=connection.display_name,
@@ -147,6 +150,9 @@ def disconnect(app: ShellREPL, args: list[str]):
     # Clear ShellREPL's db_service and query_history references
     app._db_service = None
     app._query_history = None
+    # Update prompt session's db_service reference to refresh prompt display
+    if app.prompt_session:
+        app.prompt_session.refresh_db_service(None)
 
     console.print(f"[green]✓ Disconnected from {display_name}[/green]")
     logger.info("Disconnected from database via /disconnect")
