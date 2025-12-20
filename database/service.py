@@ -485,29 +485,29 @@ class DatabaseService:
 
     def is_sql_statement(self, command: str) -> bool:
         """Check if command is a SQL statement using enhanced validation.
-        
+
         First checks if the command starts with a SQL keyword. For SHOW statements,
         validates that it's followed by a valid SHOW target to prevent natural language
         queries like "show me slow queries" from being treated as SQL.
         """
         if not command or not command.strip():
             return False
-        
+
         # Step 1: Quick check - does it start with a SQL keyword?
         query_type = self._classify_query(command)
         if query_type == QueryType.OTHER:
             return False  # Not a SQL keyword, definitely not SQL
-        
+
         # Step 2: Special handling for SHOW statements
         # SHOW is commonly used in natural language (e.g., "show me...")
         # so we need to validate it more strictly
         if query_type == QueryType.SHOW:
             command_upper = command.strip().upper()
             rest = command_upper[4:].strip()  # After "SHOW"
-            
+
             if not rest:
                 return False  # "SHOW" alone is incomplete
-            
+
             # Check if followed by valid SHOW targets
             valid_show_targets = [
                 'TABLES', 'CREATE', 'INDEX', 'DATABASES', 'PROCESSLIST',
@@ -515,14 +515,14 @@ class DatabaseService:
                 'GRANTS', 'WARNINGS', 'ERRORS', 'TABLE', 'COLUMNS',
                 'FIELDS', 'KEYS', 'TRIGGERS', 'PROCEDURE', 'FUNCTION'
             ]
-            
+
             # Check if starts with valid target
             if any(rest.startswith(target) for target in valid_show_targets):
                 return True  # Valid SHOW statement
-            
+
             # Not a valid SHOW target - likely natural language
             return False
-        
+
         # Step 3: For other SQL keywords, use basic keyword check
         # This maintains backward compatibility
         return True
@@ -737,4 +737,3 @@ def create_database_service() -> DatabaseService:
 
 # Alias for backward compatibility
 create_database_connection_context = create_connection_context
-

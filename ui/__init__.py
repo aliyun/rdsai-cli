@@ -3,4 +3,3 @@
 from ui.repl import ShellREPL, WelcomeInfoItem
 
 __all__ = ["ShellREPL", "WelcomeInfoItem"]
-

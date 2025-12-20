@@ -35,10 +35,10 @@ class MySQLExplain(MySQLToolBase):
         """Execute EXPLAIN on the provided SQL statement."""
         if not params.sql.strip():
             return {"error": "SQL statement is required", "brief": "SQL statement is required"}
-        
+
         explain_sql = f"EXPLAIN {params.sql}"
         columns, rows = self._execute_query(explain_sql)
-        
+
         return {
             "type": "MySQL EXPLAIN Result",
             "columns": columns,

@@ -55,22 +55,22 @@ class SysbenchPrepare(SysbenchToolBase):
                 table_size=params.table_size,
                 threads=params.threads,
             )
-            
+
             exit_code, stdout, stderr = await self._execute_sysbench_command(
                 args,
                 timeout=7200,  # 2 hour timeout for data preparation
             )
-            
+
             if exit_code != 0:
                 return {
                     "error": f"sysbench prepare failed with exit code {exit_code}, {stderr or stdout}",
                     "brief": "Prepare failed",
                 }
-            
+
             # Parse output and build result
             parsed = self._parse_sysbench_output(stdout, stderr)
             total_rows = params.tables * params.table_size
-            
+
             return {
                 "message": (
                     f"Successfully prepared {params.tables} table(s) "
@@ -86,10 +86,9 @@ class SysbenchPrepare(SysbenchToolBase):
                 "output": stdout if stdout else "Data preparation completed successfully.",
                 "errors": parsed.get("errors", []),
             }
-            
+
         except Exception as e:
             return {
                 "error": str(e),
                 "brief": "Prepare error",
             }
-

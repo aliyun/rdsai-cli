@@ -423,4 +423,3 @@ class TestMySQLClient:
 
         client = MySQLClient(host="localhost", port=3306, user="test", password="test")
         assert client.get_row_count() == -1
-

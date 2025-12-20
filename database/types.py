@@ -124,7 +124,7 @@ class ConnectionConfig:
     database: str | None = None
     connection_timeout: int = 10
     ssl_options: dict[str, Any] = field(default_factory=dict)
-    
+
     # Allowed SSL option keys to prevent accidental override of core config
     _SSL_ALLOWED_KEYS: frozenset = field(
         default=frozenset({'ssl_ca', 'ssl_cert', 'ssl_key', 'ssl_mode', 'ssl_verify_cert', 'ssl_verify_identity'}),
@@ -188,7 +188,7 @@ class LastQueryContext:
 @dataclass
 class ConnectionContext:
     """Database connection context with service instances and status info.
-    
+
     Note: db_service and query_history are typed as Any to avoid circular imports.
     At runtime, they are DatabaseService and QueryHistory instances respectively.
     """

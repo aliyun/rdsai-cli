@@ -30,9 +30,9 @@ from utils.term import ensure_new_line
 
 class ShellREPL:
     """Main interactive shell REPL."""
-    
+
     _current: "ShellREPL | None" = None
-    
+
     def __init__(self, loop: Loop, welcome_info: list[WelcomeInfoItem] | None = None,
                  db_service: DatabaseService | None = None,
                  query_history: QueryHistory | None = None):
@@ -43,16 +43,16 @@ class ShellREPL:
         self._background_tasks: set[asyncio.Task[Any]] = set()
         self._exit_warned: bool = False  # Track if user was warned about uncommitted transaction
         self._explain_agent: NeoLoop | None = None  # Cached explain agent instance
-    
+
     @classmethod
     def is_llm_configured(cls) -> bool:
         """Check if LLM is configured in the current REPL session.
-        
+
         This class method can be called from anywhere to check the LLM configuration
         status of the currently active REPL instance.
         """
         return cls._current is not None and cls._current.llm_configured
-    
+
     @classmethod
     def _set_current(cls, repl: "ShellREPL | None") -> None:
         """Set the current REPL instance (internal use only)."""
@@ -71,7 +71,11 @@ class ShellREPL:
     @property
     def llm_configured(self) -> bool:
         """Check if LLM is configured."""
-        return isinstance(self.loop, NeoLoop) and self.loop.runtime.llm is not None and self.loop.runtime.llm.model_name != ""
+        return (
+            isinstance(self.loop, NeoLoop)
+            and self.loop.runtime.llm is not None
+            and self.loop.runtime.llm.model_name != ""
+        )
 
     @property
     def db_connected(self) -> bool:
@@ -82,10 +86,10 @@ class ShellREPL:
     async def run(self) -> bool:
         console.clear()
         _print_welcome_info(self.loop.name or "RDSAI CLI", self._welcome_info)
-        
+
         # Set current REPL instance for global access
         self._set_current(self)
-        
+
         try:
             with CustomPromptSession(
                 status_provider=lambda: self.loop.status,
@@ -145,12 +149,15 @@ class ShellREPL:
                     # 2. If DB not connected, route all input to LLM
                     # 3. If neither configured, show warning
                     # 4. Otherwise, check if SQL statement and route accordingly
-                    
+
                     if not self.llm_configured and not self.db_connected:
                         console.print("[yellow]Neither LLM nor database connection is configured.[/yellow]")
-                        console.print("[yellow]Use /setup to configure LLM or /connect to connect to a database.[/yellow]")
+                        console.print(
+                            "[yellow]Use /setup to configure LLM or /connect "
+                            "to connect to a database.[/yellow]"
+                        )
                         continue
-                    
+
                     if not self.llm_configured:
                         # LLM not configured, route all input to database
                         if self._db_service and self._db_service.is_connected():
@@ -158,16 +165,19 @@ class ShellREPL:
                                 logger.debug("Executing SQL: {sql}", sql=user_input.command)
                                 self._execute_sql(user_input.command)
                             else:
-                                console.print("[yellow]This doesn't appear to be a SQL statement. Please configure LLM with /setup to use natural language queries.[/yellow]")
+                                console.print(
+                                    "[yellow]This doesn't appear to be a SQL statement. "
+                                    "Please configure LLM with /setup to use natural language queries.[/yellow]"
+                                )
                         else:
                             console.print("[red]No database connection. Use /connect to connect.[/red]")
                         continue
-                    
+
                     if not self.db_connected:
                         # DB not connected, route all input to LLM
                         await self._run_loop_command(user_input.content)
                         continue
-                    
+
                     # Both configured, check if SQL statement
                     if self._db_service.is_sql_statement(user_input.command):
                         logger.debug("Executing SQL: {sql}", sql=user_input.command)
@@ -348,23 +358,23 @@ class ShellREPL:
     def _try_backslash_command(self, command: str) -> tuple[bool, bool]:
         """
         Try to execute input as a backslash command.
-        
+
         Args:
             command: User input to check
-            
+
         Returns:
             Tuple of (handled, should_exit):
             - handled: True if it was a backslash command
             - should_exit: True if the command requests exit (e.g., \\q)
         """
         handled, result = execute_backslash_command(command, self._db_service)
-        
+
         if handled:
             logger.debug("Backslash command executed: {command}", command=command)
             # Check if command requests exit
             if result and not result.should_continue:
                 return True, True
-        
+
         return handled, False
 
     def _execute_sql(self, sql: str) -> None:
@@ -372,27 +382,27 @@ class ShellREPL:
         if not self._db_service or not self._db_service.is_connected():
             console.print("[red]No database connection. Use /connect to connect.[/red]")
             return
-        
+
         from database import DatabaseError, QueryStatus
         from database.service import get_service
         from ui.formatters.database_formatter import format_and_display_result
-        
+
         # Check if this is a transaction control statement
         is_tx_control, tx_type = self._db_service.is_transaction_control_statement(sql)
         if is_tx_control:
             self._handle_transaction_control(tx_type)
             return
-        
+
         try:
             # Check if vertical format is requested
             use_vertical = self._db_service.has_vertical_format_directive(sql)
-            
+
             # Execute query
             result = self._db_service.execute_query(sql)
-            
+
             # Format and display result
             format_and_display_result(result, sql, use_vertical)
-            
+
             # Save query result for agent context injection (success or error from result)
             db_svc = get_service()
             if db_svc:
@@ -411,7 +421,7 @@ class ShellREPL:
                         status=QueryStatus.ERROR,
                         error_message=result.error,
                     )
-            
+
             # Record execution in history
             if self._query_history:
                 self._query_history.record_query(
@@ -421,7 +431,7 @@ class ShellREPL:
                     affected_rows=result.affected_rows,
                     error_message=result.error
                 )
-            
+
         except DatabaseError as e:
             # Save failed query for agent context injection
             db_svc = get_service()
@@ -453,12 +463,12 @@ class ShellREPL:
     def _handle_transaction_control(self, tx_type: Any) -> None:
         """Handle transaction control statements (BEGIN/COMMIT/ROLLBACK)."""
         from database import QueryType, TransactionState
-        
+
         if not self._db_service:
             return
-        
+
         current_state = self._db_service.get_transaction_state()
-        
+
         try:
             if tx_type == QueryType.BEGIN:
                 if current_state == TransactionState.IN_TRANSACTION:
@@ -466,21 +476,21 @@ class ShellREPL:
                     return
                 self._db_service.begin_transaction()
                 console.print("[green]Transaction started[/green]")
-                
+
             elif tx_type == QueryType.COMMIT:
                 if current_state != TransactionState.IN_TRANSACTION:
                     console.print("[yellow]Warning: No transaction in progress[/yellow]")
                     return
                 self._db_service.commit_transaction()
                 console.print("[green]Transaction committed[/green]")
-                
+
             elif tx_type == QueryType.ROLLBACK:
                 if current_state not in (TransactionState.IN_TRANSACTION, TransactionState.TRANSACTION_ERROR):
                     console.print("[yellow]Warning: No transaction in progress[/yellow]")
                     return
                 self._db_service.rollback_transaction()
                 console.print("[green]Transaction rolled back[/green]")
-                
+
         except Exception as e:
             console.print(f"[red]Transaction error: {e}[/red]")
             logger.exception("Transaction control failed")
@@ -488,28 +498,31 @@ class ShellREPL:
     def _check_uncommitted_transaction(self) -> bool:
         """
         Check if there's an uncommitted transaction and prompt user.
-        
+
         Returns:
             True if user chose not to exit (has uncommitted transaction and wants to stay),
             False if it's safe to exit (no transaction or user confirmed exit).
         """
         from database import TransactionState
-        
+
         if not self._db_service or not self._db_service.is_connected():
             return False
-        
+
         current_state = self._db_service.get_transaction_state()
         if current_state not in (TransactionState.IN_TRANSACTION, TransactionState.TRANSACTION_ERROR):
             return False
-        
+
         # User already warned, allow exit this time
         if self._exit_warned:
             console.print("[yellow]Uncommitted transaction will be lost.[/yellow]")
             return False
-        
+
         # There's an uncommitted transaction, warn user
         console.print("[yellow]Warning: You have an uncommitted transaction.[/yellow]")
-        console.print("[yellow]Use COMMIT to save changes, ROLLBACK to discard, or type 'exit' again to force quit.[/yellow]")
+        console.print(
+            "[yellow]Use COMMIT to save changes, ROLLBACK to discard, "
+            "or type 'exit' again to force quit.[/yellow]"
+        )
         self._exit_warned = True
         return True
 
@@ -519,10 +532,10 @@ class ShellREPL:
 _CLI_BLUE = "sky_blue2"
 _LOGO = f"""\
 [{_CLI_BLUE}]\
-███████╗  ██████╗  ███████╗   █████╗   ██████╗ 
+███████╗  ██████╗  ███████╗   █████╗   ██████╗
 ██   ██║  ██╔══██╗ ██╔════╝  ██╔══██╗  ╚═██╔═╝
-███████║  ██║  ██║ ███████╗  ███████║    ██║   
-██║ ██╔╝  ██║  ██║ ╚════██║  ██╔══██║    ██║   
+███████║  ██║  ██║ ███████╗  ███████║    ██║
+██║ ██╔╝  ██║  ██║ ╚════██║  ██╔══██║    ██║
 ██║  ██║  ██████╔╝ ███████║  ██╔══██║  ██████╗
 ╚═╝  ╚═╝  ╚═════╝  ╚══════╝  ╚═╝  ╚═╝  ╚═════╝
 [{_CLI_BLUE}]\
@@ -532,7 +545,7 @@ _LOGO = f"""\
 @dataclass(slots=True)
 class WelcomeInfoItem:
     """A single item in the welcome information display."""
-    
+
     class Level(Enum):
         INFO = "grey50"
         WARN = "yellow"
@@ -570,4 +583,3 @@ def _print_welcome_info(name: str, info_items: list[WelcomeInfoItem]) -> None:
             padding=(1, 2),
         )
     )
-

@@ -93,4 +93,3 @@ _parser = BackslashParser()
 def parse_backslash_command(input_text: str) -> ParseResult:
     """Parse input for backslash commands using global parser."""
     return _parser.parse(input_text)
-

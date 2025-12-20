@@ -13,11 +13,17 @@ from .base import MySQLToolBase
 class Params(BaseModel):
     info_type: Optional[str] = Field(
         default="tables",
-        description="Information type: 'statements', 'waits', 'table_io', 'table_lock', 'threads', 'users', 'accounts', 'hosts', 'tables', 'memory'"
+        description=(
+            "Information type: 'statements', 'waits', 'table_io', 'table_lock', "
+            "'threads', 'users', 'accounts', 'hosts', 'tables', 'memory'"
+        )
     )
     table: Optional[str] = Field(
         default=None,
-        description="Table name for table_io/table_lock queries, or memory analysis type (by_user, by_host, by_account, by_thread)"
+        description=(
+            "Table name for table_io/table_lock queries, or memory analysis type "
+            "(by_user, by_host, by_account, by_thread)"
+        )
     )
 
 
@@ -33,7 +39,7 @@ class PerformanceSchema(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Query performance_schema for various performance metrics."""
         info_type = params.info_type or "tables"
-        
+
         if info_type == "statements":
             sql = "SELECT * FROM performance_schema.events_statements_summary_by_digest LIMIT 100"
             columns, rows = self._execute_query(sql)
@@ -95,7 +101,7 @@ class PerformanceSchema(MySQLToolBase):
                 memory_table = "memory_summary_by_account_by_event_name"
             elif params.table == "by_thread":
                 memory_table = "memory_summary_by_thread_by_event_name"
-            
+
             columns, rows = self._execute_query(f"SELECT * FROM performance_schema.{memory_table}")
             return {
                 "type": f"Memory Summary - {memory_table}",

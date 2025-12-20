@@ -148,4 +148,3 @@ class QueryHistory:
             entry = QueryHistoryEntry.from_dict(entry_data)
             instance._entries.append(entry)
         return instance
-

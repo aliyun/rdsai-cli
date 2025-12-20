@@ -41,7 +41,7 @@ def enable_logging(debug: bool = False) -> None:
 
 class Application:
     """Main application with lifecycle management.
-    
+
     Usage:
         async with await Application.create(session, yolo=yolo) as app:
             await app.run()
@@ -146,10 +146,10 @@ class Application:
         """Start all resources."""
         # Start MCP connection pool manager
         await self._mcp_pool.start()
-        
+
         # Start background task to connect enabled MCP servers (non-blocking)
         self._mcp_task = asyncio.create_task(self._connect_enabled_mcp_servers())
-        
+
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -157,13 +157,13 @@ class Application:
         # Clean up database connection
         if self._db_connection and self._db_connection.db_service:
             self._db_connection.db_service.disconnect()
-        
+
         # Cancel MCP connection task if still running
         if self._mcp_task:
             self._mcp_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._mcp_task
-        
+
         # Shutdown MCP connection pool (safely closes all connections)
         await self._mcp_pool.shutdown()
         await shutdown_connection_pool()
@@ -247,24 +247,24 @@ class Application:
 
     async def _connect_enabled_mcp_servers(self):
         """Connect to enabled MCP servers in the background.
-        
+
         This runs as a background task and does not block CLI startup.
         """
         from tools.mcp.toolset import connect_and_load_tools
-        
+
         mcp_config = self._runtime.mcp_config
         if not mcp_config:
             return
-        
+
         enabled_servers = mcp_config.get_enabled_servers()
         if not enabled_servers:
             return
-        
+
         logger.info(
             "Starting background connection to {count} enabled MCP server(s)",
             count=len(enabled_servers)
         )
-        
+
         for server in enabled_servers:
             try:
                 tools = await connect_and_load_tools(server)
@@ -283,5 +283,3 @@ class Application:
                     name=server.name,
                     error=str(e)
                 )
-
-

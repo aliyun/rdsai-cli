@@ -127,7 +127,7 @@ class MCPTool(BaseTool[BaseModel]):
         """Get a compact display string for annotations."""
         if not self._annotations:
             return ""
-        
+
         parts: list[str] = []
         if self._annotations.readOnlyHint:
             parts.append("readOnly")
@@ -135,7 +135,7 @@ class MCPTool(BaseTool[BaseModel]):
             parts.append("destructive")
         if self._annotations.idempotentHint:
             parts.append("idempotent")
-        
+
         return ", ".join(parts) if parts else ""
 
     async def __call__(self, params: BaseModel) -> ToolReturnType:
@@ -185,44 +185,43 @@ class MCPTool(BaseTool[BaseModel]):
 
 async def connect_and_load_tools(server: "MCPServerConfig") -> list[MCPTool]:
     """Connect to an MCP server and load its tools.
-    
+
     Args:
         server: The server configuration.
-        
+
     Returns:
         List of MCPTool instances loaded from the server.
-        
+
     Raises:
         Exception: If connection fails.
     """
     pool = get_connection_pool()
-    
+
     # Connect to server
     await pool.connect(server)
-    
+
     # Load tools from this server
     tool_schemas = await pool.list_tools(server.name)
     tools: list[MCPTool] = []
-    
+
     for schema in tool_schemas:
         # Apply filters
         if server.include_tools and schema.name not in server.include_tools:
             continue
         if server.exclude_tools and schema.name in server.exclude_tools:
             continue
-        
+
         mcp_tool = MCPTool(
             tool_schema=schema,
             server_name=server.name,
             connection_pool=pool,
         )
         tools.append(mcp_tool)
-    
+
     logger.info(
         "Connected to MCP server '{name}', loaded {count} tools",
         name=server.name,
         count=len(tools),
     )
-    
-    return tools
 
+    return tools

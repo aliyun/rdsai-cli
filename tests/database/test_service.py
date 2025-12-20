@@ -739,4 +739,3 @@ class TestFactoryFunctions:
         service = create_database_service()
         assert isinstance(service, DatabaseService)
         assert not service.is_connected()
-

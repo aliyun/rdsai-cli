@@ -66,10 +66,10 @@ class SysbenchRun(SysbenchToolBase):
 
     def _build_run_kwargs(self, params: Params) -> Dict[str, Any]:
         """Build keyword arguments for sysbench run command.
-        
+
         Args:
             params: Tool parameters
-            
+
         Returns:
             Dictionary of keyword arguments for _build_sysbench_args
         """
@@ -78,7 +78,7 @@ class SysbenchRun(SysbenchToolBase):
             "threads": params.threads,
             "report_interval": params.report_interval,
         }
-        
+
         # Add optional parameters
         if params.time:
             kwargs["time"] = params.time
@@ -88,15 +88,15 @@ class SysbenchRun(SysbenchToolBase):
             kwargs["rate"] = params.rate
         if params.table_size:
             kwargs["table_size"] = params.table_size
-        
+
         return kwargs
 
     def _calculate_timeout(self, params: Params) -> int | None:
         """Calculate command timeout based on test parameters.
-        
+
         Args:
             params: Tool parameters
-            
+
         Returns:
             Timeout in seconds, or None if not applicable
         """
@@ -109,11 +109,11 @@ class SysbenchRun(SysbenchToolBase):
 
     def _build_result_message(self, params: Params, metrics: Dict[str, Any]) -> str:
         """Build result message from parameters and metrics.
-        
+
         Args:
             params: Tool parameters
             metrics: Parsed performance metrics
-            
+
         Returns:
             Formatted result message
         """
@@ -124,9 +124,9 @@ class SysbenchRun(SysbenchToolBase):
             duration_info = f"with {params.events:,} events"
         else:
             duration_info = ""
-        
+
         message = f"Performance test completed {duration_info} with {params.threads} thread(s)"
-        
+
         # Append metrics if available
         metric_parts = []
         if "tps" in metrics:
@@ -135,10 +135,10 @@ class SysbenchRun(SysbenchToolBase):
             metric_parts.append(f"QPS: {metrics['qps']:.2f}")
         if "avg_latency_ms" in metrics:
             metric_parts.append(f"Avg Latency: {metrics['avg_latency_ms']:.2f}ms")
-        
+
         if metric_parts:
             message += " - " + ", ".join(metric_parts)
-        
+
         return message
 
     @override
@@ -148,7 +148,7 @@ class SysbenchRun(SysbenchToolBase):
             # Ensure either time or events is set
             if params.time is None and params.events is None:
                 params.time = 60  # Default to 60 seconds
-            
+
             # Build command arguments
             kwargs = self._build_run_kwargs(params)
             args = self._build_sysbench_args(
@@ -156,32 +156,31 @@ class SysbenchRun(SysbenchToolBase):
                 command="run",
                 **kwargs
             )
-            
+
             # Execute command with calculated timeout
             timeout = self._calculate_timeout(params)
             exit_code, stdout, stderr = await self._execute_sysbench_command(args, timeout=timeout)
-            
+
             if exit_code != 0:
                 return {
                     "error": f"sysbench run failed with exit code {exit_code}, {stderr or stdout}",
                     "brief": "Run failed",
                 }
-            
+
             # Parse output and build result
             parsed = self._parse_sysbench_output(stdout, stderr)
             metrics = parsed.get("metrics", {})
             message = self._build_result_message(params, metrics)
-            
+
             return {
                 "message": message,
                 "metrics": metrics,
                 "output": stdout if stdout else "Test completed successfully.",
                 "errors": parsed.get("errors", []),
             }
-            
+
         except Exception as e:
             return {
                 "error": str(e),
                 "brief": "Run error",
             }
-

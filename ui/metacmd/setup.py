@@ -425,7 +425,7 @@ async def _run_form(
 async def _setup() -> _SetupResult | None:
     # Step 1: Select language
     current_config = load_config()
-    
+
     # Language configuration: display name -> language code
     language_options = {
         "English (en)": "en",
@@ -450,7 +450,7 @@ async def _setup() -> _SetupResult | None:
     if not language_display:
         console.print("[yellow]Setup cancelled[/yellow]")
         return None
-    
+
     language = language_options['English (en)']
 
     # Step 2: Select platform

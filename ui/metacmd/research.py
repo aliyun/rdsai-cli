@@ -248,5 +248,3 @@ async def _explore_database(
         return None, 0
 
     return snapshot, total_columns
-
-

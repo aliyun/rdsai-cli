@@ -72,7 +72,7 @@ class DatabaseStatistics:
 @dataclass
 class DatabaseSchemaSnapshot:
     """Complete snapshot of database schema.
-    
+
     Contains all metadata collected from exploring a database.
     """
     database_name: str
@@ -95,7 +95,7 @@ class DatabaseSchemaSnapshot:
     @staticmethod
     def compute_schema_hash(tables: List[TableInfo]) -> str:
         """Compute a hash of the schema for change detection.
-        
+
         The hash is based on table names and column definitions.
         """
         schema_str_parts = []
@@ -105,7 +105,7 @@ class DatabaseSchemaSnapshot:
                 for c in table.columns
             )
             schema_str_parts.append(f"{table.name}({cols_str})")
-        
+
         schema_str = "|".join(schema_str_parts)
         return hashlib.sha256(schema_str.encode()).hexdigest()[:16]
 
@@ -118,7 +118,7 @@ class TableExploreProgress:
     table_name: str
     table_info: Optional[TableInfo] = None
     error: Optional[str] = None
-    
+
     @property
     def is_done(self) -> bool:
         return self.table_info is not None or self.error is not None
@@ -126,10 +126,10 @@ class TableExploreProgress:
 
 class DatabaseExplorer:
     """Explore database schema and collect comprehensive metadata.
-    
+
     This class provides methods to explore a MySQL database and collect
     information about tables, columns, indexes, and foreign keys.
-    
+
     Usage:
         explorer = DatabaseExplorer(db_service)
         snapshot = explorer.explore()
@@ -137,7 +137,7 @@ class DatabaseExplorer:
 
     def __init__(self, db_service: "DatabaseService"):
         """Initialize explorer with a database service.
-        
+
         Args:
             db_service: Connected database service instance
         """
@@ -145,7 +145,7 @@ class DatabaseExplorer:
 
     def _execute_query(self, sql: str) -> tuple[List[str], List[tuple]]:
         """Execute a query and return (columns, rows).
-        
+
         Returns:
             Tuple of (column_names, rows)
         """
@@ -157,10 +157,10 @@ class DatabaseExplorer:
 
     def explore(self) -> DatabaseSchemaSnapshot:
         """Explore the current database and return a complete schema snapshot.
-        
+
         Returns:
             DatabaseSchemaSnapshot with all collected metadata
-            
+
         Raises:
             ValueError: If not connected to a database
         """
@@ -172,21 +172,23 @@ class DatabaseExplorer:
                 tables.append(progress.table_info)
             if isinstance(progress, DatabaseSchemaSnapshot):
                 snapshot = progress
-        
+
         # The last yield should be the snapshot
         if snapshot is None:
             raise ValueError("Failed to explore database")
         return snapshot
 
-    def explore_iter(self, table_filter: Optional[List[str]] = None) -> Generator[TableExploreProgress | DatabaseSchemaSnapshot, None, None]:
+    def explore_iter(
+        self, table_filter: Optional[List[str]] = None
+    ) -> Generator[TableExploreProgress | DatabaseSchemaSnapshot, None, None]:
         """Explore the database with progress updates.
-        
+
         Args:
             table_filter: Optional list of table names to filter. If provided, only these
                          tables will be explored. If None, all tables are explored.
-        
+
         Yields TableExploreProgress for each table, then the final DatabaseSchemaSnapshot.
-        
+
         Usage:
             for progress in explorer.explore_iter():
                 if isinstance(progress, TableExploreProgress):
@@ -194,7 +196,7 @@ class DatabaseExplorer:
                 else:
                     # Final snapshot
                     snapshot = progress
-        
+
         Yields:
             TableExploreProgress for each table being explored
             DatabaseSchemaSnapshot as the final yield
@@ -202,7 +204,7 @@ class DatabaseExplorer:
         conn_info = self._db_service.get_connection_info()
         if not conn_info.get('connected'):
             raise ValueError("Not connected to a database")
-        
+
         database_name = conn_info.get('database')
         if not database_name:
             raise ValueError("No database selected")
@@ -213,10 +215,10 @@ class DatabaseExplorer:
         # First, get table list and foreign keys (with filtering if specified)
         tables = self._collect_tables(database_name, table_filter)
         foreign_keys = self._collect_foreign_keys(database_name, table_filter)
-        
+
         total = len(tables)
         completed_tables: List[TableInfo] = []
-        
+
         # Explore each table with progress updates
         for i, table in enumerate(tables, 1):
             # Yield progress before starting
@@ -225,7 +227,7 @@ class DatabaseExplorer:
                 total=total,
                 table_name=table.name,
             )
-            
+
             try:
                 # Collect detailed info for this table
                 table.columns = self._collect_columns(database_name, table.name)
@@ -234,7 +236,7 @@ class DatabaseExplorer:
                     col.name for col in table.columns if col.column_key == 'PRI'
                 ]
                 completed_tables.append(table)
-                
+
             except Exception as e:
                 logger.warning(f"Failed to explore table {table.name}: {e}")
                 # Still add the table but with minimal info
@@ -265,12 +267,12 @@ class DatabaseExplorer:
 
     def _collect_tables(self, database_name: str, table_filter: Optional[List[str]] = None) -> List[TableInfo]:
         """Collect basic table information from information_schema.
-        
+
         Args:
             database_name: Name of the database to query
             table_filter: Optional list of table names to filter. If provided, only these
                          tables will be returned. If None, all tables are returned.
-        
+
         Returns:
             List of TableInfo objects for matching tables
         """
@@ -293,9 +295,9 @@ class DatabaseExplorer:
             else:
                 # No valid tables in filter, return empty list
                 return []
-        
+
         sql = f"""
-            SELECT 
+            SELECT
                 TABLE_NAME,
                 TABLE_COMMENT,
                 ENGINE,
@@ -307,7 +309,7 @@ class DatabaseExplorer:
             ORDER BY TABLE_NAME
         """
         columns, rows = self._execute_query(sql)
-        
+
         tables = []
         for row in rows:
             tables.append(TableInfo(
@@ -318,13 +320,13 @@ class DatabaseExplorer:
                 data_size_bytes=row[4] or 0,
                 index_size_bytes=row[5] or 0,
             ))
-        
+
         return tables
 
     def _collect_columns(self, database_name: str, table_name: str) -> List[ColumnInfo]:
         """Collect column information for a specific table."""
         sql = f"""
-            SELECT 
+            SELECT
                 COLUMN_NAME,
                 COLUMN_TYPE,
                 IS_NULLABLE,
@@ -338,7 +340,7 @@ class DatabaseExplorer:
             ORDER BY ORDINAL_POSITION
         """
         columns, rows = self._execute_query(sql)
-        
+
         result = []
         for row in rows:
             result.append(ColumnInfo(
@@ -350,25 +352,25 @@ class DatabaseExplorer:
                 extra=row[5] or '',
                 comment=row[6] if row[6] else None,
             ))
-        
+
         return result
 
     def _collect_indexes(self, table_name: str) -> List[IndexInfo]:
         """Collect index information for a specific table."""
         sql = f"SHOW INDEX FROM `{table_name}`"
         columns, rows = self._execute_query(sql)
-        
+
         # Group by index name
         index_map: Dict[str, IndexInfo] = {}
         for row in rows:
-            # SHOW INDEX columns: Table, Non_unique, Key_name, Seq_in_index, 
-            # Column_name, Collation, Cardinality, Sub_part, Packed, Null, 
+            # SHOW INDEX columns: Table, Non_unique, Key_name, Seq_in_index,
+            # Column_name, Collation, Cardinality, Sub_part, Packed, Null,
             # Index_type, Comment, Index_comment
             key_name = row[2]
             non_unique = row[1]
             column_name = row[4]
             index_type = row[10] if len(row) > 10 else 'BTREE'
-            
+
             if key_name not in index_map:
                 index_map[key_name] = IndexInfo(
                     name=key_name,
@@ -379,18 +381,20 @@ class DatabaseExplorer:
             # Only append non-None column names
             if column_name:
                 index_map[key_name].columns.append(column_name)
-        
+
         return list(index_map.values())
 
-    def _collect_foreign_keys(self, database_name: str, table_filter: Optional[List[str]] = None) -> List[ForeignKeyInfo]:
+    def _collect_foreign_keys(
+        self, database_name: str, table_filter: Optional[List[str]] = None
+    ) -> List[ForeignKeyInfo]:
         """Collect foreign key relationships.
-        
+
         Args:
             database_name: Name of the database to query
             table_filter: Optional list of table names to filter. If provided, only foreign
                          keys involving these tables (either as source or target) will be
                          returned. If None, all foreign keys are returned.
-        
+
         Returns:
             List of ForeignKeyInfo objects for matching foreign keys
         """
@@ -410,13 +414,16 @@ class DatabaseExplorer:
                     continue
             if validated_tables:
                 table_list = ', '.join(validated_tables)
-                where_clause += f" AND (kcu.TABLE_NAME IN ({table_list}) OR kcu.REFERENCED_TABLE_NAME IN ({table_list}))"
+                where_clause += (
+                    f" AND (kcu.TABLE_NAME IN ({table_list}) "
+                    f"OR kcu.REFERENCED_TABLE_NAME IN ({table_list}))"
+                )
             else:
                 # No valid tables in filter, return empty list
                 return []
-        
+
         sql = f"""
-            SELECT 
+            SELECT
                 kcu.CONSTRAINT_NAME,
                 kcu.TABLE_NAME,
                 kcu.COLUMN_NAME,
@@ -427,7 +434,7 @@ class DatabaseExplorer:
             ORDER BY kcu.TABLE_NAME, kcu.CONSTRAINT_NAME
         """
         columns, rows = self._execute_query(sql)
-        
+
         fks = []
         for row in rows:
             fks.append(ForeignKeyInfo(
@@ -437,24 +444,24 @@ class DatabaseExplorer:
                 referenced_table=row[3],
                 referenced_column=row[4],
             ))
-        
+
         return fks
 
 
 def format_snapshot_for_research(snapshot: DatabaseSchemaSnapshot) -> str:
     """Format DatabaseSchemaSnapshot as text for the research agent.
-    
+
     This function converts a DatabaseSchemaSnapshot into a formatted markdown
     text that can be used as context for research agents analyzing database schemas.
-    
+
     Args:
         snapshot: The collected database schema snapshot.
-        
+
     Returns:
         Formatted markdown text describing the schema.
     """
     lines: list[str] = []
-    
+
     # Database Overview
     lines.append("# Database Schema")
     lines.append(f"- Database: {snapshot.database_name}")
@@ -464,7 +471,7 @@ def format_snapshot_for_research(snapshot: DatabaseSchemaSnapshot) -> str:
     lines.append(f"- Data Size: {_format_bytes(snapshot.statistics.total_data_size_bytes)}")
     lines.append(f"- Index Size: {_format_bytes(snapshot.statistics.total_index_size_bytes)}")
     lines.append("")
-    
+
     # Engine distribution
     engine_counts: dict[str, int] = {}
     for table in snapshot.tables:
@@ -473,14 +480,14 @@ def format_snapshot_for_research(snapshot: DatabaseSchemaSnapshot) -> str:
         engine_str = ", ".join(f"{engine}: {count}" for engine, count in sorted(engine_counts.items()))
         lines.append(f"- Engines: {engine_str}")
         lines.append("")
-    
+
     # Tables
     lines.append("# Tables")
     lines.append("")
-    
+
     for table in snapshot.tables:
         lines.append(f"## {table.name}")
-        
+
         # Table metadata
         meta_parts = [f"Engine: {table.engine}"]
         meta_parts.append(f"Rows: ~{table.row_count_estimate:,}")
@@ -488,19 +495,19 @@ def format_snapshot_for_research(snapshot: DatabaseSchemaSnapshot) -> str:
         if table.comment:
             meta_parts.append(f"Comment: {table.comment}")
         lines.append(f"- {' | '.join(meta_parts)}")
-        
+
         # Primary key
         if table.primary_key_columns:
             lines.append(f"- Primary Key: {', '.join(table.primary_key_columns)}")
         else:
             lines.append("- Primary Key: **NONE**")
-        
+
         # Columns
         lines.append("")
         lines.append("### Columns")
         lines.append("| Column | Type | Nullable | Key | Extra | Comment |")
         lines.append("|--------|------|----------|-----|-------|---------|")
-        
+
         for col in table.columns:
             nullable = "YES" if col.is_nullable else "NO"
             key = col.column_key or "-"
@@ -510,44 +517,44 @@ def format_snapshot_for_research(snapshot: DatabaseSchemaSnapshot) -> str:
             col_type = col.data_type.replace("|", "\\|")
             comment = comment.replace("|", "\\|")
             lines.append(f"| {col.name} | {col_type} | {nullable} | {key} | {extra} | {comment} |")
-        
+
         # Indexes
         if table.indexes:
             lines.append("")
             lines.append("### Indexes")
             lines.append("| Index Name | Columns | Unique | Type |")
             lines.append("|------------|---------|--------|------|")
-            
+
             for idx in table.indexes:
                 unique = "YES" if idx.is_unique else "NO"
                 columns = ", ".join(idx.columns)
                 lines.append(f"| {idx.name} | {columns} | {unique} | {idx.index_type} |")
-        
+
         lines.append("")
-    
+
     # Foreign Keys
     if snapshot.foreign_keys:
         lines.append("# Foreign Key Relationships")
         lines.append("")
         lines.append("| Constraint | Table.Column | References |")
         lines.append("|------------|--------------|------------|")
-        
+
         for fk in snapshot.foreign_keys:
             from_col = f"{fk.table_name}.{fk.column_name}"
             to_col = f"{fk.referenced_table}.{fk.referenced_column}"
             lines.append(f"| {fk.constraint_name} | {from_col} | {to_col} |")
-        
+
         lines.append("")
-    
+
     return "\n".join(lines)
 
 
 def _format_bytes(size_bytes: int) -> str:
     """Format bytes to human readable string.
-    
+
     Args:
         size_bytes: Size in bytes.
-        
+
     Returns:
         Human-readable size string (B, KB, MB, GB).
     """

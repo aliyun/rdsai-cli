@@ -1,4 +1,5 @@
-# This file is modified from https://github.com/Textualize/rich/blob/4d6d631a3d2deddf8405522d4b8c976a6d35726c/rich/markdown.py
+# This file is modified from:
+# https://github.com/Textualize/rich/blob/4d6d631a3d2deddf8405522d4b8c976a6d35726c/rich/markdown.py
 
 from __future__ import annotations
 
@@ -865,4 +866,3 @@ class Markdown(JupyterMixin):
                 if exiting or self_closing:
                     element.on_leave(context)
                     new_line = element.new_line
-

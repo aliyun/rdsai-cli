@@ -19,4 +19,3 @@ def cmd_quit(ctx: CommandContext) -> CommandResult:
     """Exit mysql. Same as quit."""
     # Return a special result that signals the main loop to exit
     return CommandResult(success=True, should_continue=False)
-

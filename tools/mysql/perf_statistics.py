@@ -32,7 +32,7 @@ class PerfStatistics(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Query performance statistics from information_schema.PERF_STATISTICS."""
         sql = f"""
-            SELECT 
+            SELECT
                 TIME,
                 ROUND(PROCS_CPU_RATIO, 2) as CPU_USAGE,
                 ROUND(PROCS_MEM_RATIO, 2) as MEM_USAGE,
@@ -43,22 +43,22 @@ class PerfStatistics(MySQLToolBase):
             WHERE TIME >= NOW() - INTERVAL {params.interval} SECOND
             ORDER BY TIME DESC
         """
-        
+
         columns, rows = self._execute_query(sql)
-        
+
         if not rows:
             return {
                 "data": "No performance statistics data available",
                 "message": "No data found for the specified time interval"
             }
-        
+
         # Generate CSV format output
         output = io.StringIO()
-        
+
         # CSV headers
         headers = ["TIME", "CPU_USAGE(%)", "MEM_USAGE(%)", "TOTAL_IOPS", "READ_MB", "WRITE_MB"]
         output.write(",".join(headers) + "\n")
-        
+
         # CSV data rows
         for row in rows:
             csv_row = []
@@ -68,10 +68,10 @@ class PerfStatistics(MySQLToolBase):
                 else:
                     csv_row.append(str(value))
             output.write(",".join(csv_row) + "\n")
-        
+
         csv_result = output.getvalue()
         output.close()
-        
+
         return {
             "data": csv_result,
             "message": f"Performance statistics for last {params.interval} seconds ({len(rows)} data points)"

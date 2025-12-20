@@ -62,4 +62,3 @@ class LLMModel(BaseModel):
     """Maximum output tokens (required for some providers like Anthropic)"""
     capabilities: set[ModelCapability] | None = None
     """Model capabilities"""
-

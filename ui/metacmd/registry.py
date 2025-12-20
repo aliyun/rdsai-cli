@@ -115,4 +115,3 @@ def meta_command(
     if func is not None:
         return _register(func)
     return _register
-

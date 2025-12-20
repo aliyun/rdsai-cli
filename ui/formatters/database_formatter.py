@@ -62,7 +62,7 @@ class DatabaseResultFormatter:
     def format_query_result(result: QueryResult, sql: str = "", use_vertical: bool = False) -> None:
         """
         Format and display query result.
-        
+
         Args:
             result: Query execution result
             sql: Original SQL query (for context)
@@ -136,7 +136,10 @@ class DatabaseResultFormatter:
 
         # Show query stats if available
         if result.execution_time:
-            timing_text = f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} in {result.execution_time:.3f} sec)"
+            timing_text = (
+                f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} "
+                f"in {result.execution_time:.3f} sec)"
+            )
             from ui.repl import ShellREPL
             if ShellREPL.is_llm_configured():
                 console.print(f"{timing_text} {EXPLAIN_HINT_RESULT}")

@@ -66,4 +66,3 @@ class BackslashCommand:
         char_part = f"\\{self.char}" if self.char else ""
         name_part = f" ({self.name})" if self.name != self.char else ""
         return f"{char_part}{name_part}"
-

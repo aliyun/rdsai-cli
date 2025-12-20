@@ -27,7 +27,7 @@ class ShowProcess(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Execute SHOW PROCESSLIST to get current database connections."""
         columns, rows = self._execute_query("SHOW PROCESSLIST")
-        
+
         return {
             "type": "MySQL Process List",
             "columns": columns,

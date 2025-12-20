@@ -161,7 +161,7 @@ def _current_toast() -> _ToastEntry | None:
 
 class CustomPromptSession:
     """Custom prompt session with completion, history."""
-    
+
     def __init__(
         self,
         *,
@@ -198,7 +198,7 @@ class CustomPromptSession:
         completers = [
             MetaCommandCompleter(),
         ]
-        
+
         # Add SQL completer if database service is available
         self._sql_completer: SQLCompleter | None = None
         if self._db_service:
@@ -206,7 +206,7 @@ class CustomPromptSession:
             completers.append(self._sql_completer)
             # Register callback to invalidate cache on schema changes
             self._db_service.register_schema_change_callback(self._on_schema_change)
-            
+
         self._agent_mode_completer = merge_completers(
             completers,
             deduplicate=True,
@@ -326,7 +326,7 @@ class CustomPromptSession:
                 tx_state = db_info.get('transaction_state', 'NOT_IN_TRANSACTION')
                 if tx_state != 'NOT_IN_TRANSACTION':
                     db_indicator += "[TX]"
-                    
+
         return FormattedText([("bold", f"{Path.cwd().name}{db_indicator}{symbol} ")])
 
 
@@ -361,7 +361,7 @@ class CustomPromptSession:
             self._status_refresh_task.cancel()
         self._status_refresh_task = None
         self._attachment_parts.clear()
-        
+
         # Unregister schema change callback
         if self._db_service and self._sql_completer:
             self._db_service.unregister_schema_change_callback(self._on_schema_change)
@@ -376,12 +376,12 @@ class CustomPromptSession:
         # Check if we should exit (from Ctrl-C)
         if self._should_exit:
             raise EOFError()
-        
+
         self._explain_result_requested = False
         with patch_stdout(raw=True):
             command = str(await self._session.prompt_async()).strip()
             command = command.replace("\x00", "")  # just in case null bytes are somehow inserted
-        
+
         # Check if Ctrl-E was pressed to explain result
         if self._explain_result_requested and self._on_explain_result:
             await self._on_explain_result()
@@ -391,11 +391,11 @@ class CustomPromptSession:
                 content=[],
                 command="",
             )
-        
+
         # Check again after prompt returns (in case Ctrl-C was pressed during prompt)
         if self._should_exit:
             raise EOFError()
-            
+
         self._append_history_entry(command)
 
         # Parse rich content parts
@@ -435,7 +435,7 @@ class CustomPromptSession:
 
     def _render_bottom_toolbar(self) -> FormattedText:
         """Render the bottom toolbar with status information.
-        
+
         This method must never raise exceptions, as it would cause prompt_toolkit
         to enter an infinite "Press ENTER to continue..." loop.
         """
@@ -453,7 +453,7 @@ class CustomPromptSession:
 
             status = self._status_provider()
             status_text = self._format_status(status)
-            
+
             # Add database status
             db_status = ""
             if self._db_service and self._db_service.is_connected():
@@ -492,7 +492,7 @@ class CustomPromptSession:
             if full_status_text:
                 full_status_text += " | "
             full_status_text += thinking_text
-            
+
             padding = max(1, columns - len(full_status_text))
             fragments.append(("", " " * padding))
             fragments.append(("", full_status_text))
@@ -510,14 +510,14 @@ class CustomPromptSession:
     def _format_status(status: StatusSnapshot) -> str:
         """Format the status snapshot for display."""
         parts: list[str] = []
-        
+
         # Show YOLO mode indicator
         if status.yolo:
             parts.append("[YOLO]")
-        
+
         # Show context usage
         if status.context_usage >= 0:
             bounded = max(0.0, min(status.context_usage, 1.0))
             parts.append(f"context: {bounded:.1%}")
-        
+
         return " ".join(parts)

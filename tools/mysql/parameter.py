@@ -30,10 +30,13 @@ class KernelParameter(MySQLToolBase):
 
         sql = f"SHOW VARIABLES LIKE '{params.param_name}'"
         columns, rows = self._execute_query(sql)
-        
+
         if not rows:
-            return {"error": f"Parameter '{params.param_name}' not found", "brief": f"Parameter '{params.param_name}' not found"}
-        
+            return {
+                "error": f"Parameter '{params.param_name}' not found",
+                "brief": f"Parameter '{params.param_name}' not found",
+            }
+
         if len(rows) == 1:
             # Single result - return simple format
             row = rows[0]

@@ -17,7 +17,7 @@ from database import get_database_service
 
 class SysbenchToolBase(BaseTool):
     """Base class for all Sysbench performance testing tools."""
-    
+
     # Regex patterns for parsing sysbench output
     _TPS_PATTERN = re.compile(r'tps:\s*([\d.]+)', re.IGNORECASE)
     _QPS_PATTERN = re.compile(r'qps:\s*([\d.]+)', re.IGNORECASE)
@@ -38,10 +38,10 @@ class SysbenchToolBase(BaseTool):
         """Get database connection information for sysbench."""
         db_service = self._get_database_service()
         conn_info = db_service.get_connection_info()
-        
+
         if not conn_info.get('connected'):
             raise ValueError("Not connected to database")
-        
+
         database = conn_info.get('database')
         if not database:
             raise ValueError(
@@ -49,7 +49,7 @@ class SysbenchToolBase(BaseTool):
                 "You can use 'CREATE DATABASE database_name;' to create a database, "
                 "or 'USE database_name;' to switch to an existing database."
             )
-        
+
         return {
             'host': conn_info['host'],
             'port': conn_info['port'],
@@ -69,17 +69,17 @@ class SysbenchToolBase(BaseTool):
         **kwargs: Any
     ) -> list[str]:
         """Build sysbench command arguments.
-        
+
         Args:
             test_type: Test type (e.g., 'oltp_read_write', 'oltp_read_only')
             command: Sysbench command (prepare, run, cleanup)
             **kwargs: Additional sysbench parameters
-            
+
         Returns:
             List of command arguments
         """
         conn_info = self._get_connection_info()
-        
+
         # Build base command
         args = [
             "sysbench",
@@ -89,11 +89,11 @@ class SysbenchToolBase(BaseTool):
             f"--mysql-user={conn_info['user']}",
             f"--mysql-db={conn_info['database']}",
         ]
-        
+
         # Add password if available
         if conn_info['password']:
             args.append(f"--mysql-password={conn_info['password']}")
-        
+
         # Map parameter names to sysbench option names
         param_mapping = {
             'tables': '--tables',
@@ -104,15 +104,15 @@ class SysbenchToolBase(BaseTool):
             'rate': '--rate',
             'report_interval': '--report-interval',
         }
-        
+
         # Add common parameters
         for param_name, option_name in param_mapping.items():
             if param_name in kwargs:
                 args.append(f"{option_name}={kwargs[param_name]}")
-        
+
         # Add command
         args.append(command)
-        
+
         return args
 
     async def _execute_sysbench_command(
@@ -121,11 +121,11 @@ class SysbenchToolBase(BaseTool):
         timeout: int | None = None,
     ) -> tuple[int, str, str]:
         """Execute sysbench command and return exit code, stdout, stderr.
-        
+
         Args:
             args: Command arguments
             timeout: Command timeout in seconds
-            
+
         Returns:
             Tuple of (exit_code, stdout, stderr)
         """
@@ -134,7 +134,7 @@ class SysbenchToolBase(BaseTool):
                 "sysbench is not installed or not in PATH. "
                 "Please install sysbench first: https://github.com/akopytov/sysbench"
             )
-        
+
         process = None
         try:
             process = await asyncio.create_subprocess_exec(
@@ -142,14 +142,14 @@ class SysbenchToolBase(BaseTool):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
-            
+
             stdout, stderr = await asyncio.wait_for(
                 process.communicate(),
                 timeout=timeout,
             )
-            
+
             exit_code = await process.wait()
-            
+
             return (
                 exit_code,
                 stdout.decode('utf-8', errors='replace'),
@@ -199,11 +199,11 @@ class SysbenchToolBase(BaseTool):
 
     def _parse_sysbench_output(self, stdout: str, stderr: str) -> Dict[str, Any]:
         """Parse sysbench output and extract key metrics.
-        
+
         Args:
             stdout: Standard output from sysbench
             stderr: Standard error from sysbench
-            
+
         Returns:
             Dictionary with parsed metrics
         """
@@ -212,30 +212,30 @@ class SysbenchToolBase(BaseTool):
             'metrics': {},
             'errors': [],
         }
-        
+
         # Parse metrics from stdout
         for line in stdout.split('\n'):
             # Extract TPS
             tps_match = self._TPS_PATTERN.search(line)
             if tps_match:
                 result['metrics']['tps'] = float(tps_match.group(1))
-            
+
             # Extract QPS
             qps_match = self._QPS_PATTERN.search(line)
             if qps_match:
                 result['metrics']['qps'] = float(qps_match.group(1))
-            
+
             # Extract average latency
             latency_match = self._LATENCY_PATTERN.search(line)
             if latency_match:
                 result['metrics']['avg_latency_ms'] = float(latency_match.group(1))
-        
+
         # Parse error messages from stderr
         if stderr:
             error_lines = [line.strip() for line in stderr.split('\n') if line.strip()]
             if error_lines:
                 result['errors'] = error_lines
-        
+
         return result
 
     @abstractmethod
@@ -245,49 +245,49 @@ class SysbenchToolBase(BaseTool):
 
     def _format_result_output(self, result: Dict[str, Any]) -> str:
         """Format tool result for output.
-        
+
         Args:
             result: Result dictionary from _execute_tool
-            
+
         Returns:
             Formatted output string
         """
         builder = ToolResultBuilder()
-        
+
         if "message" in result:
             builder.write(f"{result['message']}\n\n")
-        
+
         if "metrics" in result and result["metrics"]:
             builder.write("**Performance Metrics:**\n")
             for key, value in result["metrics"].items():
                 builder.write(f"  {key}: {value}\n")
             builder.write("\n")
-        
+
         if "output" in result:
             builder.write(f"{result['output']}\n")
-        
+
         if "errors" in result and result["errors"]:
             builder.write("**Warnings/Errors:**\n")
             for error in result["errors"]:
                 builder.write(f"  {error}\n")
-        
+
         return builder.get_output()
 
     async def __call__(self, params: BaseModel) -> ToolReturnType:
         """Execute the tool with error handling."""
         try:
             result = await self._execute_tool(params)
-            
+
             if "error" in result:
                 return ToolError(
                     message=result["error"],
                     brief=result.get("brief", "Sysbench error")
                 )
-            
+
             output = self._format_result_output(result)
             message = result.get("message", "Sysbench tool executed successfully")
             return ToolOk(output=output, message=message)
-            
+
         except asyncio.CancelledError:
             # Re-raise CancelledError to allow proper cancellation propagation
             raise
@@ -301,4 +301,3 @@ class SysbenchToolBase(BaseTool):
                 message=f"Unexpected error: {e}",
                 brief="Internal error"
             )
-

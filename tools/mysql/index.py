@@ -27,9 +27,9 @@ class TableIndex(MySQLToolBase):
         """Execute SHOW INDEX to get table index information."""
         if not params.table_name.strip():
             return {"error": "Table name is required", "brief": "Table name is required"}
-        
+
         columns, rows = self._execute_query(f"SHOW INDEX FROM `{params.table_name}`")
-        
+
         if rows:
             return {
                 "type": f"Indexes for table '{params.table_name}'",
@@ -38,4 +38,10 @@ class TableIndex(MySQLToolBase):
                 "message": f"Found {len(rows)} index entries for table '{params.table_name}'"
             }
         else:
-            return {"error": f"No indexes found for table '{params.table_name}' or table does not exist", "brief": f"No indexes for '{params.table_name}'"}
+            return {
+                "error": (
+                    f"No indexes found for table '{params.table_name}' "
+                    "or table does not exist"
+                ),
+                "brief": f"No indexes for '{params.table_name}'",
+            }

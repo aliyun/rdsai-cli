@@ -103,4 +103,3 @@ __all__ = [
     # Execution
     "execute_backslash_command",
 ]
-
