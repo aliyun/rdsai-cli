@@ -15,7 +15,6 @@ from database import (
     DatabaseExplorer,
     DatabaseSchemaSnapshot,
     TableExploreProgress,
-    DatabaseStatistics,
     format_snapshot_for_research,
 )
 from ui.console import console

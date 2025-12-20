@@ -4,14 +4,13 @@ import asyncio
 import re
 import shutil
 from abc import abstractmethod
-from pathlib import Path
-from typing import Any, Dict, override
+from typing import Any, Dict
 
 from pydantic import BaseModel
 
 from loop.runtime import BuiltinSystemPromptArgs
 from loop.toolset import BaseTool, ToolError, ToolOk, ToolReturnType
-from tools.utils import ToolResultBuilder, load_desc
+from tools.utils import ToolResultBuilder
 from database import get_database_service
 
 

@@ -17,14 +17,12 @@ disable=
     too-many-return-statements,
     too-many-positional-arguments,
     unnecessary-pass,
-    unused-import,
     unused-argument,
     unused-variable,
     redefined-outer-name,
     import-outside-toplevel,
     broad-exception-caught,
     protected-access,
-    invalid-name,
     global-statement,
     arguments-differ,
     useless-parent-delegation,
@@ -47,6 +45,7 @@ disable=
     no-else-continue,
     no-name-in-module,
     invalid-overridden-method,
+    invalid-name,
     try-except-raise,
     useless-return,
     duplicate-code,
@@ -62,9 +61,9 @@ max-line-length=120
 [DESIGN]
 # Increase limits to be more reasonable
 max-args=7
-max-locals=20
-max-branches=15
-max-statements=60
+max-locals=15
+max-branches=10
+max-statements=30
 max-attributes=10
-max-returns=8
+max-returns=3
 
