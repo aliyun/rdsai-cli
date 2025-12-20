@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from loop.agent import Agent, load_agent
-from loop.neoloop import NeoLoop
 from loop.runtime import Runtime
 
 

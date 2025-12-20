@@ -7,13 +7,12 @@ from typing import Any
 from mcp.types import Tool as MCPToolSchema, ToolAnnotations
 from pydantic import BaseModel, Field, create_model
 
-from loop.toolset import BaseTool, ToolError, ToolOk, ToolReturnType, Toolset
+from loop.toolset import BaseTool, ToolError, ToolOk, ToolReturnType
 from tools.mcp.client import (
     MCPConnectionPool,
     get_connection_pool,
-    shutdown_connection_pool,
 )
-from tools.mcp.config import MCPConfig, MCPServerConfig
+from tools.mcp.config import MCPServerConfig
 from utils.logging import logger
 
 # --- Helper functions for schema conversion ---

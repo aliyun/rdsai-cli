@@ -32,7 +32,6 @@ from loop.compaction import ChainCompaction
 from loop.context import ContextManager
 from loop.types import ContentPart
 from loop.runtime import Runtime
-from loop.toolset import ToolResult
 from database import format_query_context_for_agent
 from database.service import get_service
 from utils.logging import logger

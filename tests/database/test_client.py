@@ -1,7 +1,7 @@
 """Tests for database.client module."""
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from database.client import (
     validate_identifier,
     DatabaseClientFactory,
