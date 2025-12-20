@@ -25,7 +25,6 @@ from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.patch_stdout import patch_stdout
 from pydantic import BaseModel, ValidationError
 
-from config import ModelCapability
 from config import get_share_dir
 from loop import StatusSnapshot
 from loop.types import ContentPart, TextPart
@@ -312,10 +311,46 @@ class CustomPromptSession:
         """Whether thinking mode is enabled."""
         return self._thinking_enabled
 
+    def refresh_db_service(self, db_service: DatabaseService | None) -> None:
+        """Refresh the database service reference and completers."""
+        # Unregister old callback if exists
+        if self._db_service and self._sql_completer:
+            self._db_service.unregister_schema_change_callback(self._on_schema_change)
+        
+        # Update db_service
+        self._db_service = db_service
+        
+        # Rebuild completers
+        completers = [
+            MetaCommandCompleter(),
+        ]
+        
+        # Add SQL completer if database service is available
+        self._sql_completer = None
+        if self._db_service:
+            self._sql_completer = SQLCompleter(self._db_service)
+            completers.append(self._sql_completer)
+            # Register callback to invalidate cache on schema changes
+            self._db_service.register_schema_change_callback(self._on_schema_change)
+        
+        self._agent_mode_completer = merge_completers(
+            completers,
+            deduplicate=True,
+        )
+        
+        # Update session completer
+        self._session.completer = self._agent_mode_completer
+        
+        # Trigger immediate refresh of the prompt display
+        app = get_app_or_none()
+        if app is not None:
+            app.invalidate()
+
     def _render_message(self) -> FormattedText:
         symbol = PROMPT_SYMBOL
         # Add database indicator
         db_indicator = ""
+        prefix = "rdsai"
         if self._db_service and self._db_service.is_connected():
             db_info = self._db_service.get_connection_info()
             db_name = db_info.get('database', 'db')
@@ -326,8 +361,9 @@ class CustomPromptSession:
                 tx_state = db_info.get('transaction_state', 'NOT_IN_TRANSACTION')
                 if tx_state != 'NOT_IN_TRANSACTION':
                     db_indicator += "[TX]"
-                    
-        return FormattedText([("bold", f"{Path.cwd().name}{db_indicator}{symbol} ")])
+            prefix = db_info.get('user') or prefix
+
+        return FormattedText([("bold", f"{prefix}{db_indicator}{symbol} ")])
 
 
     def __enter__(self) -> CustomPromptSession:

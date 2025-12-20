@@ -64,6 +64,7 @@ def cli_main(
                 "--password",
                 "-p",
                 help="Database password.",
+                hide_input=True,
             ),
         ] = None,
         db_database: Annotated[

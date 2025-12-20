@@ -43,6 +43,7 @@ class ShellREPL:
         self._background_tasks: set[asyncio.Task[Any]] = set()
         self._exit_warned: bool = False  # Track if user was warned about uncommitted transaction
         self._explain_agent: NeoLoop | None = None  # Cached explain agent instance
+        self._prompt_session: CustomPromptSession | None = None  # Reference to prompt session
     
     @classmethod
     def is_llm_configured(cls) -> bool:
@@ -69,6 +70,11 @@ class ShellREPL:
         return self._query_history
 
     @property
+    def prompt_session(self) -> CustomPromptSession | None:
+        """Get the prompt session."""
+        return self._prompt_session
+
+    @property
     def llm_configured(self) -> bool:
         """Check if LLM is configured."""
         return isinstance(self.loop, NeoLoop) and self.loop.runtime.llm is not None and self.loop.runtime.llm.model_name != ""
@@ -93,6 +99,7 @@ class ShellREPL:
                 on_thinking_toggle=self._on_thinking_toggle,
                 on_explain_result=self._explain_last_sql_result,
             ) as prompt_session:
+                self._prompt_session = prompt_session
                 while True:
                     try:
                         ensure_new_line()
@@ -179,6 +186,7 @@ class ShellREPL:
         finally:
             # Clear current REPL instance on exit
             self._set_current(None)
+            self._prompt_session = None
 
         return True
 
