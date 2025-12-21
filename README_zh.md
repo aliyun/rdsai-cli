@@ -1,4 +1,6 @@
 # RDSAI CLI
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/github/license/aliyun/rdsai-cli)](https://github.com/aliyun/rdsai-cli/blob/main/LICENSE)
 
 [English](README.md) | [中文](README_zh.md)
 
