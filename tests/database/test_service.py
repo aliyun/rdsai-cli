@@ -1,8 +1,7 @@
 """Tests for database.service module."""
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch, call
-from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 from database.service import (
     DatabaseService,
@@ -19,7 +18,6 @@ from database.service import (
 )
 from database.types import (
     ConnectionConfig,
-    QueryResult,
     QueryType,
     QueryStatus,
     LastQueryContext,
@@ -739,4 +737,3 @@ class TestFactoryFunctions:
         service = create_database_service()
         assert isinstance(service, DatabaseService)
         assert not service.is_connected()
-

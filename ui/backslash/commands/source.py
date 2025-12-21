@@ -118,7 +118,7 @@ def _execute_script(
 def _split_sql_statements(content: str, delimiter: str = ";") -> list[str]:
     """
     Split SQL content into individual statements.
-    
+
     Handles:
     - Standard delimiter (;)
     - Custom delimiters (for stored procedures)
@@ -182,4 +182,3 @@ def _split_sql_statements(content: str, delimiter: str = ";") -> list[str]:
             statements.append(stmt)
 
     return statements
-

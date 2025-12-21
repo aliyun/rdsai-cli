@@ -224,4 +224,3 @@ def _format_uptime(seconds: int) -> str:
         parts.append(f"{secs} sec")
 
     return " ".join(parts)
-

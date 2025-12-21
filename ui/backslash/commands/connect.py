@@ -101,4 +101,3 @@ def cmd_resetconnection(ctx: CommandContext) -> CommandResult | None:
     except Exception as e:
         console.print(f"[red]Failed to reset connection: {e}[/red]")
         return CommandResult(success=False)
-

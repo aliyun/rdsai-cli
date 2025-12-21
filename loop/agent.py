@@ -163,5 +163,3 @@ class SkipThisTool(Exception):
     """Raised when a tool decides to skip itself from the loading process."""
 
     pass
-
-

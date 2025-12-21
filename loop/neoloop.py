@@ -32,7 +32,6 @@ from loop.compaction import ChainCompaction
 from loop.context import ContextManager
 from loop.types import ContentPart
 from loop.runtime import Runtime
-from loop.toolset import ToolResult
 from database import format_query_context_for_agent
 from database.service import get_service
 from utils.logging import logger
@@ -159,7 +158,7 @@ class NeoLoop(Loop):
     @property
     def toolset(self):
         """Get the dynamic toolset for runtime tool management.
-        
+
         Use this property to add or remove tools at runtime:
             loop.toolset.add_tool(my_tool)
             loop.toolset.remove_tools_by(lambda t: t.name.startswith("mcp_"))
@@ -172,7 +171,7 @@ class NeoLoop(Loop):
 
     def switch_model(self, llm: "LLM") -> None:
         """Switch to a different model at runtime.
-        
+
         Args:
             llm: The new LLM instance to use.
         """
@@ -312,10 +311,10 @@ class NeoLoop(Loop):
 
     async def _handle_approval(self, interrupt_value: dict[str, Any]) -> str:
         """Handle an approval request from the graph.
-        
+
         Args:
             interrupt_value: The interrupt payload containing tool info.
-            
+
         Returns:
             "approve", "approve_for_session", or "reject"
         """
@@ -356,28 +355,28 @@ class NeoLoop(Loop):
 
     async def _cleanup_incomplete_messages(self, config: dict[str, Any]) -> None:
         """Cleanup incomplete messages in conversation history after cancellation.
-        
+
         When user cancels during tool execution, the conversation history may have
         AIMessage with tool_calls but no corresponding ToolMessage responses.
         This causes LLM API errors on the next request.
-        
+
         This method removes the incomplete AIMessage from conversation history.
         """
         state = self._graph.get_state(config)
         messages = state.values.get("messages", [])
-        
+
         if not messages:
             return
         logger.debug("Cleaning up incomplete messages")
         # Find AIMessages with tool_calls that have incomplete responses
         tool_call_ids_with_response: set[str] = set()
         messages_to_remove: list[RemoveMessage] = []
-        
+
         # First pass: collect all tool_call_ids that have responses
         for msg in messages:
             if isinstance(msg, ToolMessage):
                 tool_call_ids_with_response.add(msg.tool_call_id)
-        
+
         # Second pass: find AIMessages with incomplete tool_calls
         for msg in messages:
             if isinstance(msg, AIMessage) and msg.tool_calls:
@@ -388,21 +387,21 @@ class NeoLoop(Loop):
                 )
                 if has_incomplete and hasattr(msg, 'id') and msg.id:
                     messages_to_remove.append(RemoveMessage(id=msg.id))
-        
+
         if not messages_to_remove:
             return
-        
+
         logger.info(
             "Removing {n} incomplete AIMessage(s) after cancellation",
             n=len(messages_to_remove)
         )
-        
+
         # Remove incomplete messages from state
         self._graph.update_state(config, {"messages": messages_to_remove})
 
     def reset_context(self) -> None:
         """Reset the conversation context by generating a new thread ID.
-        
+
         This effectively starts a fresh conversation while preserving
         all other configurations (agent, runtime, yolo mode, etc.).
         """
@@ -414,10 +413,10 @@ class NeoLoop(Loop):
 
     async def compact(self) -> bool:
         """Compact the conversation context to reduce token usage.
-        
+
         This method compresses older messages while preserving recent ones,
         helping to stay within context limits for long conversations.
-        
+
         Returns:
             True if compaction was performed, False if not needed or failed.
         """
@@ -474,7 +473,7 @@ class NeoLoop(Loop):
 
     def _should_auto_compact(self) -> bool:
         """Check if auto-compaction should be triggered.
-        
+
         Returns:
             True if context usage exceeds the threshold.
         """
@@ -486,7 +485,7 @@ class NeoLoop(Loop):
 
     def get_state_history(self):
         """Get the state history for this session.
-        
+
         Returns:
             Iterator of state snapshots.
         """

@@ -33,7 +33,7 @@ class InformationSchema(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Query information_schema for various database metadata."""
         info_type = params.info_type or "tables"
-        
+
         if info_type == "index" and params.table:
             sql = f"SELECT * FROM information_schema.STATISTICS WHERE table_name = '{params.table}'"
             columns, rows = self._execute_query(sql)
@@ -47,7 +47,7 @@ class InformationSchema(MySQLToolBase):
             columns, rows = self._execute_query("SELECT * FROM information_schema.INNODB_BUFFER_POOL_STATS")
             return {
                 "type": "InnoDB Buffer Pool Statistics",
-                "columns": columns,  
+                "columns": columns,
                 "rows": rows,
                 "message": "InnoDB buffer pool statistics retrieved"
             }

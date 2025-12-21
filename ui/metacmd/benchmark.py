@@ -61,27 +61,27 @@ _BENCHMARK_HELP = """[cyan]Usage:[/cyan] /benchmark [run|test_type] [options]
 
 def _parse_benchmark_args(args: list[str]) -> tuple[dict[str, Any], list[str]]:
     """Parse benchmark arguments similar to sysbench command line.
-    
+
     Returns:
         Tuple of (parsed_params_dict, unparsed_args)
     """
     params: dict[str, Any] = {}
     unparsed: list[str] = []
     i = 0
-    
+
     # Check for test_type as first positional argument
     # Skip 'run' as it's a subcommand, not a test_type
     if args and not args[0].startswith('--') and args[0] not in ('-h', '--help', 'run'):
         params['test_type'] = args[0]
         i = 1
-    
+
     while i < len(args):
         arg = args[i]
-        
+
         # Handle --help
         if arg in ('-h', '--help'):
             return {'help': True}, []
-        
+
         # Handle --key=value format
         if '=' in arg:
             key, value = arg.split('=', 1)
@@ -89,7 +89,7 @@ def _parse_benchmark_args(args: list[str]) -> tuple[dict[str, Any], list[str]]:
             params[key.replace('-', '_')] = _parse_value(value)
             i += 1
             continue
-        
+
         # Handle --key value or -k value format
         if arg.startswith('--'):
             key = arg[2:].replace('-', '_')
@@ -120,7 +120,7 @@ def _parse_benchmark_args(args: list[str]) -> tuple[dict[str, Any], list[str]]:
         else:
             unparsed.append(arg)
             i += 1
-    
+
     return params, unparsed
 
 
@@ -131,28 +131,28 @@ def _parse_value(value: str) -> Any:
         return int(value)
     except ValueError:
         pass
-    
+
     # Try boolean
     if value.lower() in ('true', 'yes', 'on', '1'):
         return True
     if value.lower() in ('false', 'no', 'off', '0'):
         return False
-    
+
     # Return as string
     return value
 
 
 def _format_param_description(params: dict[str, Any]) -> str:
     """Format parameters as a human-readable description.
-    
+
     Args:
         params: Dictionary of parameters
-        
+
     Returns:
         Formatted parameter description string
     """
     param_parts = []
-    
+
     if 'test_type' in params:
         param_parts.append(f"Test type: {params['test_type']}")
     if 'tables' in params:
@@ -169,22 +169,22 @@ def _format_param_description(params: dict[str, Any]) -> str:
         param_parts.append(f"Rate limit: {params['rate']} TPS")
     if 'report_interval' in params and params.get('report_interval', 10) != 10:
         param_parts.append(f"Report interval: {params['report_interval']} seconds")
-    
+
     return "\n".join(f"- {p}" for p in param_parts)
 
 
 def _build_tool_params_string(params: dict[str, Any], tool_type: str) -> str:
     """Build parameter string for tool calls.
-    
+
     Args:
         params: Dictionary of parameters
         tool_type: Type of tool ('prepare', 'run', or 'cleanup')
-        
+
     Returns:
         Formatted parameter string
     """
     parts = []
-    
+
     if tool_type == 'prepare':
         test_type = params.get('test_type', 'oltp_read_write')
         tables = params.get('tables', 1)
@@ -192,7 +192,7 @@ def _build_tool_params_string(params: dict[str, Any], tool_type: str) -> str:
         parts.append(f"test_type={test_type}, tables={tables}, table_size={table_size}")
         if 'threads' in params:
             parts.append(f"threads={params['threads']}")
-    
+
     elif tool_type == 'run':
         test_type = params.get('test_type', 'oltp_read_write')
         tables = params.get('tables', 1)
@@ -207,21 +207,21 @@ def _build_tool_params_string(params: dict[str, Any], tool_type: str) -> str:
             parts.append(f"rate={params['rate']}")
         if 'report_interval' in params and params.get('report_interval', 10) != 10:
             parts.append(f"report_interval={params['report_interval']}")
-    
+
     elif tool_type == 'cleanup':
         test_type = params.get('test_type', 'oltp_read_write')
         parts.append(f"test_type={test_type}")
-    
+
     return ", ".join(parts)
 
 
 def _build_agent_prompt(params: dict[str, Any] | None, is_run_mode: bool) -> str:
     """Build prompt for agent execution.
-    
+
     Args:
         params: Parsed parameters dictionary, or None if no parameters
         is_run_mode: Whether running in 'run' mode (let agent choose parameters)
-        
+
     Returns:
         Formatted prompt string for agent
     """
@@ -236,24 +236,30 @@ Specified parameters:
 {param_desc}
 
 Please intelligently select other unspecified test parameters and execute the benchmark workflow."""
-        
+
         # No parameters specified, let agent choose all
-        return "Run sysbench performance test on the current database. Please intelligently select test parameters and execute the benchmark workflow."
-    
+        return (
+            "Run sysbench performance test on the current database. "
+            "Please intelligently select test parameters and execute the benchmark workflow."
+        )
+
     elif params:
         # Explicit parameters mode: use specified parameters
         param_desc = _format_param_description(params)
         no_cleanup = params.get('no_cleanup', False)
-        
+
         cleanup_note = " Keep test data after benchmark." if no_cleanup else ""
-        
+
         return f"""Run sysbench performance test on the current database with the following configuration:
 
 {param_desc}{cleanup_note}"""
-    
+
     else:
         # No parameters and not run mode (should not happen, but handle gracefully)
-        return "Run sysbench performance test on the current database. Please intelligently select test parameters and execute the benchmark workflow."
+        return (
+            "Run sysbench performance test on the current database. "
+            "Please intelligently select test parameters and execute the benchmark workflow."
+        )
 
 
 @meta_command(loop_only=True)
@@ -268,7 +274,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
     if not args:
         console.print(_BENCHMARK_HELP)
         return
-    
+
     # Check for 'run' subcommand (let agent choose parameters)
     if args[0] == 'run':
         # Remove 'run' from args and let agent choose
@@ -277,23 +283,23 @@ async def benchmark(app: ShellREPL, args: list[str]):
     else:
         # Parse arguments normally
         params, unparsed = _parse_benchmark_args(args)
-    
+
     # Handle help
     if params.get('help'):
         console.print(_BENCHMARK_HELP)
         return
-    
+
     # Warn about unparsed arguments
     if unparsed:
         console.print(f"[yellow]Warning: Unrecognized arguments: {' '.join(unparsed)}[/yellow]")
         console.print("[dim]Use /benchmark --help for usage information.[/dim]\n")
-    
+
     # Check database connection
     if not app.db_service or not app.db_service.is_connected():
         console.print("[red]✗[/red] Not connected to a database.")
         console.print("[dim]Use /connect to connect to a database first.[/dim]")
         return
-    
+
     # Check if database is selected
     conn_info = app.db_service.get_connection_info()
     database = conn_info.get('database')
@@ -303,43 +309,43 @@ async def benchmark(app: ShellREPL, args: list[str]):
         console.print("[yellow]You can use 'CREATE DATABASE database_name;' to create a database,[/yellow]")
         console.print("[yellow]or 'USE database_name;' to switch to an existing database.[/yellow]")
         return
-    
+
     # Check if sysbench is installed
     if not shutil.which("sysbench"):
         console.print("[red]✗[/red] sysbench is not installed or not in PATH.")
         console.print("[dim]Please install sysbench first: https://github.com/akopytov/sysbench[/dim]")
         return
-    
+
     # Check LLM availability
     if not isinstance(app.loop, NeoLoop):
         console.print("[red]✗[/red] Benchmark requires NeoLoop.")
         return
-    
+
     runtime = app.loop.runtime
     if not runtime.llm:
         console.print("[red]✗[/red] LLM not configured.")
         console.print("[dim]Use /setup to configure an LLM model.[/dim]")
         return
-    
+
     # Load sysbench agent
     sysbench_agent_file = _get_sysbench_agent_file()
     if not sysbench_agent_file.exists():
         console.print(f"[red]✗[/red] Sysbench agent configuration not found: {sysbench_agent_file}")
         return
-    
+
     try:
         sysbench_agent = await load_agent(sysbench_agent_file, runtime)
     except Exception as e:
         console.print(f"[red]✗[/red] Failed to load sysbench agent: {e}")
         return
-    
+
     # Determine if running in 'run' mode (let agent choose parameters)
     is_run_mode = args and args[0] == 'run'
-    
+
     # Display benchmark configuration and ask for confirmation
     console.print("\n[cyan]Benchmark Configuration:[/cyan]")
     console.print(f"  Database: [green]{database}[/green]")
-    
+
     if is_run_mode:
         console.print("  Mode: [yellow]Agent will intelligently choose parameters[/yellow]")
         if params:
@@ -356,11 +362,11 @@ async def benchmark(app: ShellREPL, args: list[str]):
                 console.print(f"    {line}")
     else:
         console.print("  Mode: [yellow]Agent will intelligently choose parameters[/yellow]")
-    
+
     console.print("\n[yellow]⚠ Warning:[/yellow] This benchmark will put significant load on the database.")
     console.print(f"[dim]Target database: [bold]{database}[/bold][/dim]")
     console.print("[dim]Make sure this is appropriate for your environment.[/dim]\n")
-    
+
     # Ask for user confirmation
     try:
         confirm = await ChoiceInput(
@@ -374,17 +380,17 @@ async def benchmark(app: ShellREPL, args: list[str]):
     except (EOFError, KeyboardInterrupt):
         console.print("\n[yellow]Benchmark cancelled by user.[/yellow]")
         return
-    
+
     if confirm != "yes":
         console.print("[yellow]Benchmark cancelled.[/yellow]")
         return
-    
+
     # Build prompt for agent
     prompt = _build_agent_prompt(params, is_run_mode)
 
     # Create a new loop instance for benchmark with sysbench agent
     benchmark_loop = NeoLoop(sysbench_agent)
-    
+
     # Display startup message
     console.print("\n[cyan]Starting benchmark...[/cyan]")
     if is_run_mode:
@@ -393,7 +399,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
         console.print("[dim]Analysis report will be generated after benchmark completes.[/dim]")
 
     cancel_event = asyncio.Event()
-    
+
     try:
         await run_loop(
             benchmark_loop,
@@ -419,6 +425,5 @@ async def benchmark(app: ShellREPL, args: list[str]):
         logger.exception("Benchmark failed")
         console.print(f"[red]✗[/red] Benchmark failed: {e}")
         return
-    
-    console.print("\n[green]✓[/green] Benchmark completed.")
 
+    console.print("\n[green]✓[/green] Benchmark completed.")

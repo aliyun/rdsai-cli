@@ -1,7 +1,7 @@
 """Tests for database.client module."""
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from database.client import (
     validate_identifier,
     DatabaseClientFactory,
@@ -423,4 +423,3 @@ class TestMySQLClient:
 
         client = MySQLClient(host="localhost", port=3306, user="test", password="test")
         assert client.get_row_count() == -1
-

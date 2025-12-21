@@ -15,7 +15,6 @@ from database import (
     DatabaseExplorer,
     DatabaseSchemaSnapshot,
     TableExploreProgress,
-    DatabaseStatistics,
     format_snapshot_for_research,
 )
 from ui.console import console
@@ -248,5 +247,3 @@ async def _explore_database(
         return None, 0
 
     return snapshot, total_columns
-
-

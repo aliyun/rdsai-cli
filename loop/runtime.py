@@ -25,7 +25,7 @@ class BuiltinSystemPromptArgs:
 @dataclass(slots=True, kw_only=True)
 class Runtime:
     """Agent runtime configuration.
-    
+
     This is a simplified runtime that only contains configuration and LLM.
     State management is handled by LangGraph's checkpointer.
     """
@@ -39,7 +39,7 @@ class Runtime:
 
     def set_llm(self, llm: LLM | None) -> None:
         """Switch to a different LLM at runtime.
-        
+
         Args:
             llm: The new LLM instance to use.
         """
@@ -47,7 +47,7 @@ class Runtime:
 
     def set_yolo(self, yolo: bool) -> None:
         """Set the yolo mode (auto-approve all actions).
-        
+
         Args:
             yolo: Whether to auto-approve all tool executions.
         """
@@ -62,7 +62,7 @@ class Runtime:
         yolo: bool = False,
     ) -> Runtime:
         """Create a new runtime instance.
-        
+
         Args:
             config: Application configuration.
             llm: Language model instance (optional).

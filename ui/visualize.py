@@ -102,13 +102,13 @@ class _ContentBlock:
     def __init__(self, is_think: bool, agent_type: str = "normal"):
         self.is_think = is_think
         self.agent_type = agent_type
-        
+
         # Select spinner text based on agent type
         if agent_type == "explain":
             text = random.choice(EXPLAIN_COMPOSING_TEXTS)
         else:
             text = random.choice(THINKING_TEXTS if is_think else COMPOSING_TEXTS)
-        
+
         self._spinner = Spinner("dots2", text)
         self.raw_text = ""
 
@@ -166,7 +166,7 @@ class _ToolCallBlock:
     def finish(self, result: ToolReturnType):
         self._result = result
         self._renderable = self._compose()
-    
+
     def set_approval_status(self, status: str | None) -> None:
         """Set the approval status and recompose."""
         self._approval_status = status
@@ -174,7 +174,7 @@ class _ToolCallBlock:
 
     def _compose(self) -> RenderableType:
         lines: list[RenderableType] = []
-        
+
         # Tool name headline - determine action based on state
         if self.finished:
             action = "Called"
@@ -184,9 +184,9 @@ class _ToolCallBlock:
             action = "Using"
         else:
             action = "Using"
-        
+
         lines.append(Text.from_markup(f"{action} [bold white]{self._tool_name}[/bold white]"))
-        
+
         # Parameters as tree-style sub-lines
         args_list = list(self._args.items())
         for i, (key, value) in enumerate(args_list):
@@ -196,12 +196,12 @@ class _ToolCallBlock:
             param_line.append(f"{key}: ", style="dim")
             param_line.append(value)
             lines.append(param_line)
-        
+
         # Render brief as additional content if available
         brief = self._result.brief if self.finished and self._result else None
         if brief and brief.strip():
             lines.append(Markdown(brief))
-        
+
         # Determine bullet style based on status
         if self.finished:
             bullet_style = "green" if isinstance(self._result, ToolOk) else "red"
@@ -229,23 +229,23 @@ class _ToolCallBlock:
 
 class _ApprovalPanelRenderer:
     """Base class for approval panel renderers."""
-    
+
     title: str = "[yellow]⚠ Approval Requested[/yellow]"
-    
+
     def __init__(self, request: ApprovalRequest):
         self.request = request
-    
+
     def render_preamble(self) -> RenderableType | None:
         """Render content that should be printed BEFORE the panel (e.g., SQL statements).
-        
-        This content is printed separately using console.print() and won't be 
+
+        This content is printed separately using console.print() and won't be
         included in the Live view, avoiding truncation issues with long content.
-        
+
         Returns:
             Renderable content to print before the panel, or None if nothing to print.
         """
         return None
-    
+
     def render_header(self) -> list[RenderableType]:
         """Render the header section."""
         return [
@@ -255,18 +255,18 @@ class _ApprovalPanelRenderer:
             ),
             Text(""),
         ]
-    
+
     def render_body(self) -> list[RenderableType]:
         """Render the body section. Override in subclasses for custom content."""
         return []
-    
+
     def render(self, options: list[RenderableType]) -> RenderableType:
         """Render the complete panel."""
         lines: list[RenderableType] = []
         lines.extend(self.render_header())
         lines.extend(self.render_body())
         lines.extend(options)
-        
+
         return Panel(
             Group(*lines),
             title=self.title,
@@ -278,9 +278,9 @@ class _ApprovalPanelRenderer:
 
 class _DDLApprovalRenderer(_ApprovalPanelRenderer):
     """Renderer for DDL approval requests with SQL code block and risk indicator."""
-    
+
     title = "[yellow]⚠ DDL Approval Required[/yellow]"
-    
+
     # Risk level configuration: (prefix, style, label)
     RISK_LEVELS: list[tuple[str, str, str]] = [
         ("DROP", "red bold", "⚠ HIGH RISK"),
@@ -288,15 +288,15 @@ class _DDLApprovalRenderer(_ApprovalPanelRenderer):
         ("ALTER", "yellow", "⚡ MEDIUM RISK"),
     ]
     DEFAULT_RISK = ("green", "✓ LOW RISK")
-    
+
     def render_preamble(self) -> RenderableType | None:
         """Render SQL statement separately before the panel to avoid truncation."""
         tool_args = self.request.tool_args or {}
         sql_statement = tool_args.get("sql_statement", "")
-        
+
         if not sql_statement:
             return None
-        
+
         # Render SQL with syntax highlighting in a separate panel
         sql_syntax = Syntax(
             sql_statement.strip(),
@@ -313,7 +313,7 @@ class _DDLApprovalRenderer(_ApprovalPanelRenderer):
             padding=(0, 0),
             expand=True,
         )
-    
+
     def render_header(self) -> list[RenderableType]:
         return [
             Text.assemble(
@@ -322,26 +322,26 @@ class _DDLApprovalRenderer(_ApprovalPanelRenderer):
             ),
             Text(""),
         ]
-    
+
     def render_body(self) -> list[RenderableType]:
         lines: list[RenderableType] = []
         tool_args = self.request.tool_args or {}
-        
+
         sql_statement = tool_args.get("sql_statement", "")
         description = tool_args.get("description", self.request.description)
-        
+
         # Risk indicator
         risk_style, risk_label = self._get_risk_level(sql_statement)
         lines.append(Text(risk_label, style=risk_style))
         lines.append(Text(""))
-        
+
         # Description
         if description:
             lines.append(Text.from_markup(f"[bold]Description:[/bold] {description}"))
             lines.append(Text(""))
-        
+
         return lines
-    
+
     def _get_risk_level(self, sql: str) -> tuple[str, str]:
         """Determine risk level based on SQL statement."""
         sql_upper = sql.strip().upper()
@@ -353,9 +353,9 @@ class _DDLApprovalRenderer(_ApprovalPanelRenderer):
 
 class _SysbenchApprovalRenderer(_ApprovalPanelRenderer):
     """Renderer for Sysbench tool approval requests with full parameter display."""
-    
+
     title = "[yellow]⚠ Sysbench Approval Required[/yellow]"
-    
+
     def render_header(self) -> list[RenderableType]:
         return [
             Text.assemble(
@@ -364,19 +364,19 @@ class _SysbenchApprovalRenderer(_ApprovalPanelRenderer):
             ),
             Text(""),
         ]
-    
+
     def render_body(self) -> list[RenderableType]:
         """Render full parameter list for sysbench tools."""
         lines: list[RenderableType] = []
         tool_args = self.request.tool_args or {}
-        
+
         if not tool_args:
             return lines
-        
+
         # Format parameters in a readable way
         lines.append(Text.from_markup("[bold]Parameters:[/bold]"))
         lines.append(Text(""))
-        
+
         # Parameter display order and labels
         param_labels = {
             "test_type": "Test Type",
@@ -388,7 +388,7 @@ class _SysbenchApprovalRenderer(_ApprovalPanelRenderer):
             "rate": "Rate Limit (TPS)",
             "report_interval": "Report Interval (seconds)",
         }
-        
+
         # Display parameters in order
         for param_key, param_label in param_labels.items():
             if param_key in tool_args:
@@ -399,7 +399,7 @@ class _SysbenchApprovalRenderer(_ApprovalPanelRenderer):
                 else:
                     value_str = str(value)
                 lines.append(Text(f"  {param_label}: {value_str}"))
-        
+
         # Display any other parameters not in the standard list
         for param_key, param_value in tool_args.items():
             if param_key not in param_labels:
@@ -407,12 +407,12 @@ class _SysbenchApprovalRenderer(_ApprovalPanelRenderer):
                 if isinstance(param_value, int) and param_value >= 1000:
                     value_str = f"{param_value:,}"
                 lines.append(Text(f"  {param_key}: {value_str}"))
-        
+
         lines.append(Text(""))
-        
+
         # Add warning about database load
         lines.append(Text.from_markup("[yellow]⚠ This will put significant load on the database.[/yellow]"))
-        
+
         return lines
 
 
@@ -503,7 +503,12 @@ async def _keyboard_listener(handler: Callable[[KeyEvent], None]):
 
 
 class _LiveView:
-    def __init__(self, initial_status: StatusSnapshot, cancel_event: asyncio.Event | None = None, agent_type: str = "normal"):
+    def __init__(
+        self,
+        initial_status: StatusSnapshot,
+        cancel_event: asyncio.Event | None = None,
+        agent_type: str = "normal",
+    ):
         self._cancel_event = cancel_event
         self._agent_type = agent_type
 
@@ -676,7 +681,7 @@ class _LiveView:
                 # Blocks with approval_status "pending" or "granted" should be kept
                 if block._approval_status not in ("pending", "granted"):
                     blocks_to_finish.append(block)
-        
+
         for block in blocks_to_finish:
             # this should not happen, but just in case
             block.finish(
@@ -684,7 +689,7 @@ class _LiveView:
                 if is_interrupt
                 else ToolOk(output="")
             )
-        
+
         # Only flush finished blocks (not approval-pending/granted ones)
         self.flush_finished_tool_calls()
         self._flush_trailing_newline()  # Print deferred empty line at cleanup
@@ -694,7 +699,7 @@ class _LiveView:
             self._approval_request_queue.popleft().resolve(ApprovalResponse.REJECT)
         self._current_approval_request_panel = None
         self._reject_all_following = False
-        
+
         # Don't clear _last_tool_call_block if it's in approval workflow
         if self._last_tool_call_block is not None:
             if self._last_tool_call_block._approval_status in ("pending", "granted"):
@@ -713,12 +718,12 @@ class _LiveView:
 
     def flush_finished_tool_calls(self) -> None:
         """Flush all leading finished tool call blocks.
-        
+
         Tool calls are printed without empty lines between them.
         Empty line is deferred until next content block or cleanup.
         """
         tool_call_ids = list(self._tool_call_blocks.keys())
-        
+
         for tool_call_id in tool_call_ids:
             block = self._tool_call_blocks[tool_call_id]
             if not block.finished:
@@ -729,7 +734,7 @@ class _LiveView:
             self._need_trailing_newline = True  # Defer empty line
             if self._last_tool_call_block == block:
                 self._last_tool_call_block = None
-        
+
         self.refresh_soon()
 
     def _flush_trailing_newline(self) -> None:
@@ -765,12 +770,12 @@ class _LiveView:
             # Create new block
             block = _ToolCallBlock(tool_call)
             self._tool_call_blocks[tool_call.id] = block
-            
+
             # Check if there's a pending approval status to apply
             if hasattr(self, '_pending_approvals') and tool_call.id in self._pending_approvals:
                 status = self._pending_approvals.pop(tool_call.id)
                 block.set_approval_status(status)
-        
+
         self._last_tool_call_block = block
         self.refresh_soon()
 
@@ -790,7 +795,7 @@ class _LiveView:
 
     def handle_approval_pending(self, tool_call_id: str) -> None:
         """Handle ApprovalPending message - mark tool call as waiting for approval.
-        
+
         This may be called before ToolCall is received, so we need to create a placeholder block.
         """
         block = self._tool_call_blocks.get(tool_call_id)
@@ -821,9 +826,7 @@ class _LiveView:
         if block is None:
             # Block doesn't exist, nothing to do
             return
-        
-        # Mark the block as finished with a rejected error
-        from loop.toolset import ToolError
+
         block.finish(ToolError(message="Tool execution rejected by user.", brief="Rejected"))
         self.flush_finished_tool_calls()
         self.refresh_soon()
@@ -856,18 +859,17 @@ class _LiveView:
             if request.resolved:
                 # skip resolved requests
                 continue
-            
+
             # Print trailing newline to separate from previous output
             self._flush_trailing_newline()
-            
+
             # Print preamble (e.g., SQL statement) separately before the panel
             # This ensures long content is fully displayed without truncation
             renderer = _get_approval_renderer(request)
             preamble = renderer.render_preamble()
             if preamble is not None:
                 console.print(preamble)
-            
+
             self._current_approval_request_panel = _ApprovalRequestPanel(request)
             self.refresh_soon()
             break
-

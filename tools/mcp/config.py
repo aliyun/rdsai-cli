@@ -67,7 +67,7 @@ class MCPConfig(BaseModel):
     servers: list[MCPServerConfig] = Field(
         default_factory=list, description="List of MCP servers to connect to"
     )
-    
+
     # Internal: path to the config file (not serialized)
     _config_file: Path | None = None
 
@@ -94,23 +94,23 @@ class MCPConfig(BaseModel):
 
     def save(self, config_file: Path | None = None) -> None:
         """Save configuration to YAML file.
-        
+
         Args:
             config_file: Path to save to. Uses original path if not specified.
         """
         target = config_file or self._config_file
         if target is None:
             target = DEFAULT_MCP_CONFIG_PATH
-        
+
         # Ensure directory exists
         target.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Serialize without internal fields
         data = self.model_dump(exclude={"_config_file"})
-        
+
         with open(target, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
-        
+
         logger.info("Saved MCP config to: {file}", file=target)
 
 
@@ -121,7 +121,7 @@ def load_mcp_config(config_file: Path | None = None) -> MCPConfig | None:
     """Load MCP configuration from a YAML file.
 
     Args:
-        config_file: Path to the MCP configuration file. 
+        config_file: Path to the MCP configuration file.
                     If None, uses default path ~/.rdsai-cli/mcp.yaml.
 
     Returns:
@@ -133,7 +133,7 @@ def load_mcp_config(config_file: Path | None = None) -> MCPConfig | None:
     # Use default path if not specified
     if config_file is None:
         config_file = DEFAULT_MCP_CONFIG_PATH
-    
+
     if not config_file.exists():
         logger.debug("MCP config file not found: {file}", file=config_file)
         return None

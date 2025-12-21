@@ -14,7 +14,7 @@ JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 # --- Base Mixins ---
 class MergeableMixin:
     """Mixin for objects that can be merged in place."""
-    
+
     def merge_in_place(self, other: Any) -> None:
         """Merge another object into this one in place."""
         if hasattr(self, "text") and hasattr(other, "text"):
@@ -95,5 +95,3 @@ class ToolCallPart(BaseModel, MergeableMixin):
 
 # Content part union type
 ContentPart = TextPart | ImageURLPart | AudioURLPart | ThinkPart | ToolCallPart
-
-

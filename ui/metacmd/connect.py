@@ -156,4 +156,3 @@ def disconnect(app: ShellREPL, args: list[str]):
 
     console.print(f"[green]✓ Disconnected from {display_name}[/green]")
     logger.info("Disconnected from database via /disconnect")
-

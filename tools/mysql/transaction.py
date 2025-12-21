@@ -29,7 +29,7 @@ class Transaction(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Diagnose transaction and lock related information."""
         info_type = params.info_type or "trx"
-        
+
         if info_type == "locks":
             columns, rows = self._execute_query("SELECT * FROM information_schema.INNODB_LOCKS")
             return {

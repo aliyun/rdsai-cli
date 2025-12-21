@@ -68,7 +68,7 @@ class GeneralLog(MySQLToolBase):
                    command_type, argument
             FROM mysql.general_log
         """
-        
+
         conditions = []
         if params.start_time:
             conditions.append(f"event_time >= '{params.start_time}'")
@@ -80,14 +80,14 @@ class GeneralLog(MySQLToolBase):
             conditions.append(f"command_type = '{params.command_type}'")
         if params.sql_pattern:
             conditions.append(f"argument LIKE '{params.sql_pattern}'")
-        
+
         if conditions:
             sql += " WHERE " + " AND ".join(conditions)
-            
+
         sql += f" ORDER BY event_time DESC LIMIT {params.limit}"
-        
+
         columns, rows = self._execute_query(sql)
-        
+
         return {
             "type": "MySQL General Log",
             "columns": columns,

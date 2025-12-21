@@ -112,4 +112,3 @@ def save_config(config: Config, config_file: Path | None = None):
     logger.debug("Saving config to file: {file}", file=config_file)
     with open(config_file, "w", encoding="utf-8") as f:
         f.write(config.model_dump_json(indent=2, exclude_none=True))
-

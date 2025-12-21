@@ -40,19 +40,19 @@ class MySQLToolBase(BaseTool):
 
     def _execute_query(self, sql: str) -> tuple[list[str], list[tuple]]:
         """Execute a SQL query and return columns and rows.
-        
+
         Returns:
             Tuple of (columns, rows)
-            
+
         Raises:
             ToolQueryError: When query fails, with pre-formatted error message
         """
         db_service = self._get_database_service()
         result = db_service.execute_query(sql)
-        
+
         if not result.success:
             raise ToolQueryError(result.error or "Query execution failed")
-        
+
         return result.columns or [], result.rows
 
     def _format_table_output(self, columns: list[str], rows: list[tuple], table_name: str = "Result") -> str:
@@ -61,27 +61,27 @@ class MySQLToolBase(BaseTool):
             return f"No data found for {table_name}."
 
         builder = ToolResultBuilder()
-        
+
         # Compact header
         builder.write(f"{table_name}: {len(rows)} rows\n")
         builder.write(f"Columns: {', '.join(columns)}\n\n")
-        
+
         # Show all rows in compact format
         for row in rows:
             values = [str(val) if val is not None else "NULL" for val in row]
             builder.write(f"{' | '.join(values)}\n")
-        
+
         return builder.get_output()
 
     def _format_simple_output(self, data: dict[str, Any]) -> str:
         """Format simple key-value data for output."""
         builder = ToolResultBuilder()
-        
+
         for key, value in data.items():
             if key == "error":
                 continue
             builder.write(f"**{key}**: {value}\n")
-        
+
         return builder.get_output()
 
     @abstractmethod
@@ -93,17 +93,17 @@ class MySQLToolBase(BaseTool):
         """Execute the tool with error handling."""
         try:
             result = await self._execute_tool(params)
-            
+
             if "error" in result:
                 return ToolError(
                     message=result["error"],
                     brief=result.get("brief")
                 )
-            
+
             # Format output based on result structure
             if "columns" in result and "rows" in result:
                 output = self._format_table_output(
-                    result["columns"], 
+                    result["columns"],
                     result["rows"],
                     result.get("type", "Query Result")
                 )
@@ -111,28 +111,28 @@ class MySQLToolBase(BaseTool):
                 output = result["data"]
             else:
                 output = self._format_simple_output(result)
-            
+
             message = result.get("message", "MySQL tool executed successfully")
             return ToolOk(output=output, message=message)
-            
+
         except ToolQueryError as e:
             # Query error with pre-formatted message from database service
             error_msg = str(e)
             return ToolError(message=error_msg, brief=error_msg)
-            
+
         except DatabaseError as e:
             # Use structured error classification for precise error messages
             brief = get_error_brief(e)
             message = format_error_for_console(e)
             return ToolError(message=message, brief=brief)
-            
+
         except ValueError as e:
             # Handle connection/parameter errors
             return ToolError(
                 message=str(e),
                 brief="Connection error" if "connection" in str(e).lower() else "Invalid parameter"
             )
-            
+
         except Exception as e:
             # Fallback for unexpected errors
             return ToolError(

@@ -27,16 +27,19 @@ class TableStructure(MySQLToolBase):
         """Execute SHOW CREATE TABLE to get table structure."""
         if not params.table_name.strip():
             return {"error": "Table name is required", "brief": "Table name is required"}
-        
+
         from database import get_current_database
         current_database = get_current_database()
-        
+
         if not current_database:
-            return {"error": "No database selected. Please use 'USE database_name' first", "brief": "No database selected"}
-        
+            return {
+                "error": "No database selected. Please use 'USE database_name' first",
+                "brief": "No database selected",
+            }
+
         sql = f"SHOW CREATE TABLE `{current_database}`.`{params.table_name}`"
         columns, rows = self._execute_query(sql)
-        
+
         if rows and len(rows[0]) > 1:
             row = rows[0]
             return {
@@ -45,4 +48,7 @@ class TableStructure(MySQLToolBase):
                 "message": f"Table structure retrieved for '{params.table_name}'"
             }
         else:
-            return {"error": f"Table '{params.table_name}' not found", "brief": f"Table '{params.table_name}' not found"}
+            return {
+                "error": f"Table '{params.table_name}' not found",
+                "brief": f"Table '{params.table_name}' not found",
+            }

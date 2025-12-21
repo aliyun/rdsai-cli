@@ -36,7 +36,7 @@ class ToolOk(BaseModel):
 class ToolResult(BaseModel):
     """Result of a tool call execution."""
     tool_call_id: str
-    name: str | None = None 
+    name: str | None = None
     result: ToolOk | ToolError
 
 
@@ -48,18 +48,18 @@ HandleResult = ToolResult
 # --- Tool Definitions ---
 class BaseTool(Generic[T]):
     """Base class for all tools with typed parameters.
-    
+
     Usage:
         class MyTool(BaseTool[MyParams]):
             name = "MyTool"
             params = MyParams
             ...
-    
+
     For tools without strict type checking:
         class MyTool(BaseTool):  # Equivalent to BaseTool[Any]
             ...
     """
-    
+
     name: str
     description: str
     params: type[T]
@@ -70,14 +70,14 @@ class BaseTool(Generic[T]):
     async def __call__(self, params: T) -> ToolReturnType:
         """Execute the tool with given parameters."""
         raise NotImplementedError
-    
+
     @property
     def parameters(self) -> dict[str, Any]:
         """Get tool parameter schema."""
         if hasattr(self, "params") and issubclass(self.params, BaseModel):
             return self.params.model_json_schema()
         return {}
-    
+
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, BaseTool):
             return False
@@ -86,7 +86,7 @@ class BaseTool(Generic[T]):
             self.description == other.description and
             self.parameters == other.parameters
         )
-    
+
     def __repr__(self) -> str:
         return f"BaseTool(name={self.name!r}, description={self.description!r}, parameters={self.parameters!r})"
 
@@ -95,12 +95,12 @@ class BaseTool(Generic[T]):
 # --- Toolsets ---
 class Toolset:
     """Collection of tools."""
-    
+
     tools: list[BaseTool]
-    
+
     def __init__(self, tools=None):
         self.tools = tools or []
-    
+
     def __add__(self, other):
         """Add tools to create new toolset."""
         new_tools = list(self.tools)
@@ -111,7 +111,7 @@ class Toolset:
         else:
             new_tools.append(other)
         return Toolset(new_tools)
-    
+
     def __iadd__(self, other):
         """In-place addition to modify self.tools directly."""
         if isinstance(other, Toolset):
@@ -121,18 +121,26 @@ class Toolset:
         else:
             self.tools.append(other)
         return self
-    
+
     def __iter__(self):
         return iter(self.tools)
 
 
 class SimpleToolset(Toolset):
     """Toolset with built-in tool execution handling."""
-    
+
     async def handle(self, tool_call: ToolCall) -> HandleResult:
         """Execute a tool call and return the result."""
-        fname = tool_call.function.name if isinstance(tool_call.function, FunctionBody) else tool_call.function["name"]
-        fargs_str = tool_call.function.arguments if isinstance(tool_call.function, FunctionBody) else tool_call.function["arguments"]
+        fname = (
+            tool_call.function.name
+            if isinstance(tool_call.function, FunctionBody)
+            else tool_call.function["name"]
+        )
+        fargs_str = (
+            tool_call.function.arguments
+            if isinstance(tool_call.function, FunctionBody)
+            else tool_call.function["arguments"]
+        )
 
         try:
             tool_args = json.loads(fargs_str)
@@ -191,47 +199,47 @@ class CustomToolset(SimpleToolset):
 
 class DynamicToolset(CustomToolset):
     """Toolset that supports dynamic tool management at runtime.
-    
+
     This class provides explicit methods for adding and removing tools,
     with version tracking for change detection.
-    
+
     Usage:
         toolset = DynamicToolset()
         toolset.add_tool(my_tool)
         toolset.remove_tools_by(lambda t: t.name.startswith("mcp_"))
     """
-    
+
     def __init__(self, tools: list[BaseTool] | None = None):
         super().__init__(tools)
         self._version = 0
-    
+
     @property
     def version(self) -> int:
         """Get the current version number. Increments on each modification."""
         return self._version
-    
+
     @property
     def tool_names(self) -> list[str]:
         """Get list of all tool names."""
         return [t.name for t in self.tools]
-    
+
     def has_tool(self, name: str) -> bool:
         """Check if a tool with the given name exists."""
         return any(t.name == name for t in self.tools)
-    
+
     def get_tool(self, name: str) -> BaseTool | None:
         """Get a tool by name, or None if not found."""
         for tool in self.tools:
             if tool.name == name:
                 return tool
         return None
-    
+
     def add_tool(self, tool: BaseTool) -> bool:
         """Add a single tool.
-        
+
         Args:
             tool: The tool to add.
-            
+
         Returns:
             True if added, False if a tool with the same name already exists.
         """
@@ -240,13 +248,13 @@ class DynamicToolset(CustomToolset):
         self.tools.append(tool)
         self._version += 1
         return True
-    
+
     def add_tools(self, tools: list[BaseTool]) -> int:
         """Add multiple tools.
-        
+
         Args:
             tools: List of tools to add.
-            
+
         Returns:
             Number of tools actually added (excluding duplicates).
         """
@@ -255,13 +263,13 @@ class DynamicToolset(CustomToolset):
             if self.add_tool(tool):
                 added += 1
         return added
-    
+
     def remove_tool(self, name: str) -> bool:
         """Remove a tool by name.
-        
+
         Args:
             name: Name of the tool to remove.
-            
+
         Returns:
             True if removed, False if not found.
         """
@@ -271,13 +279,13 @@ class DynamicToolset(CustomToolset):
                 self._version += 1
                 return True
         return False
-    
+
     def remove_tools_by(self, predicate: Callable[[BaseTool], bool]) -> int:
         """Remove tools matching a predicate.
-        
+
         Args:
             predicate: A function that returns True for tools to remove.
-            
+
         Returns:
             Number of tools removed.
         """
@@ -287,10 +295,10 @@ class DynamicToolset(CustomToolset):
         if removed > 0:
             self._version += 1
         return removed
-    
+
     def clear(self) -> int:
         """Remove all tools.
-        
+
         Returns:
             Number of tools removed.
         """

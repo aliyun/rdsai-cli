@@ -32,10 +32,10 @@ THINKING_BIND_PARAMS: dict[str, dict[str, Any]] = {
 
 def get_thinking_bind_params(provider_type: str) -> dict[str, Any]:
     """Get the bind parameters to enable thinking mode for a provider.
-    
+
     Args:
         provider_type: The type of the LLM provider.
-        
+
     Returns:
         Dictionary of parameters to pass to model.bind().
         Empty dict if no special parameters needed.
@@ -45,16 +45,16 @@ def get_thinking_bind_params(provider_type: str) -> dict[str, Any]:
 
 def extract_thinking_content(chunk: AIMessageChunk, provider_type: str) -> str | None:
     """Extract thinking/reasoning content from a message chunk.
-    
+
     Different providers return thinking content in different formats:
     - Qwen/DeepSeek: additional_kwargs['reasoning_content']
     - Anthropic: content blocks with type='thinking'
     - Gemini: additional_kwargs['thought']
-    
+
     Args:
         chunk: The AI message chunk from streaming.
         provider_type: The type of the LLM provider.
-        
+
     Returns:
         The thinking content string, or None if not present.
     """
@@ -62,7 +62,7 @@ def extract_thinking_content(chunk: AIMessageChunk, provider_type: str) -> str |
         case "qwen" | "deepseek":
             # Qwen and DeepSeek use reasoning_content in additional_kwargs
             return chunk.additional_kwargs.get("reasoning_content")
-        
+
         case "anthropic":
             # Anthropic returns thinking in content blocks
             if isinstance(chunk.content, list):
@@ -71,11 +71,11 @@ def extract_thinking_content(chunk: AIMessageChunk, provider_type: str) -> str |
                         return block.get("thinking")
             # Also check additional_kwargs for some LangChain versions
             return chunk.additional_kwargs.get("thinking")
-        
+
         case "gemini":
             # Gemini uses thought field
             return chunk.additional_kwargs.get("thought")
-        
+
         case _:
             # Fallback: try common field names for unknown providers
             return (
@@ -84,4 +84,3 @@ def extract_thinking_content(chunk: AIMessageChunk, provider_type: str) -> str |
                 or chunk.additional_kwargs.get("thought")
                 or chunk.additional_kwargs.get("reasoning")
             )
-

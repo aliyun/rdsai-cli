@@ -75,4 +75,3 @@ def _execute_and_display(db_service, sql: str, use_vertical: bool) -> CommandRes
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         return CommandResult(success=False)
-

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Literal, get_args
 
-from pydantic import BaseModel, Field, SecretStr, field_serializer
+from pydantic import BaseModel, SecretStr, field_serializer
 
 
 # Type definitions moved here to avoid circular imports with llm/llm.py
@@ -62,4 +62,3 @@ class LLMModel(BaseModel):
     """Maximum output tokens (required for some providers like Anthropic)"""
     capabilities: set[ModelCapability] | None = None
     """Model capabilities"""
-

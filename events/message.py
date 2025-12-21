@@ -121,4 +121,3 @@ class ApprovalRequest(BaseModel):
     def resolved(self) -> bool:
         """Whether the request is resolved."""
         return self._future.done()
-

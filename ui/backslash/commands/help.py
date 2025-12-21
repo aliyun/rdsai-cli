@@ -50,4 +50,3 @@ def cmd_help(ctx: CommandContext) -> CommandResult | None:
 
     console.print("[dim]For more help, type 'help' followed by a topic.[/dim]\n")
     return None
-

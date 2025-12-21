@@ -27,10 +27,14 @@ class ReplicaStatus(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> Dict[str, Any]:
         """Execute SHOW SLAVE STATUS to get replication information."""
         columns, rows = self._execute_query("SHOW SLAVE STATUS")
-        
+
         return {
             "type": "MySQL Replica Status",
             "columns": columns,
             "rows": rows,
-            "message": "Replica status retrieved successfully" if rows else "No replica status found (not a replica server)"
+            "message": (
+                "Replica status retrieved successfully"
+                if rows
+                else "No replica status found (not a replica server)"
+            )
         }

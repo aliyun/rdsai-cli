@@ -19,7 +19,7 @@ class SubagentRegistry:
 
     def register(self, executor: SubagentExecutor) -> None:
         """Register a subagent executor.
-        
+
         Args:
             executor: Subagent executor instance.
         """
@@ -28,10 +28,10 @@ class SubagentRegistry:
 
     def get(self, name: str) -> SubagentExecutor | None:
         """Get a subagent executor by name.
-        
+
         Args:
             name: Subagent name.
-            
+
         Returns:
             Subagent executor or None if not found.
         """
@@ -39,7 +39,7 @@ class SubagentRegistry:
 
     def list_all(self) -> list[str]:
         """List all registered subagent names.
-        
+
         Returns:
             List of subagent names.
         """
@@ -61,7 +61,7 @@ _registry: SubagentRegistry | None = None
 
 def get_registry() -> SubagentRegistry:
     """Get the global subagent registry instance.
-    
+
     Returns:
         Global SubagentRegistry instance.
     """

@@ -303,4 +303,3 @@ class MySQLClient(DatabaseClient):
 
 # Register MySQL client
 DatabaseClientFactory.register('mysql', MySQLClient)
-

@@ -55,10 +55,10 @@ class MaxStepsReached(Exception):
 @dataclass(frozen=True, slots=True)
 class StatusSnapshot:
     """Snapshot of the current loop status."""
-    
+
     context_usage: float
     """The usage of the context, in percentage."""
-    
+
     yolo: bool = False
     """Whether YOLO mode (auto-approve all actions) is enabled."""
 
@@ -66,7 +66,7 @@ class StatusSnapshot:
 @runtime_checkable
 class Loop(Protocol):
     """Protocol defining the Loop interface."""
-    
+
     @property
     def name(self) -> str:
         """The name of the loop."""
@@ -183,7 +183,7 @@ _current_stream = ContextVar[Stream | None]("current_stream", default=None)
 
 def get_stream_or_none() -> Stream | None:
     """Get the current stream or None.
-    
+
     Expect to be not None when called from anywhere in the agent loop.
     """
     return _current_stream.get()
@@ -191,7 +191,7 @@ def get_stream_or_none() -> Stream | None:
 
 def stream_send(msg: StreamMessage) -> None:
     """Send a message to the current stream.
-    
+
     Take this as `print` and `input` for loops.
     Loops should always use this function to send stream messages.
     """

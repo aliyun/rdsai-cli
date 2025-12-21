@@ -56,4 +56,3 @@ def cmd_delimiter(ctx: CommandContext) -> CommandResult | None:
     set_delimiter(new_delimiter)
     console.print(f"Delimiter set to: [cyan]{new_delimiter}[/cyan]")
     return None
-

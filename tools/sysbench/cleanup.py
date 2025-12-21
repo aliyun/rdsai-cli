@@ -39,38 +39,37 @@ class SysbenchCleanup(SysbenchToolBase):
             kwargs = {}
             if params.tables:
                 kwargs["tables"] = params.tables
-            
+
             args = self._build_sysbench_args(
                 test_type=params.test_type,
                 command="cleanup",
                 **kwargs
             )
-            
+
             # Execute command
             exit_code, stdout, stderr = await self._execute_sysbench_command(
                 args,
                 timeout=300,  # 5 minutes timeout for cleanup
             )
-            
+
             if exit_code != 0:
                 return {
                     "error": f"sysbench cleanup failed with exit code {exit_code}, {stderr or stdout}",
                     "brief": "Cleanup failed",
                 }
-            
+
             # Parse output and build result
             parsed = self._parse_sysbench_output(stdout, stderr)
             tables_info = f"{params.tables} table(s)" if params.tables else "all tables"
-            
+
             return {
                 "message": f"Successfully cleaned up {tables_info}",
                 "output": stdout if stdout else "Cleanup completed successfully.",
                 "errors": parsed.get("errors", []),
             }
-            
+
         except Exception as e:
             return {
                 "error": str(e),
                 "brief": "Cleanup error",
             }
-

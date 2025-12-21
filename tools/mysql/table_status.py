@@ -36,20 +36,26 @@ class TableStatus(MySQLToolBase):
         # Determine database to use
         database = params.db_name or get_current_database()
         if not database:
-            return {"error": "No database selected. Please specify db_name or use 'USE database_name' first", "brief": "No database selected"}
-        
+            return {
+                "error": (
+                    "No database selected. Please specify db_name "
+                    "or use 'USE database_name' first"
+                ),
+                "brief": "No database selected",
+            }
+
         # Build the SQL query
         if params.table_name:
             sql = f"SHOW TABLE STATUS FROM `{database}` LIKE '{params.table_name}'"
         else:
             sql = f"SHOW TABLE STATUS FROM `{database}`"
-        
+
         columns, rows = self._execute_query(sql)
-        
+
         table_info = f"database '{database}'"
         if params.table_name:
             table_info += f", table '{params.table_name}'"
-        
+
         return {
             "type": f"Table Status for {table_info}",
             "columns": columns,

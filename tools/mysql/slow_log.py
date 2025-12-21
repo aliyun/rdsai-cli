@@ -40,24 +40,24 @@ class SlowLog(MySQLToolBase):
         """Query MySQL slow log information from mysql.slow_log table."""
         # Build the SQL query
         sql = """
-            SELECT start_time, user_host, query_time, lock_time, 
-                   rows_sent, rows_examined, db, sql_text 
+            SELECT start_time, user_host, query_time, lock_time,
+                   rows_sent, rows_examined, db, sql_text
             FROM mysql.slow_log
         """
-        
+
         conditions = []
         if params.start_time:
             conditions.append(f"start_time >= '{params.start_time}'")
         if params.end_time:
             conditions.append(f"start_time <= '{params.end_time}'")
-        
+
         if conditions:
             sql += " WHERE " + " AND ".join(conditions)
-            
+
         sql += f" ORDER BY start_time DESC LIMIT {params.limit}"
-        
+
         columns, rows = self._execute_query(sql)
-        
+
         return {
             "type": "MySQL Slow Query Log",
             "columns": columns,

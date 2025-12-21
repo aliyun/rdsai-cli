@@ -29,7 +29,7 @@ USER_AGENT = f"RDSAI_CLI/{VERSION}"
 
 def get_share_dir() -> Path:
     """Get the share directory path.
-    
+
     Returns:
         Path to the shared directory (~/.rdsai-cli)
     """
@@ -40,7 +40,7 @@ def get_share_dir() -> Path:
 
 def get_config_file() -> Path:
     """Get the configuration file path.
-    
+
     Returns:
         Path to the config file (~/.rdsai-cli/config.json)
     """
@@ -84,9 +84,9 @@ class Session:
         ssl_mode: str | None = None,
     ) -> "DatabaseConnectionContext":
         """Connect to a database.
-        
+
         If already connected, disconnects first.
-        
+
         Args:
             host: Database server hostname
             user: Database username
@@ -97,13 +97,13 @@ class Session:
             ssl_cert: SSL client certificate file path
             ssl_key: SSL client private key file path
             ssl_mode: SSL connection mode
-            
+
         Returns:
             DatabaseConnectionContext with connection status
         """
         # Disconnect existing connection if any
         self.disconnect()
-        
+
         # Create new connection
         self._db_connection = create_database_connection_context(
             host=host,
@@ -116,7 +116,7 @@ class Session:
             ssl_key=ssl_key,
             ssl_mode=ssl_mode,
         )
-        
+
         if self._db_connection.is_connected:
             logger.info("Session {id} connected to {host}", id=self.id, host=host)
         else:
@@ -126,7 +126,7 @@ class Session:
                 host=host,
                 error=self._db_connection.error,
             )
-        
+
         return self._db_connection
 
     def disconnect(self) -> None:
@@ -139,7 +139,7 @@ class Session:
     @staticmethod
     def create_empty() -> Session:
         """Create a new session without database connection.
-        
+
         Returns:
             New Session instance without database connection
         """
@@ -160,7 +160,7 @@ class Session:
         ssl_mode: str | None = None,
     ) -> Session:
         """Create a new session and connect to database.
-        
+
         Args:
             host: Database server hostname
             user: Database username
@@ -171,7 +171,7 @@ class Session:
             ssl_cert: SSL client certificate file path
             ssl_key: SSL client private key file path
             ssl_mode: SSL connection mode
-            
+
         Returns:
             New Session instance with database connection
         """
@@ -179,7 +179,7 @@ class Session:
         logger.debug("Creating new session: {session_id}", session_id=session_id)
 
         session = Session(id=session_id)
-        
+
         # Connect to database
         session.connect(
             host=host,
@@ -192,6 +192,5 @@ class Session:
             ssl_key=ssl_key,
             ssl_mode=ssl_mode,
         )
-        
-        return session
 
+        return session

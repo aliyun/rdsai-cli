@@ -347,4 +347,3 @@ def get_error_brief(error: DatabaseError) -> str:
     if isinstance(error, SchemaError):
         return "Schema error"
     return "Database error"
-

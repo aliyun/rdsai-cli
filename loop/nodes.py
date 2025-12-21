@@ -59,9 +59,9 @@ async def agent_node(
     config: RunnableConfig,
 ) -> dict[str, Any]:
     """LLM invocation node.
-    
+
     Calls the LLM with current messages and returns the response.
-    
+
     Note: Context injection (Memory Bank, query results) is handled at the message
     level by neoloop.py using the layered context strategy, not in the system prompt.
     """
@@ -70,7 +70,7 @@ async def agent_node(
     llm = config["configurable"]["llm"]
     stream_send = config["configurable"].get("stream_send")
     thinking_enabled = config["configurable"].get("thinking_enabled", False)
-    
+
     # Build messages with system prompt
     system_prompt = agent.system_prompt
     messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
@@ -84,7 +84,7 @@ async def agent_node(
             args_schema=tool.params,
             func=lambda **kwargs: None,  # Placeholder, we handle execution in tools_node
         ))
-    
+
     if lc_tools:
         model = llm.chat_provider.bind_tools(lc_tools)
     else:
@@ -124,10 +124,10 @@ async def agent_node(
 
     if final_chunk is None:
         final_chunk = AIMessage(content="")
-    
+
     # Get yolo state to check if approval is needed
     yolo = state.get("yolo", False)
-    
+
     # Send tool calls to UI via message center
     # For tools requiring approval, send ToolCall first, then ApprovalPending
     # This ensures the tool appears in UI before the approval request
@@ -135,7 +135,7 @@ async def agent_node(
         tool_name = tc["name"]
         tool_args = tc["args"]
         tool_call_id = tc["id"]
-        
+
         # Always send ToolCall first so it appears in UI
         tool_call = ToolCall(
             id=tool_call_id,
@@ -147,21 +147,21 @@ async def agent_node(
         )
         if stream_send:
             stream_send(tool_call)
-        
+
         # Check if this tool needs approval
         needs_approval_for_this_tool = not yolo and needs_approval(tool_name, tool_args)
-        
+
         if needs_approval_for_this_tool:
             # For tools requiring approval, send ApprovalPending immediately after ToolCall
             # This will mark the tool as "Waiting for approval" in UI
             if stream_send:
                 stream_send(ApprovalPending(tool_call_id=tool_call_id))
-    
+
     # Calculate token usage
     new_token_count = state.get("token_count", 0)
     if final_chunk.usage_metadata:
         new_token_count = final_chunk.usage_metadata.get("total_tokens", new_token_count)
-    
+
     return {
         "messages": [final_chunk],
         "token_count": new_token_count,
@@ -174,36 +174,36 @@ async def tools_node(
     config: RunnableConfig,
 ) -> dict[str, Any]:
     """Tool execution node.
-    
+
     Executes tool calls from the last AI message.
     Supports human-in-the-loop approval via interrupt().
     """
     agent: Agent = config["configurable"]["agent"]
     stream_send = config["configurable"].get("stream_send")
-    
+
     last_message = state["messages"][-1]
     if not isinstance(last_message, AIMessage) or not last_message.tool_calls:
         return {"messages": []}
-    
+
     tool_calls = last_message.tool_calls
     yolo = state.get("yolo", False)
-    
+
     results: list[ToolMessage] = []
-    
+
     # Get auto-approved actions from config
     auto_approve_actions = config["configurable"].get("auto_approve_actions", set())
-    
+
     for tc in tool_calls:
         tool_name = tc["name"]
         tool_args = tc["args"]
         tool_call_id = tc["id"]
-        
+
         # Check if approval is needed
         # Skip approval if: yolo mode, already auto-approved for session, or doesn't need approval
         if not yolo and tool_name not in auto_approve_actions and needs_approval(tool_name, tool_args):
             # ToolCall and ApprovalPending were already sent in agent_node
             # Tool should now be showing "Waiting for approval" in UI
-            
+
             # Human in the Loop: interrupt for approval
             approval_request: ApprovalInterrupt = {
                 "type": "approval",
@@ -211,7 +211,7 @@ async def tools_node(
                 "tool_args": tool_args,
                 "description": get_tool_description(tool_name, tool_args),
             }
-            
+
             # This will pause the graph and return control to the caller
             # When resumed with Command(resume=response), interrupt() returns the response
             response = interrupt(approval_request)
@@ -225,15 +225,15 @@ async def tools_node(
                     name=tool_name,
                 ))
                 continue
-            
+
             # If approved, send ApprovalGranted to UI
             # This will change the tool status from "Waiting for approval" to "Using"
             if stream_send:
                 stream_send(ApprovalGranted(tool_call_id=tool_call_id))
-        
+
         # Execute the tool
         tool_result = await _execute_tool(agent.toolset, tool_call_id, tool_name, tool_args)
-        
+
         # Notify UI of tool result
         stream_send(tool_result)
 
@@ -246,13 +246,13 @@ async def tools_node(
             content = f"Error: {tool_result.result.message}"
             if tool_result.result.output:
                 content += f"\n{tool_result.result.output}"
-        
+
         results.append(ToolMessage(
             tool_call_id=tool_call_id,
             content=content,
             name=tool_name,
         ))
-    
+
     return {"messages": results}
 
 
@@ -272,7 +272,7 @@ async def _execute_tool(
             arguments=json.dumps(tool_args),
         ),
     )
-    
+
     # Set current tool call context
     token = current_tool_call.set(tool_call)
     try:
@@ -283,15 +283,15 @@ async def _execute_tool(
 
 def should_continue(state: AgentState) -> Literal["tools", "end"]:
     """Determine the next node based on current state.
-    
+
     Returns:
         "tools" if there are tool calls to execute
         "end" if the conversation should end
     """
     last_message = state["messages"][-1]
-    
+
     # Check if the last message has tool calls
     if isinstance(last_message, AIMessage) and last_message.tool_calls:
         return "tools"
-    
+
     return "end"
