@@ -13,6 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security enhancements
 - Diagnostic report export
 
+## [v0.1.3] - 2025-12-21
+
+### Fixed
+- **Security**: Hide database password input in CLI (previously visible in terminal)
+- **UI**: Fix prompt display text updates
+
+### Changed
+- **UX**: Update prompt display when refreshing database connection
+- **Code Quality**: 
+  - Add pylint configuration file for optimized code checking rules
+  - Adjust pylint configuration rules and restrictions
+  - Format code and remove extra blank lines
+- **CI/CD**:
+  - Update Python CI workflow to use uv and new Python version
+  - Update Python publish workflow for new version and steps
+  - Change Pylint trigger to only pull requests
+  - Update Python version matrix and pylint command
+  - Modify pylint workflow for Python versions and setup
+
+### Documentation
+- Update README_zh.md project description
+- Add Chinese README and document translations
+
 ## [v0.1.2] - 2025-12-17
 
 ### Added
