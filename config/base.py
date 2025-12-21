@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from importlib.metadata import PackageNotFoundError, version as get_package_version
 from pathlib import Path
 
 from utils.logging import logger
@@ -19,9 +20,27 @@ from database import create_database_connection_context, ConnectionContext
 DatabaseConnectionContext = ConnectionContext
 
 
-# ========== Version Constants ==========
 
-VERSION = "v0.1.3"
+def _get_version() -> str:
+    """Get version from package metadata or pyproject.toml.
+
+    Tries to read version in this order:
+    1. From installed package metadata (importlib.metadata)
+    2. From pyproject.toml file (development mode)
+
+    Returns:
+        Version string with "v" prefix (e.g., "v0.1.2")
+    """
+    try:
+        pkg_version = get_package_version("rdsai-cli")
+        # Add "v" prefix if not present
+        return pkg_version if pkg_version.startswith("v") else f"v{pkg_version}"
+    except PackageNotFoundError:
+        pass
+    return "UNKNOW"
+
+
+VERSION = _get_version()
 USER_AGENT = f"RDSAI_CLI/{VERSION}"
 
 
