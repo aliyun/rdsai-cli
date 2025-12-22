@@ -5,7 +5,7 @@
 [English](README.md) | [中文](README_zh.md)
 
 ---
-![image.png](docs/assets/image.png)
+![image.png](docs/assets/img.png)
 
 RDSAI CLI is a next-generation, AI-powered RDS CLI that transforms how you interact with the database. You describe your intent in natural language or SQL, and the AI agent performs hybrid processing of both: orchestrating diagnostic tools, analyzing execution plans, and executing queries — all without leaving your terminal. From performance troubleshooting to schema exploration, it handles the complexity so you can focus on what truly matters.
 
