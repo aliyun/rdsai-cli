@@ -37,14 +37,15 @@ We recommend using [uv](https://docs.astral.sh/uv/) as the Python package manage
 For more installation options, see [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
 ```bash
-# Using uv (recommended)
+# Using uv (recommended - provides isolated environment)
 uv tool install --python 3.13 rdsai-cli
 
-# Or using pip
+# Or using pip (may cause dependency conflicts with other packages)
+# Recommended: Use virtual environment: python -m venv .venv && source .venv/bin/activate
 pip install rdsai-cli
 ```
 
-After installation, the `rdsai` command will be available globally.
+After installation, the `rdsai` command will be available globally. **Note:** Using `pip install` may cause dependency conflicts with other Python packages. We recommend using `uv tool install` or installing in a virtual environment.
 
 ### Install from source (for development)
 

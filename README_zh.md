@@ -37,14 +37,15 @@ RDSAI CLI 是一款新一代的 AI 驱动 RDS CLI，它用来改变了您与数�
 更多安装选项，请参阅 [uv 安装指南](https://docs.astral.sh/uv/getting-started/installation/)。
 
 ```bash
-# 使用 uv（推荐）
+# 使用 uv（推荐 - 提供隔离环境）
 uv tool install --python 3.13 rdsai-cli
 
-# 或使用 pip
+# 或使用 pip（可能与其他包产生依赖冲突）
+# 推荐：使用虚拟环境：python -m venv .venv && source .venv/bin/activate
 pip install rdsai-cli
 ```
 
-安装后，`rdsai` 命令将在全局可用。
+安装后，`rdsai` 命令将在全局可用。**注意：** 使用 `pip install` 可能与其他 Python 包产生依赖冲突。我们推荐使用 `uv tool install` 或在虚拟环境中安装。
 
 ### 从源码安装（用于开发）
 
