@@ -30,17 +30,11 @@ class MCPServerConfig(BaseModel):
     url: str | None = Field(default=None, description="HTTP endpoint URL")
 
     # For streamable_http transport - optional headers
-    headers: dict[str, str] | None = Field(
-        default=None, description="HTTP headers for streamable_http transport"
-    )
+    headers: dict[str, str] | None = Field(default=None, description="HTTP headers for streamable_http transport")
 
     # Tool filtering
-    include_tools: list[str] | None = Field(
-        default=None, description="Only include these tools (whitelist)"
-    )
-    exclude_tools: list[str] | None = Field(
-        default=None, description="Exclude these tools (blacklist)"
-    )
+    include_tools: list[str] | None = Field(default=None, description="Only include these tools (whitelist)")
+    exclude_tools: list[str] | None = Field(default=None, description="Exclude these tools (blacklist)")
 
     # Optional: tool name prefix to avoid conflicts
     tool_prefix: str | None = Field(
@@ -64,9 +58,7 @@ class MCPConfig(BaseModel):
     """Global MCP configuration."""
 
     enabled: bool = Field(default=True, description="Whether MCP integration is enabled")
-    servers: list[MCPServerConfig] = Field(
-        default_factory=list, description="List of MCP servers to connect to"
-    )
+    servers: list[MCPServerConfig] = Field(default_factory=list, description="List of MCP servers to connect to")
 
     # Internal: path to the config file (not serialized)
     _config_file: Path | None = None

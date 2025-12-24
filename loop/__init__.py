@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 class LLMNotSet(Exception):
     """Raised when the LLM is not set."""
+
     pass
 
 
@@ -37,8 +38,7 @@ class LLMNotSupported(Exception):
         self.capabilities = capabilities
         capabilities_str = "capability" if len(capabilities) == 1 else "capabilities"
         super().__init__(
-            f"LLM model '{llm.model_name}' does not support required {capabilities_str}: "
-            f"{', '.join(capabilities)}."
+            f"LLM model '{llm.model_name}' does not support required {capabilities_str}: {', '.join(capabilities)}."
         )
 
 

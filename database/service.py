@@ -89,6 +89,7 @@ SchemaChangeCallback = Callable[[], None]
 
 # ========== Helper Functions ==========
 
+
 def extract_single_column(rows: list[Any]) -> list[str]:
     """Extract single column values from query result rows as strings."""
     result = []
@@ -110,6 +111,7 @@ def extract_first_value(row: Any) -> Any | None:
 
 
 # ========== Query Context Management ==========
+
 
 def format_query_context_for_agent(context: LastQueryContext, max_display_rows: int = 50) -> str:
     """Format the last query context as a string for agent injection."""
@@ -157,35 +159,36 @@ def format_query_context_for_agent(context: LastQueryContext, max_display_rows: 
 
 # ========== Database Service ==========
 
+
 class DatabaseService:
     """Unified database service: connection management + query execution + transactions + schema."""
 
     # Pattern to match vertical format directive (\G) at end of SQL
-    _VERTICAL_FORMAT_PATTERN = r'\s*\\[Gg]\s*;?\s*$'
+    _VERTICAL_FORMAT_PATTERN = r"\s*\\[Gg]\s*;?\s*$"
 
     # Query type prefixes for efficient classification
     _QUERY_TYPE_PREFIXES: tuple[tuple[str, QueryType], ...] = (
-        ('SELECT', QueryType.SELECT),
-        ('INSERT', QueryType.INSERT),
-        ('UPDATE', QueryType.UPDATE),
-        ('DELETE', QueryType.DELETE),
-        ('SHOW', QueryType.SHOW),
-        ('SET', QueryType.SET),
-        ('CREATE', QueryType.CREATE),
-        ('DROP', QueryType.DROP),
-        ('ALTER', QueryType.ALTER),
-        ('DESCRIBE', QueryType.DESCRIBE),
-        ('DESC', QueryType.DESC),
-        ('EXPLAIN', QueryType.EXPLAIN),
-        ('USE', QueryType.USE),
-        ('BEGIN', QueryType.BEGIN),
-        ('START TRANSACTION', QueryType.BEGIN),
-        ('COMMIT', QueryType.COMMIT),
-        ('ROLLBACK', QueryType.ROLLBACK),
-        ('GRANT', QueryType.GRANT),
-        ('REVOKE', QueryType.REVOKE),
-        ('TRUNCATE', QueryType.TRUNCATE),
-        ('REPLACE', QueryType.REPLACE),
+        ("SELECT", QueryType.SELECT),
+        ("INSERT", QueryType.INSERT),
+        ("UPDATE", QueryType.UPDATE),
+        ("DELETE", QueryType.DELETE),
+        ("SHOW", QueryType.SHOW),
+        ("SET", QueryType.SET),
+        ("CREATE", QueryType.CREATE),
+        ("DROP", QueryType.DROP),
+        ("ALTER", QueryType.ALTER),
+        ("DESCRIBE", QueryType.DESCRIBE),
+        ("DESC", QueryType.DESC),
+        ("EXPLAIN", QueryType.EXPLAIN),
+        ("USE", QueryType.USE),
+        ("BEGIN", QueryType.BEGIN),
+        ("START TRANSACTION", QueryType.BEGIN),
+        ("COMMIT", QueryType.COMMIT),
+        ("ROLLBACK", QueryType.ROLLBACK),
+        ("GRANT", QueryType.GRANT),
+        ("REVOKE", QueryType.REVOKE),
+        ("TRUNCATE", QueryType.TRUNCATE),
+        ("REPLACE", QueryType.REPLACE),
     )
 
     def __init__(self):
@@ -359,28 +362,28 @@ class DatabaseService:
         """Get current connection information."""
         with self._lock:
             if not self._active_connection or not self._connection_config:
-                return {'connected': False}
+                return {"connected": False}
 
             config = self._connection_config
             client = self._active_connection
 
             info = {
-                'connected': True,
-                'connection_id': self._connection_id,
-                'engine': config.engine,
-                'host': config.host,
-                'port': config.port,
-                'user': config.user,
-                'database': self._current_database,
+                "connected": True,
+                "connection_id": self._connection_id,
+                "engine": config.engine,
+                "host": config.host,
+                "port": config.port,
+                "user": config.user,
+                "database": self._current_database,
             }
 
             if config.ssl_options:
-                info['ssl_enabled'] = True
+                info["ssl_enabled"] = True
 
             if client:
                 try:
-                    info['transaction_state'] = client.get_transaction_state().value
-                    info['autocommit'] = client.get_autocommit()
+                    info["transaction_state"] = client.get_transaction_state().value
+                    info["autocommit"] = client.get_autocommit()
                 except Exception as e:
                     logger.warning(f"Failed to get extended connection info: {e}")
 
@@ -426,23 +429,22 @@ class DatabaseService:
                 rows=rows if rows is not None else [],
                 columns=columns,
                 affected_rows=affected_rows,
-                execution_time=execution_time
+                execution_time=execution_time,
             )
 
         except Exception as e:
             execution_time = (datetime.now() - start_time).total_seconds()
-            db_error = handle_database_error(e, {
-                'sql': sql[:200] + '...' if len(sql) > 200 else sql,
-                'execution_time': execution_time,
-                'query_type': query_type.value if query_type else None,
-            })
+            db_error = handle_database_error(
+                e,
+                {
+                    "sql": sql[:200] + "..." if len(sql) > 200 else sql,
+                    "execution_time": execution_time,
+                    "query_type": query_type.value if query_type else None,
+                },
+            )
 
             return QueryResult(
-                query_type=query_type,
-                success=False,
-                rows=[],
-                execution_time=execution_time,
-                error=str(db_error)
+                query_type=query_type, success=False, rows=[], execution_time=execution_time, error=str(db_error)
             )
 
     def has_vertical_format_directive(self, sql: str) -> bool:
@@ -451,7 +453,7 @@ class DatabaseService:
 
     def _clean_display_directives(self, sql: str) -> str:
         r"""Remove client display directives (like \G) from SQL."""
-        return re.sub(self._VERTICAL_FORMAT_PATTERN, lambda m: ';' if ';' in m.group() else '', sql)
+        return re.sub(self._VERTICAL_FORMAT_PATTERN, lambda m: ";" if ";" in m.group() else "", sql)
 
     def _classify_query(self, sql: str) -> QueryType:
         """Classify SQL query type using efficient prefix matching."""
@@ -478,7 +480,7 @@ class DatabaseService:
         """Extract database name from USE statement."""
         if not sql or not sql.strip():
             return None
-        pattern = r'USE\s+(?:`)?([^`;\s]+)(?:`)?'
+        pattern = r"USE\s+(?:`)?([^`;\s]+)(?:`)?"
         match = re.search(pattern, sql.strip(), re.IGNORECASE)
         if match:
             return match.group(1)
@@ -511,10 +513,26 @@ class DatabaseService:
 
             # Check if followed by valid SHOW targets
             valid_show_targets = [
-                'TABLES', 'CREATE', 'INDEX', 'DATABASES', 'PROCESSLIST',
-                'VARIABLES', 'STATUS', 'ENGINE', 'SLAVE', 'REPLICA',
-                'GRANTS', 'WARNINGS', 'ERRORS', 'TABLE', 'COLUMNS',
-                'FIELDS', 'KEYS', 'TRIGGERS', 'PROCEDURE', 'FUNCTION'
+                "TABLES",
+                "CREATE",
+                "INDEX",
+                "DATABASES",
+                "PROCESSLIST",
+                "VARIABLES",
+                "STATUS",
+                "ENGINE",
+                "SLAVE",
+                "REPLICA",
+                "GRANTS",
+                "WARNINGS",
+                "ERRORS",
+                "TABLE",
+                "COLUMNS",
+                "FIELDS",
+                "KEYS",
+                "TRIGGERS",
+                "PROCEDURE",
+                "FUNCTION",
             ]
 
             # Check if starts with valid target
@@ -537,7 +555,7 @@ class DatabaseService:
             client.begin_transaction()
             logger.debug("Transaction started")
         except Exception as e:
-            raise handle_database_error(e, {'operation': 'begin'})
+            raise handle_database_error(e, {"operation": "begin"})
 
     def commit_transaction(self) -> None:
         """Commit current transaction."""
@@ -546,7 +564,7 @@ class DatabaseService:
             client.commit_transaction()
             logger.debug("Transaction committed")
         except Exception as e:
-            raise handle_database_error(e, {'operation': 'commit'})
+            raise handle_database_error(e, {"operation": "commit"})
 
     def rollback_transaction(self) -> None:
         """Rollback current transaction."""
@@ -555,7 +573,7 @@ class DatabaseService:
             client.rollback_transaction()
             logger.debug("Transaction rolled back")
         except Exception as e:
-            raise handle_database_error(e, {'operation': 'rollback'})
+            raise handle_database_error(e, {"operation": "rollback"})
 
     def set_autocommit(self, enabled: bool) -> None:
         """Set autocommit mode."""
@@ -564,7 +582,7 @@ class DatabaseService:
             client.set_autocommit(enabled)
             logger.debug(f"Autocommit set to {'enabled' if enabled else 'disabled'}")
         except Exception as e:
-            raise handle_database_error(e, {'operation': f'set_autocommit({enabled})'})
+            raise handle_database_error(e, {"operation": f"set_autocommit({enabled})"})
 
     def get_transaction_state(self) -> TransactionState | None:
         """Get current transaction state."""
@@ -595,13 +613,9 @@ class DatabaseService:
             current_db = self.get_current_database()
             tables = self._get_tables()
 
-            return SchemaInfo(
-                current_database=current_db,
-                tables=tables,
-                table_details={}
-            )
+            return SchemaInfo(current_database=current_db, tables=tables, table_details={})
         except Exception as e:
-            raise handle_database_error(e, {'operation': 'get_schema_info'})
+            raise handle_database_error(e, {"operation": "get_schema_info"})
 
     def _get_tables(self) -> list[str]:
         """Get list of tables in current database."""
@@ -625,10 +639,7 @@ class DatabaseService:
             client.execute(f"DESCRIBE `{validated_name}`")
             return client.fetchall()
         except Exception as e:
-            raise handle_database_error(e, {
-                'operation': 'describe_table',
-                'table_name': table_name
-            })
+            raise handle_database_error(e, {"operation": "describe_table", "table_name": table_name})
 
     def change_database(self, database_name: str) -> None:
         """Change to specified database."""
@@ -639,10 +650,7 @@ class DatabaseService:
             logger.info(f"Changed to database: {database_name}")
             self._notify_schema_change()
         except Exception as e:
-            raise handle_database_error(e, {
-                'operation': 'change_database',
-                'database': database_name
-            })
+            raise handle_database_error(e, {"operation": "change_database", "database": database_name})
 
     def get_databases(self) -> list[str]:
         """Get list of available databases."""
@@ -652,7 +660,7 @@ class DatabaseService:
             result = client.fetchall()
             return extract_single_column(result)
         except Exception as e:
-            raise handle_database_error(e, {'operation': 'show_databases'})
+            raise handle_database_error(e, {"operation": "show_databases"})
 
     # ========== Context Manager ==========
 
@@ -676,6 +684,7 @@ class DatabaseService:
 
 # ========== Factory Functions ==========
 
+
 def create_connection_context(
     host: str,
     port: int | None,
@@ -690,16 +699,16 @@ def create_connection_context(
     """Create a database connection context with connected service and query history."""
     ssl_options = {}
     if ssl_ca:
-        ssl_options['ssl_ca'] = ssl_ca
+        ssl_options["ssl_ca"] = ssl_ca
     if ssl_cert:
-        ssl_options['ssl_cert'] = ssl_cert
+        ssl_options["ssl_cert"] = ssl_cert
     if ssl_key:
-        ssl_options['ssl_key'] = ssl_key
+        ssl_options["ssl_key"] = ssl_key
     if ssl_mode:
-        ssl_options['ssl_mode'] = ssl_mode
+        ssl_options["ssl_mode"] = ssl_mode
 
     connection_config = ConnectionConfig(
-        engine='mysql',
+        engine="mysql",
         host=host,
         port=port,
         user=user,

@@ -109,9 +109,9 @@ def help(app: ShellREPL, args: list[str]):
     # Database connection
     if app.db_service and app.db_service.is_connected():
         db_info = app.db_service.get_connection_info()
-        db_name = db_info.get('database', '-')
-        host = db_info.get('host', '')
-        port = db_info.get('port', '')
+        db_name = db_info.get("database", "-")
+        host = db_info.get("host", "")
+        port = db_info.get("port", "")
         status_lines.append(f"  Database:   [cyan]{db_name}[/cyan] [dim]({host}:{port})[/dim]")
     else:
         status_lines.append("  Database:   [dim]not connected[/dim]")

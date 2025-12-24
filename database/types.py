@@ -13,8 +13,10 @@ from typing import Any
 
 # ========== Connection Status ==========
 
+
 class ConnectionStatus(str, Enum):
     """Database connection status enumeration."""
+
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     FAILED = "failed"
@@ -22,14 +24,17 @@ class ConnectionStatus(str, Enum):
 
 class QueryStatus(str, Enum):
     """Query execution status enumeration."""
+
     SUCCESS = "success"
     ERROR = "error"
 
 
 # ========== Query Types ==========
 
+
 class QueryType(Enum):
     """Types of SQL queries."""
+
     SELECT = "SELECT"
     INSERT = "INSERT"
     UPDATE = "UPDATE"
@@ -54,16 +59,19 @@ class QueryType(Enum):
 
 
 # Query types that return result sets (rows and columns)
-RESULT_SET_QUERY_TYPES = frozenset([
-    QueryType.SELECT,
-    QueryType.SHOW,
-    QueryType.DESCRIBE,
-    QueryType.DESC,
-    QueryType.EXPLAIN,
-])
+RESULT_SET_QUERY_TYPES = frozenset(
+    [
+        QueryType.SELECT,
+        QueryType.SHOW,
+        QueryType.DESCRIBE,
+        QueryType.DESC,
+        QueryType.EXPLAIN,
+    ]
+)
 
 
 # ========== Query Result ==========
+
 
 @dataclass
 class QueryResult:
@@ -90,6 +98,7 @@ class QueryResult:
 
 # ========== Schema Info ==========
 
+
 @dataclass
 class SchemaInfo:
     """Database schema information."""
@@ -112,14 +121,15 @@ class SchemaInfo:
 
 # ========== Connection Config ==========
 
+
 @dataclass
 class ConnectionConfig:
     """Database connection configuration."""
 
-    engine: str = 'mysql'
-    host: str = 'localhost'
+    engine: str = "mysql"
+    host: str = "localhost"
     port: int | None = None
-    user: str = ''
+    user: str = ""
     password: str | None = None
     database: str | None = None
     connection_timeout: int = 10
@@ -127,9 +137,9 @@ class ConnectionConfig:
 
     # Allowed SSL option keys to prevent accidental override of core config
     _SSL_ALLOWED_KEYS: frozenset = field(
-        default=frozenset({'ssl_ca', 'ssl_cert', 'ssl_key', 'ssl_mode', 'ssl_verify_cert', 'ssl_verify_identity'}),
+        default=frozenset({"ssl_ca", "ssl_cert", "ssl_key", "ssl_mode", "ssl_verify_cert", "ssl_verify_identity"}),
         init=False,
-        repr=False
+        repr=False,
     )
 
     def __post_init__(self):
@@ -139,25 +149,21 @@ class ConnectionConfig:
 
         # Set default ports based on engine
         if self.port is None:
-            default_ports = {
-                'mysql': 3306,
-                'postgresql': 5432,
-                'sqlite': None
-            }
+            default_ports = {"mysql": 3306, "postgresql": 5432, "sqlite": None}
             self.port = default_ports.get(self.engine)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for client creation."""
         config_dict = {
-            'engine': self.engine,
-            'host': self.host,
-            'user': self.user,
-            'password': self.password,
-            'database': self.database,
+            "engine": self.engine,
+            "host": self.host,
+            "user": self.user,
+            "password": self.password,
+            "database": self.database,
         }
 
         if self.port is not None:
-            config_dict['port'] = self.port
+            config_dict["port"] = self.port
 
         # Add only allowed SSL options to prevent override of core config
         if self.ssl_options:
@@ -170,9 +176,11 @@ class ConnectionConfig:
 
 # ========== Last Query Context ==========
 
+
 @dataclass
 class LastQueryContext:
     """Last SQL query result context for agent injection."""
+
     sql: str
     status: QueryStatus
     columns: list[str] | None = None
@@ -185,6 +193,7 @@ class LastQueryContext:
 
 # ========== Connection Context ==========
 
+
 @dataclass
 class ConnectionContext:
     """Database connection context with service instances and status info.
@@ -192,6 +201,7 @@ class ConnectionContext:
     Note: db_service and query_history are typed as Any to avoid circular imports.
     At runtime, they are DatabaseService and QueryHistory instances respectively.
     """
+
     db_service: Any = None  # DatabaseService instance
     query_history: Any = None  # QueryHistory instance
     status: str = field(default_factory=lambda: ConnectionStatus.DISCONNECTED.value)

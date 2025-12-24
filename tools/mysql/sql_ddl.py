@@ -18,9 +18,7 @@ class Params(BaseModel):
             "ONLY DDL statements are allowed - DO NOT use for SELECT queries or DML operations (INSERT/UPDATE/DELETE). "
         )
     )
-    description: str = Field(
-        description="A brief description of what this SQL modification will do"
-    )
+    description: str = Field(description="A brief description of what this SQL modification will do")
 
 
 class DDLExecutor(MySQLToolBase):
@@ -61,7 +59,7 @@ class DDLExecutor(MySQLToolBase):
             "CREATE FUNCTION",
             "DROP FUNCTION",
             "CREATE TRIGGER",
-            "DROP TRIGGER"
+            "DROP TRIGGER",
         ]
 
         # Check if statement starts with any allowed DDL
@@ -71,9 +69,16 @@ class DDLExecutor(MySQLToolBase):
 
         # Block dangerous operations
         dangerous_operations = [
-            "DELETE", "UPDATE", "INSERT", "TRUNCATE",
-            "DROP DATABASE", "CREATE DATABASE",
-            "GRANT", "REVOKE", "SET", "USE"
+            "DELETE",
+            "UPDATE",
+            "INSERT",
+            "TRUNCATE",
+            "DROP DATABASE",
+            "CREATE DATABASE",
+            "GRANT",
+            "REVOKE",
+            "SET",
+            "USE",
         ]
 
         for dangerous in dangerous_operations:
@@ -98,14 +103,12 @@ class DDLExecutor(MySQLToolBase):
             return {"error": f"Unsafe SQL statement: {reason}", "brief": "Unsafe SQL statement"}
 
         from database import get_current_database, get_database_service
+
         db_service = get_database_service()
 
         if not db_service or not db_service.is_connected():
             return {
-                "error": (
-                    "No database connection available. "
-                    "Please connect to a database first"
-                ),
+                "error": ("No database connection available. Please connect to a database first"),
                 "brief": "No database connection",
             }
 
@@ -123,6 +126,7 @@ class DDLExecutor(MySQLToolBase):
 
         if not result.success:
             from .base import ToolQueryError
+
             raise ToolQueryError(result.error or "DDL execution failed")
 
         return {
@@ -130,5 +134,5 @@ class DDLExecutor(MySQLToolBase):
             "sql_executed": params.sql_statement,
             "database": current_database,
             "success": True,
-            "affected_rows": result.affected_rows
+            "affected_rows": result.affected_rows,
         }

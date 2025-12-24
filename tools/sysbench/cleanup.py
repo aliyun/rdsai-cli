@@ -12,14 +12,10 @@ from .base import SysbenchToolBase
 
 class Params(BaseModel):
     test_type: str = Field(
-        default="oltp_read_write",
-        description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
+        default="oltp_read_write", description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
     )
     tables: int | None = Field(
-        default=None,
-        description="Number of tables to cleanup. If not specified, cleans up all tables.",
-        ge=1,
-        le=100
+        default=None, description="Number of tables to cleanup. If not specified, cleans up all tables.", ge=1, le=100
     )
 
 
@@ -40,11 +36,7 @@ class SysbenchCleanup(SysbenchToolBase):
             if params.tables:
                 kwargs["tables"] = params.tables
 
-            args = self._build_sysbench_args(
-                test_type=params.test_type,
-                command="cleanup",
-                **kwargs
-            )
+            args = self._build_sysbench_args(test_type=params.test_type, command="cleanup", **kwargs)
 
             # Execute command
             exit_code, stdout, stderr = await self._execute_sysbench_command(

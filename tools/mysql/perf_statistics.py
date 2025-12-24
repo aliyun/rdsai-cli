@@ -13,10 +13,7 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     interval: int = Field(
-        default=60,
-        description="Time interval in seconds to retrieve statistics for (default: 60)",
-        ge=1,
-        le=60
+        default=60, description="Time interval in seconds to retrieve statistics for (default: 60)", ge=1, le=60
     )
 
 
@@ -49,7 +46,7 @@ class PerfStatistics(MySQLToolBase):
         if not rows:
             return {
                 "data": "No performance statistics data available",
-                "message": "No data found for the specified time interval"
+                "message": "No data found for the specified time interval",
             }
 
         # Generate CSV format output
@@ -74,5 +71,5 @@ class PerfStatistics(MySQLToolBase):
 
         return {
             "data": csv_result,
-            "message": f"Performance statistics for last {params.interval} seconds ({len(rows)} data points)"
+            "message": f"Performance statistics for last {params.interval} seconds ({len(rows)} data points)",
         }

@@ -12,6 +12,7 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     """No parameters needed for SHOW SLAVE STATUS."""
+
     pass
 
 
@@ -33,8 +34,6 @@ class ReplicaStatus(MySQLToolBase):
             "columns": columns,
             "rows": rows,
             "message": (
-                "Replica status retrieved successfully"
-                if rows
-                else "No replica status found (not a replica server)"
-            )
+                "Replica status retrieved successfully" if rows else "No replica status found (not a replica server)"
+            ),
         }

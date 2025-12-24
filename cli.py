@@ -26,93 +26,93 @@ def _version_callback(value: bool) -> None:
 
 @cli.command()
 def cli_main(
-        debug: Annotated[
-            bool,
-            typer.Option(
-                "--debug",
-                help="Log debug information. Default: no.",
-            ),
-        ] = False,
-        # Database connection parameters
-        db_host: Annotated[
-            str | None,
-            typer.Option(
-                "--host",
-                "-h",
-                help="Database server hostname (required).",
-            ),
-        ] = None,
-        db_port: Annotated[
-            int | None,
-            typer.Option(
-                "--port",
-                "-P",
-                help="Database server port (MySQL default: 3306).",
-            ),
-        ] = None,
-        db_user: Annotated[
-            str | None,
-            typer.Option(
-                "--user",
-                "-u",
-                help="Database username (required).",
-            ),
-        ] = None,
-        db_password: Annotated[
-            str | None,
-            typer.Option(
-                "--password",
-                "-p",
-                help="Database password.",
-                hide_input=True,
-            ),
-        ] = None,
-        db_database: Annotated[
-            str | None,
-            typer.Option(
-                "--database",
-                "-D",
-                help="Default database name.",
-            ),
-        ] = None,
-        ssl_ca: Annotated[
-            str | None,
-            typer.Option(
-                "--ssl-ca",
-                help="SSL CA certificate file path.",
-            ),
-        ] = None,
-        ssl_cert: Annotated[
-            str | None,
-            typer.Option(
-                "--ssl-cert",
-                help="SSL client certificate file path.",
-            ),
-        ] = None,
-        ssl_key: Annotated[
-            str | None,
-            typer.Option(
-                "--ssl-key",
-                help="SSL client private key file path.",
-            ),
-        ] = None,
-        ssl_mode: Annotated[
-            str | None,
-            typer.Option(
-                "--ssl-mode",
-                help="SSL connection mode.",
-            ),
-        ] = None,
-        yolo: Annotated[
-            bool,
-            typer.Option(
-                "--yolo",
-                "--yes",
-                "-y",
-                "--auto-approve",
-                help="Automatically approve all actions. Default: no.",
-            ),
-        ] = False,
+    debug: Annotated[
+        bool,
+        typer.Option(
+            "--debug",
+            help="Log debug information. Default: no.",
+        ),
+    ] = False,
+    # Database connection parameters
+    db_host: Annotated[
+        str | None,
+        typer.Option(
+            "--host",
+            "-h",
+            help="Database server hostname (required).",
+        ),
+    ] = None,
+    db_port: Annotated[
+        int | None,
+        typer.Option(
+            "--port",
+            "-P",
+            help="Database server port (MySQL default: 3306).",
+        ),
+    ] = None,
+    db_user: Annotated[
+        str | None,
+        typer.Option(
+            "--user",
+            "-u",
+            help="Database username (required).",
+        ),
+    ] = None,
+    db_password: Annotated[
+        str | None,
+        typer.Option(
+            "--password",
+            "-p",
+            help="Database password.",
+            hide_input=True,
+        ),
+    ] = None,
+    db_database: Annotated[
+        str | None,
+        typer.Option(
+            "--database",
+            "-D",
+            help="Default database name.",
+        ),
+    ] = None,
+    ssl_ca: Annotated[
+        str | None,
+        typer.Option(
+            "--ssl-ca",
+            help="SSL CA certificate file path.",
+        ),
+    ] = None,
+    ssl_cert: Annotated[
+        str | None,
+        typer.Option(
+            "--ssl-cert",
+            help="SSL client certificate file path.",
+        ),
+    ] = None,
+    ssl_key: Annotated[
+        str | None,
+        typer.Option(
+            "--ssl-key",
+            help="SSL client private key file path.",
+        ),
+    ] = None,
+    ssl_mode: Annotated[
+        str | None,
+        typer.Option(
+            "--ssl-mode",
+            help="SSL connection mode.",
+        ),
+    ] = None,
+    yolo: Annotated[
+        bool,
+        typer.Option(
+            "--yolo",
+            "--yes",
+            "-y",
+            "--auto-approve",
+            help="Automatically approve all actions. Default: no.",
+        ),
+    ] = False,
 ):
     """RDSAI Cli, your next CLI agent."""
     from app import Application
@@ -162,8 +162,6 @@ def cli_main(
             sys.exit(1)
         except Reload:
             continue
-
-
 
 
 if __name__ == "__main__":

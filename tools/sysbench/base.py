@@ -18,9 +18,9 @@ class SysbenchToolBase(BaseTool):
     """Base class for all Sysbench performance testing tools."""
 
     # Regex patterns for parsing sysbench output
-    _TPS_PATTERN = re.compile(r'tps:\s*([\d.]+)', re.IGNORECASE)
-    _QPS_PATTERN = re.compile(r'qps:\s*([\d.]+)', re.IGNORECASE)
-    _LATENCY_PATTERN = re.compile(r'latency\s+\(ms\):\s*avg:\s*([\d.]+)', re.IGNORECASE)
+    _TPS_PATTERN = re.compile(r"tps:\s*([\d.]+)", re.IGNORECASE)
+    _QPS_PATTERN = re.compile(r"qps:\s*([\d.]+)", re.IGNORECASE)
+    _LATENCY_PATTERN = re.compile(r"latency\s+\(ms\):\s*avg:\s*([\d.]+)", re.IGNORECASE)
 
     def __init__(self, builtin_args: BuiltinSystemPromptArgs, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -38,10 +38,10 @@ class SysbenchToolBase(BaseTool):
         db_service = self._get_database_service()
         conn_info = db_service.get_connection_info()
 
-        if not conn_info.get('connected'):
+        if not conn_info.get("connected"):
             raise ValueError("Not connected to database")
 
-        database = conn_info.get('database')
+        database = conn_info.get("database")
         if not database:
             raise ValueError(
                 "No database selected. Please create or switch to a database first.\n"
@@ -50,23 +50,18 @@ class SysbenchToolBase(BaseTool):
             )
 
         return {
-            'host': conn_info['host'],
-            'port': conn_info['port'],
-            'user': conn_info['user'],
-            'password': db_service._connection_config.password if db_service._connection_config else None,
-            'database': database,
+            "host": conn_info["host"],
+            "port": conn_info["port"],
+            "user": conn_info["user"],
+            "password": db_service._connection_config.password if db_service._connection_config else None,
+            "database": database,
         }
 
     def _check_sysbench_installed(self) -> bool:
         """Check if sysbench is installed and available."""
         return shutil.which("sysbench") is not None
 
-    def _build_sysbench_args(
-        self,
-        test_type: str,
-        command: str,
-        **kwargs: Any
-    ) -> list[str]:
+    def _build_sysbench_args(self, test_type: str, command: str, **kwargs: Any) -> list[str]:
         """Build sysbench command arguments.
 
         Args:
@@ -90,18 +85,18 @@ class SysbenchToolBase(BaseTool):
         ]
 
         # Add password if available
-        if conn_info['password']:
+        if conn_info["password"]:
             args.append(f"--mysql-password={conn_info['password']}")
 
         # Map parameter names to sysbench option names
         param_mapping = {
-            'tables': '--tables',
-            'table_size': '--table-size',
-            'threads': '--threads',
-            'time': '--time',
-            'events': '--events',
-            'rate': '--rate',
-            'report_interval': '--report-interval',
+            "tables": "--tables",
+            "table_size": "--table-size",
+            "threads": "--threads",
+            "time": "--time",
+            "events": "--events",
+            "rate": "--rate",
+            "report_interval": "--report-interval",
         }
 
         # Add common parameters
@@ -151,8 +146,8 @@ class SysbenchToolBase(BaseTool):
 
             return (
                 exit_code,
-                stdout.decode('utf-8', errors='replace'),
-                stderr.decode('utf-8', errors='replace'),
+                stdout.decode("utf-8", errors="replace"),
+                stderr.decode("utf-8", errors="replace"),
             )
         except asyncio.TimeoutError:
             if process is not None:
@@ -207,33 +202,33 @@ class SysbenchToolBase(BaseTool):
             Dictionary with parsed metrics
         """
         result = {
-            'raw_output': stdout + stderr,
-            'metrics': {},
-            'errors': [],
+            "raw_output": stdout + stderr,
+            "metrics": {},
+            "errors": [],
         }
 
         # Parse metrics from stdout
-        for line in stdout.split('\n'):
+        for line in stdout.split("\n"):
             # Extract TPS
             tps_match = self._TPS_PATTERN.search(line)
             if tps_match:
-                result['metrics']['tps'] = float(tps_match.group(1))
+                result["metrics"]["tps"] = float(tps_match.group(1))
 
             # Extract QPS
             qps_match = self._QPS_PATTERN.search(line)
             if qps_match:
-                result['metrics']['qps'] = float(qps_match.group(1))
+                result["metrics"]["qps"] = float(qps_match.group(1))
 
             # Extract average latency
             latency_match = self._LATENCY_PATTERN.search(line)
             if latency_match:
-                result['metrics']['avg_latency_ms'] = float(latency_match.group(1))
+                result["metrics"]["avg_latency_ms"] = float(latency_match.group(1))
 
         # Parse error messages from stderr
         if stderr:
-            error_lines = [line.strip() for line in stderr.split('\n') if line.strip()]
+            error_lines = [line.strip() for line in stderr.split("\n") if line.strip()]
             if error_lines:
-                result['errors'] = error_lines
+                result["errors"] = error_lines
 
         return result
 
@@ -278,10 +273,7 @@ class SysbenchToolBase(BaseTool):
             result = await self._execute_tool(params)
 
             if "error" in result:
-                return ToolError(
-                    message=result["error"],
-                    brief=result.get("brief", "Sysbench error")
-                )
+                return ToolError(message=result["error"], brief=result.get("brief", "Sysbench error"))
 
             output = self._format_result_output(result)
             message = result.get("message", "Sysbench tool executed successfully")
@@ -291,12 +283,6 @@ class SysbenchToolBase(BaseTool):
             # Re-raise CancelledError to allow proper cancellation propagation
             raise
         except ValueError as e:
-            return ToolError(
-                message=str(e),
-                brief="Configuration error"
-            )
+            return ToolError(message=str(e), brief="Configuration error")
         except Exception as e:
-            return ToolError(
-                message=f"Unexpected error: {e}",
-                brief="Internal error"
-            )
+            return ToolError(message=f"Unexpected error: {e}", brief="Internal error")

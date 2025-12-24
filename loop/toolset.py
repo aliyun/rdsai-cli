@@ -16,6 +16,7 @@ from loop.types import ContentPart, ToolCall, FunctionBody
 # --- Tool Results ---
 class ToolError(BaseModel):
     """Tool execution error result."""
+
     message: str
     output: str | list[ContentPart] | ContentPart | None = None
     brief: str | None = None
@@ -23,11 +24,13 @@ class ToolError(BaseModel):
 
 class ToolRuntimeError(ToolError):
     """Runtime error during tool execution."""
+
     pass
 
 
 class ToolOk(BaseModel):
     """Successful tool execution result."""
+
     message: str | None = None
     output: str | list[ContentPart] | ContentPart = ""
     brief: str | None = None
@@ -35,6 +38,7 @@ class ToolOk(BaseModel):
 
 class ToolResult(BaseModel):
     """Result of a tool call execution."""
+
     tool_call_id: str
     name: str | None = None
     result: ToolOk | ToolError
@@ -81,15 +85,10 @@ class BaseTool(Generic[T]):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, BaseTool):
             return False
-        return (
-            self.name == other.name and
-            self.description == other.description and
-            self.parameters == other.parameters
-        )
+        return self.name == other.name and self.description == other.description and self.parameters == other.parameters
 
     def __repr__(self) -> str:
         return f"BaseTool(name={self.name!r}, description={self.description!r}, parameters={self.parameters!r})"
-
 
 
 # --- Toolsets ---
@@ -131,11 +130,7 @@ class SimpleToolset(Toolset):
 
     async def handle(self, tool_call: ToolCall) -> HandleResult:
         """Execute a tool call and return the result."""
-        fname = (
-            tool_call.function.name
-            if isinstance(tool_call.function, FunctionBody)
-            else tool_call.function["name"]
-        )
+        fname = tool_call.function.name if isinstance(tool_call.function, FunctionBody) else tool_call.function["name"]
         fargs_str = (
             tool_call.function.arguments
             if isinstance(tool_call.function, FunctionBody)
@@ -146,9 +141,9 @@ class SimpleToolset(Toolset):
             tool_args = json.loads(fargs_str)
         except (json.JSONDecodeError, TypeError):
             return ToolResult(
-                    tool_call_id=tool_call.id,
-                    name=fname,
-                    result=ToolRuntimeError(message=f"Invalid JSON arguments: {fargs_str}")
+                tool_call_id=tool_call.id,
+                name=fname,
+                result=ToolRuntimeError(message=f"Invalid JSON arguments: {fargs_str}"),
             )
 
         tool_map = {t.name: t for t in self.tools}
@@ -157,23 +152,14 @@ class SimpleToolset(Toolset):
             try:
                 params_obj = tool.params(**tool_args)
                 tool_ret = await tool(params_obj)
-                return ToolResult(
-                    tool_call_id=tool_call.id,
-                    name=fname,
-                    result=tool_ret
-                )
+                return ToolResult(tool_call_id=tool_call.id, name=fname, result=tool_ret)
             except Exception as e:
-                return ToolResult(
-                        tool_call_id=tool_call.id,
-                        name=fname,
-                        result=ToolRuntimeError(message=str(e))
-                )
+                return ToolResult(tool_call_id=tool_call.id, name=fname, result=ToolRuntimeError(message=str(e)))
         else:
             return ToolResult(
-                tool_call_id=tool_call.id,
-                name=fname,
-                result=ToolRuntimeError(message=f"Tool {fname} not found")
+                tool_call_id=tool_call.id, name=fname, result=ToolRuntimeError(message=f"Tool {fname} not found")
             )
+
 
 current_tool_call = ContextVar[ToolCall | None]("current_tool_call", default=None)
 
@@ -187,7 +173,6 @@ def get_current_tool_call_or_none() -> ToolCall | None:
 
 
 class CustomToolset(SimpleToolset):
-
     @override
     def handle(self, tool_call: ToolCall) -> HandleResult:
         token = current_tool_call.set(tool_call)

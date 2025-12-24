@@ -34,22 +34,22 @@ from config.app import (
 
 __all__ = [
     # Base
-    'get_config_file',
-    'get_share_dir',
-    'Session',
-    'USER_AGENT',
-    'VERSION',
+    "get_config_file",
+    "get_share_dir",
+    "Session",
+    "USER_AGENT",
+    "VERSION",
     # LLM
-    'ALL_MODEL_CAPABILITIES',
-    'LLMModel',
-    'LLMProvider',
-    'ModelCapability',
-    'ProviderType',
+    "ALL_MODEL_CAPABILITIES",
+    "LLMModel",
+    "LLMProvider",
+    "ModelCapability",
+    "ProviderType",
     # App
-    'Config',
-    'get_default_config',
-    'load_config',
-    'LoopControl',
-    'save_config',
-    'Services',
+    "Config",
+    "get_default_config",
+    "load_config",
+    "LoopControl",
+    "save_config",
+    "Services",
 ]

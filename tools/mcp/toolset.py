@@ -18,9 +18,7 @@ from utils.logging import logger
 # --- Helper functions for schema conversion ---
 
 
-def _json_type_to_python(
-    json_type: str | list[str] | None, json_schema: dict[str, Any]
-) -> Any:
+def _json_type_to_python(json_type: str | list[str] | None, json_schema: dict[str, Any]) -> Any:
     """Convert JSON Schema type to Python type annotation."""
     if json_type is None:
         return Any
@@ -173,13 +171,7 @@ class MCPTool(BaseTool[BaseModel]):
             )
 
     def __repr__(self) -> str:
-        return (
-            f"MCPTool(name={self.name!r}, "
-            f"server={self._server_name!r}, "
-            f"original={self._original_name!r})"
-        )
-
-
+        return f"MCPTool(name={self.name!r}, server={self._server_name!r}, original={self._original_name!r})"
 
 
 async def connect_and_load_tools(server: MCPServerConfig) -> list[MCPTool]:

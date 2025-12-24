@@ -538,9 +538,7 @@ class ListItem(TextElement):
             yield from line
             yield new_line
 
-    def render_number(
-        self, console: Console, options: ConsoleOptions, number: int, last_number: int
-    ) -> RenderResult:
+    def render_number(self, console: Console, options: ConsoleOptions, number: int, last_number: int) -> RenderResult:
         lines = console.render_lines(self.elements, options, style=self.style)
         new_line = Segment("\n")
         indent_padding_len = LIST_INDENT_WIDTH * self.indent
@@ -850,9 +848,7 @@ class Markdown(JupyterMixin):
                         element.on_text(context, text)
 
                     should_render = (
-                        not context.stack
-                        or context.stack
-                        and context.stack.top.on_child_close(context, element)
+                        not context.stack or context.stack and context.stack.top.on_child_close(context, element)
                     )
                     if should_render:
                         if new_line and node_type != "inline" and render_started:

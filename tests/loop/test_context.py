@@ -17,10 +17,7 @@ class TestContextEntry:
 
     def test_init_with_default_tag(self):
         """Test ContextEntry initialization with default tag."""
-        entry = ContextEntry(
-            type=ContextType.DATABASE,
-            content="test content"
-        )
+        entry = ContextEntry(type=ContextType.DATABASE, content="test content")
         assert entry.type == ContextType.DATABASE
         assert entry.content == "test content"
         assert entry.tag == "database_context"
@@ -28,21 +25,13 @@ class TestContextEntry:
 
     def test_init_with_custom_tag(self):
         """Test ContextEntry initialization with custom tag."""
-        entry = ContextEntry(
-            type=ContextType.QUERY,
-            content="test content",
-            tag="custom_tag",
-            priority=10
-        )
+        entry = ContextEntry(type=ContextType.QUERY, content="test content", tag="custom_tag", priority=10)
         assert entry.tag == "custom_tag"
         assert entry.priority == 10
 
     def test_format(self):
         """Test ContextEntry format method."""
-        entry = ContextEntry(
-            type=ContextType.DATABASE,
-            content="test content"
-        )
+        entry = ContextEntry(type=ContextType.DATABASE, content="test content")
         formatted = entry.format()
         assert "<database_context>" in formatted
         assert "</database_context>" in formatted

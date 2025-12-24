@@ -20,7 +20,6 @@ from database import create_database_connection_context, ConnectionContext
 DatabaseConnectionContext = ConnectionContext
 
 
-
 def _get_version() -> str:
     """Get version from package metadata or pyproject.toml.
 
@@ -46,6 +45,7 @@ USER_AGENT = f"RDSAI_CLI/{VERSION}"
 
 # ========== Shared Directory ==========
 
+
 def get_share_dir() -> Path:
     """Get the share directory path.
 
@@ -67,6 +67,7 @@ def get_config_file() -> Path:
 
 
 # ========== Session Management ==========
+
 
 @dataclass(slots=True, kw_only=True)
 class Session:

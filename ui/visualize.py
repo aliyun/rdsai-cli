@@ -213,7 +213,7 @@ class _ToolCallBlock:
             # Show yellow dot for pending approval
             return BulletColumns(
                 Group(*lines),
-                bullet= Spinner("dots2", text="⏸", style="yellow"),
+                bullet=Spinner("dots2", text="⏸", style="yellow"),
             )
         elif self._approval_status == "granted":
             return BulletColumns(
@@ -627,7 +627,6 @@ class _LiveView:
             case ApprovalRequest():
                 self.request_approval(msg)
 
-
     def dispatch_keyboard_event(self, event: KeyEvent) -> None:
         # handle ESC key to cancel the run
         if event == KeyEvent.ESCAPE and self._cancel_event is not None:
@@ -684,11 +683,7 @@ class _LiveView:
 
         for block in blocks_to_finish:
             # this should not happen, but just in case
-            block.finish(
-                ToolError(message="", brief="Interrupted")
-                if is_interrupt
-                else ToolOk(output="")
-            )
+            block.finish(ToolError(message="", brief="Interrupted") if is_interrupt else ToolOk(output=""))
 
         # Only flush finished blocks (not approval-pending/granted ones)
         self.flush_finished_tool_calls()
@@ -772,7 +767,7 @@ class _LiveView:
             self._tool_call_blocks[tool_call.id] = block
 
             # Check if there's a pending approval status to apply
-            if hasattr(self, '_pending_approvals') and tool_call.id in self._pending_approvals:
+            if hasattr(self, "_pending_approvals") and tool_call.id in self._pending_approvals:
                 status = self._pending_approvals.pop(tool_call.id)
                 block.set_approval_status(status)
 
@@ -801,7 +796,7 @@ class _LiveView:
         block = self._tool_call_blocks.get(tool_call_id)
         if block is None:
             # ToolCall hasn't been received yet, store pending status
-            if not hasattr(self, '_pending_approvals'):
+            if not hasattr(self, "_pending_approvals"):
                 self._pending_approvals: dict[str, str] = {}
             self._pending_approvals[tool_call_id] = "pending"
             return
@@ -813,7 +808,7 @@ class _LiveView:
         block = self._tool_call_blocks.get(tool_call_id)
         if block is None:
             # Store granted status if block doesn't exist yet
-            if not hasattr(self, '_pending_approvals'):
+            if not hasattr(self, "_pending_approvals"):
                 self._pending_approvals: dict[str, str] = {}
             self._pending_approvals[tool_call_id] = "granted"
             return

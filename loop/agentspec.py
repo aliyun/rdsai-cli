@@ -12,6 +12,7 @@ def get_agents_dir() -> Path:
     loop_dir = Path(__file__).parent
     return loop_dir.parent / "prompts"
 
+
 DEFAULT_AGENT_FILE = get_agents_dir() / "default_agent.yaml"
 
 
@@ -20,12 +21,8 @@ class AgentSpec(BaseModel):
 
     extend: str | None = Field(default=None, description="Agent file to extend")
     name: str | None = Field(default=None, description="Agent name")  # required
-    system_prompt_path: Path | None = Field(
-        default=None, description="System prompt path"
-    )  # required
-    system_prompt_args: dict[str, str] = Field(
-        default_factory=dict, description="System prompt arguments"
-    )
+    system_prompt_path: Path | None = Field(default=None, description="System prompt path")  # required
+    system_prompt_args: dict[str, str] = Field(default_factory=dict, description="System prompt arguments")
     tools: list[str] | None = Field(default=None, description="Tools")
     exclude_tools: list[str] | None = Field(default=None, description="Tools to exclude")
 
@@ -82,9 +79,7 @@ def _load_agent_spec(agent_file: Path) -> AgentSpec:
 
     agent_spec = AgentSpec(**data.get("agent", {}))
     if agent_spec.system_prompt_path is not None:
-        agent_spec.system_prompt_path = (
-            agent_file.parent / agent_spec.system_prompt_path
-        ).absolute()
+        agent_spec.system_prompt_path = (agent_file.parent / agent_spec.system_prompt_path).absolute()
     if agent_spec.extend:
         if agent_spec.extend == "default":
             base_agent_file = DEFAULT_AGENT_FILE
@@ -104,6 +99,7 @@ def _load_agent_spec(agent_file: Path) -> AgentSpec:
             base_agent_spec.exclude_tools = agent_spec.exclude_tools
         agent_spec = base_agent_spec
     return agent_spec
+
 
 class AgentSpecError(Exception):
     """Agent specification error."""

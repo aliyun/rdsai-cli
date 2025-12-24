@@ -36,7 +36,7 @@ class TestAgentSpec:
             system_prompt_path=Path("/path/to/prompt.md"),
             system_prompt_args={"key": "value"},
             tools=["tool1", "tool2"],
-            exclude_tools=["tool3"]
+            exclude_tools=["tool3"],
         )
         assert spec.extend == "default"
         assert spec.name == "test_agent"
@@ -51,14 +51,8 @@ class TestLoadAgentSpec:
 
     def test_load_minimal_spec(self):
         """Test loading minimal agent spec."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            spec_data = {
-                "version": 1,
-                "agent": {
-                    "name": "test_agent",
-                    "system_prompt_path": "prompt.md"
-                }
-            }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            spec_data = {"version": 1, "agent": {"name": "test_agent", "system_prompt_path": "prompt.md"}}
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
 
@@ -74,7 +68,7 @@ class TestLoadAgentSpec:
 
     def test_load_full_spec(self):
         """Test loading full agent spec."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             spec_data = {
                 "version": 1,
                 "agent": {
@@ -82,8 +76,8 @@ class TestLoadAgentSpec:
                     "system_prompt_path": "prompt.md",
                     "system_prompt_args": {"key": "value"},
                     "tools": ["tool1", "tool2"],
-                    "exclude_tools": ["tool3"]
-                }
+                    "exclude_tools": ["tool3"],
+                },
             }
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
@@ -105,7 +99,7 @@ class TestLoadAgentSpec:
 
     def test_load_spec_invalid_yaml(self):
         """Test loading spec with invalid YAML."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("invalid: yaml: content: [")
             spec_path = Path(f.name)
 
@@ -117,14 +111,8 @@ class TestLoadAgentSpec:
 
     def test_load_spec_unsupported_version(self):
         """Test loading spec with unsupported version."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            spec_data = {
-                "version": 2,
-                "agent": {
-                    "name": "test_agent",
-                    "system_prompt_path": "prompt.md"
-                }
-            }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            spec_data = {"version": 2, "agent": {"name": "test_agent", "system_prompt_path": "prompt.md"}}
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
 
@@ -136,13 +124,8 @@ class TestLoadAgentSpec:
 
     def test_load_spec_missing_name(self):
         """Test loading spec without name."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            spec_data = {
-                "version": 1,
-                "agent": {
-                    "system_prompt_path": "prompt.md"
-                }
-            }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            spec_data = {"version": 1, "agent": {"system_prompt_path": "prompt.md"}}
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
 
@@ -154,13 +137,8 @@ class TestLoadAgentSpec:
 
     def test_load_spec_missing_system_prompt_path(self):
         """Test loading spec without system_prompt_path."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            spec_data = {
-                "version": 1,
-                "agent": {
-                    "name": "test_agent"
-                }
-            }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            spec_data = {"version": 1, "agent": {"name": "test_agent"}}
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
 
@@ -177,14 +155,8 @@ class TestLoadAgentSpec:
             prompt_file = Path(tmpdir) / "prompt.md"
             prompt_file.write_text("# Prompt")
 
-            spec_data = {
-                "version": 1,
-                "agent": {
-                    "name": "test_agent",
-                    "system_prompt_path": "prompt.md"
-                }
-            }
-            with open(spec_file, 'w', encoding='utf-8') as f:
+            spec_data = {"version": 1, "agent": {"name": "test_agent", "system_prompt_path": "prompt.md"}}
+            with open(spec_file, "w", encoding="utf-8") as f:
                 yaml.dump(spec_data, f)
 
             spec = load_agent_spec(spec_file)
@@ -199,14 +171,10 @@ class TestLoadAgentSpec:
         if not DEFAULT_AGENT_FILE.exists():
             pytest.skip("DEFAULT_AGENT_FILE does not exist")
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             spec_data = {
                 "version": 1,
-                "agent": {
-                    "extend": "default",
-                    "name": "custom_agent",
-                    "system_prompt_path": "custom_prompt.md"
-                }
+                "agent": {"extend": "default", "name": "custom_agent", "system_prompt_path": "custom_prompt.md"},
             }
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
@@ -234,10 +202,10 @@ class TestLoadAgentSpec:
                     "name": "base_agent",
                     "system_prompt_path": "base_prompt.md",
                     "tools": ["base_tool"],
-                    "system_prompt_args": {"base_key": "base_value"}
-                }
+                    "system_prompt_args": {"base_key": "base_value"},
+                },
             }
-            with open(base_spec_file, 'w', encoding='utf-8') as f:
+            with open(base_spec_file, "w", encoding="utf-8") as f:
                 yaml.dump(base_spec_data, f)
 
             spec_data = {
@@ -247,10 +215,10 @@ class TestLoadAgentSpec:
                     "name": "extended_agent",
                     "system_prompt_path": "extended_prompt.md",
                     "tools": ["extended_tool"],
-                    "system_prompt_args": {"extended_key": "extended_value"}
-                }
+                    "system_prompt_args": {"extended_key": "extended_value"},
+                },
             }
-            with open(spec_file, 'w', encoding='utf-8') as f:
+            with open(spec_file, "w", encoding="utf-8") as f:
                 yaml.dump(spec_data, f)
 
             spec = load_agent_spec(spec_file)
@@ -263,14 +231,8 @@ class TestLoadAgentSpec:
 
     def test_load_spec_tools_defaults_to_empty(self):
         """Test that tools defaults to empty list."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            spec_data = {
-                "version": 1,
-                "agent": {
-                    "name": "test_agent",
-                    "system_prompt_path": "prompt.md"
-                }
-            }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            spec_data = {"version": 1, "agent": {"name": "test_agent", "system_prompt_path": "prompt.md"}}
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
 
@@ -282,14 +244,10 @@ class TestLoadAgentSpec:
 
     def test_load_spec_exclude_tools_defaults_to_empty(self):
         """Test that exclude_tools defaults to empty list."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             spec_data = {
                 "version": 1,
-                "agent": {
-                    "name": "test_agent",
-                    "system_prompt_path": "prompt.md",
-                    "tools": ["tool1"]
-                }
+                "agent": {"name": "test_agent", "system_prompt_path": "prompt.md", "tools": ["tool1"]},
             }
             yaml.dump(spec_data, f)
             spec_path = Path(f.name)
@@ -311,7 +269,7 @@ class TestResolvedAgentSpec:
             system_prompt_path=Path("/path/to/prompt.md"),
             system_prompt_args={"key": "value"},
             tools=["tool1"],
-            exclude_tools=["tool2"]
+            exclude_tools=["tool2"],
         )
         assert spec.name == "test"
         assert spec.system_prompt_path == Path("/path/to/prompt.md")

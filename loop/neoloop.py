@@ -47,7 +47,7 @@ COMPACT_THRESHOLD = 0.92  # Auto-compact when context usage reaches 92%
 
 
 def create_agent_graph(
-        checkpointer: BaseCheckpointSaver | None = None,
+    checkpointer: BaseCheckpointSaver | None = None,
 ) -> CompiledStateGraph:
     """Create and compile the agent graph.
 
@@ -93,10 +93,10 @@ class NeoLoop(Loop):
     """The loop of RDSAI CLI using LangGraph."""
 
     def __init__(
-            self,
-            agent: Agent,
-            *,
-            checkpointer: BaseCheckpointSaver | None = None,
+        self,
+        agent: Agent,
+        *,
+        checkpointer: BaseCheckpointSaver | None = None,
     ):
         """Initialize the loop.
 
@@ -209,9 +209,7 @@ class NeoLoop(Loop):
             human_message = HumanMessage(content=content)
         else:
             # Convert ContentPart list to string for now
-            text_content = "".join(
-                p.text for p in user_input if hasattr(p, "text")
-            )
+            text_content = "".join(p.text for p in user_input if hasattr(p, "text"))
             content = self._context_manager.wrap_user_input(text_content)
             human_message = HumanMessage(content=content)
 
@@ -258,10 +256,7 @@ class NeoLoop(Loop):
 
                 # Auto-compact if context usage exceeds threshold
                 if self._should_auto_compact():
-                    logger.info(
-                        "Context usage at {usage:.1%}, triggering auto-compaction",
-                        usage=self._context_usage
-                    )
+                    logger.info("Context usage at {usage:.1%}, triggering auto-compaction", usage=self._context_usage)
                     await self.compact()
 
                 # Check current state for interrupts
@@ -352,7 +347,6 @@ class NeoLoop(Loop):
                 return "reject"
         return "reject"
 
-
     async def _cleanup_incomplete_messages(self, config: dict[str, Any]) -> None:
         """Cleanup incomplete messages in conversation history after cancellation.
 
@@ -381,20 +375,14 @@ class NeoLoop(Loop):
         for msg in messages:
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 # Check if any tool_call is missing a response
-                has_incomplete = any(
-                    tc["id"] not in tool_call_ids_with_response
-                    for tc in msg.tool_calls
-                )
-                if has_incomplete and hasattr(msg, 'id') and msg.id:
+                has_incomplete = any(tc["id"] not in tool_call_ids_with_response for tc in msg.tool_calls)
+                if has_incomplete and hasattr(msg, "id") and msg.id:
                     messages_to_remove.append(RemoveMessage(id=msg.id))
 
         if not messages_to_remove:
             return
 
-        logger.info(
-            "Removing {n} incomplete AIMessage(s) after cancellation",
-            n=len(messages_to_remove)
-        )
+        logger.info("Removing {n} incomplete AIMessage(s) after cancellation", n=len(messages_to_remove))
 
         # Remove incomplete messages from state
         self._graph.update_state(config, {"messages": messages_to_remove})
@@ -437,9 +425,7 @@ class NeoLoop(Loop):
 
         # Perform compaction
         compactor = ChainCompaction()
-        compacted_messages, estimated_tokens = await compactor.compact(
-            messages, self._runtime.llm
-        )
+        compacted_messages, estimated_tokens = await compactor.compact(messages, self._runtime.llm)
 
         if len(compacted_messages) >= len(messages):
             logger.debug("Compaction not needed: message count unchanged")
@@ -447,13 +433,10 @@ class NeoLoop(Loop):
 
         # Build update: remove old messages, add compacted ones
         # We need to remove all existing messages and add the compacted ones
-        remove_ops = [RemoveMessage(id=msg.id) for msg in messages if hasattr(msg, 'id') and msg.id]
+        remove_ops = [RemoveMessage(id=msg.id) for msg in messages if hasattr(msg, "id") and msg.id]
 
         # Update state with compacted messages
-        self._graph.update_state(
-            config,
-            {"messages": remove_ops + compacted_messages, "token_count": estimated_tokens}
-        )
+        self._graph.update_state(config, {"messages": remove_ops + compacted_messages, "token_count": estimated_tokens})
 
         # Update local token count
         self._token_count = estimated_tokens
@@ -478,9 +461,9 @@ class NeoLoop(Loop):
             True if context usage exceeds the threshold.
         """
         return (
-                self._runtime.llm is not None
-                and self._runtime.llm.max_context_size > 0
-                and self._context_usage >= COMPACT_THRESHOLD
+            self._runtime.llm is not None
+            and self._runtime.llm.max_context_size > 0
+            and self._context_usage >= COMPACT_THRESHOLD
         )
 
     def get_state_history(self):

@@ -8,7 +8,7 @@ from typing import Any
 
 
 # Pattern for validating SQL identifiers
-_IDENTIFIER_PATTERN = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_$]*$|^`[^`]+`$')
+_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_$]*$|^`[^`]+`$")
 
 
 def validate_identifier(name: str) -> str:
@@ -30,9 +30,9 @@ def validate_identifier(name: str) -> str:
     name = name.strip()
 
     # Remove surrounding backticks for validation
-    if name.startswith('`') and name.endswith('`'):
+    if name.startswith("`") and name.endswith("`"):
         inner_name = name[1:-1]
-        if '`' in inner_name:
+        if "`" in inner_name:
             raise ValueError(f"Invalid identifier: {name!r} contains embedded backticks")
         return inner_name
 
@@ -44,6 +44,7 @@ def validate_identifier(name: str) -> str:
 
 class TransactionState(Enum):
     """Transaction state enumeration."""
+
     NOT_IN_TRANSACTION = "NOT_IN_TRANSACTION"
     IN_TRANSACTION = "IN_TRANSACTION"
     TRANSACTION_ERROR = "TRANSACTION_ERROR"
@@ -131,6 +132,7 @@ class DatabaseClient(ABC):
 
 class DatabaseClientFactory:
     """Factory for creating database clients."""
+
     _registry: dict[str, type[DatabaseClient]] = {}
 
     @classmethod
@@ -154,53 +156,47 @@ class MySQLClient(DatabaseClient):
     default_port = 3306
 
     def __init__(
-        self,
-        host: str,
-        port: int | None,
-        user: str,
-        password: str | None,
-        database: str | None = None,
-        **kwargs: Any
+        self, host: str, port: int | None, user: str, password: str | None, database: str | None = None, **kwargs: Any
     ):
         if port is None:
             port = self.default_port
 
         conn_params: dict[str, Any] = {
-            'host': host,
-            'port': port,
-            'user': user,
-            'password': password,
-            'database': database,
-            'connect_timeout': 10,
-            'autocommit': True
+            "host": host,
+            "port": port,
+            "user": user,
+            "password": password,
+            "database": database,
+            "connect_timeout": 10,
+            "autocommit": True,
         }
 
         # Handle SSL configuration
-        ssl_ca = kwargs.get('ssl_ca')
-        ssl_cert = kwargs.get('ssl_cert')
-        ssl_key = kwargs.get('ssl_key')
-        ssl_mode = kwargs.get('ssl_mode')
+        ssl_ca = kwargs.get("ssl_ca")
+        ssl_cert = kwargs.get("ssl_cert")
+        ssl_key = kwargs.get("ssl_key")
+        ssl_mode = kwargs.get("ssl_mode")
 
         if ssl_ca or ssl_cert or ssl_key or ssl_mode:
             ssl_config: dict[str, Any] = {}
             if ssl_ca:
-                ssl_config['ca'] = ssl_ca
+                ssl_config["ca"] = ssl_ca
             if ssl_cert:
-                ssl_config['cert'] = ssl_cert
+                ssl_config["cert"] = ssl_cert
             if ssl_key:
-                ssl_config['key'] = ssl_key
+                ssl_config["key"] = ssl_key
             if ssl_mode:
-                ssl_config['verify_cert'] = ssl_mode.upper() in ['VERIFY_CA', 'VERIFY_IDENTITY']
-                ssl_config['verify_identity'] = ssl_mode.upper() == 'VERIFY_IDENTITY'
-                if ssl_mode.upper() == 'DISABLED':
-                    conn_params['ssl_disabled'] = True
-                elif ssl_mode.upper() in ['REQUIRED', 'VERIFY_CA', 'VERIFY_IDENTITY']:
-                    conn_params['ssl_disabled'] = False
-                    conn_params['ssl_ca'] = ssl_config.get('ca')
-                    conn_params['ssl_cert'] = ssl_config.get('cert')
-                    conn_params['ssl_key'] = ssl_config.get('key')
-                    conn_params['ssl_verify_cert'] = ssl_config.get('verify_cert', False)
-                    conn_params['ssl_verify_identity'] = ssl_config.get('verify_identity', False)
+                ssl_config["verify_cert"] = ssl_mode.upper() in ["VERIFY_CA", "VERIFY_IDENTITY"]
+                ssl_config["verify_identity"] = ssl_mode.upper() == "VERIFY_IDENTITY"
+                if ssl_mode.upper() == "DISABLED":
+                    conn_params["ssl_disabled"] = True
+                elif ssl_mode.upper() in ["REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY"]:
+                    conn_params["ssl_disabled"] = False
+                    conn_params["ssl_ca"] = ssl_config.get("ca")
+                    conn_params["ssl_cert"] = ssl_config.get("cert")
+                    conn_params["ssl_key"] = ssl_config.get("key")
+                    conn_params["ssl_verify_cert"] = ssl_config.get("verify_cert", False)
+                    conn_params["ssl_verify_identity"] = ssl_config.get("verify_identity", False)
 
         self.conn = mysql.connector.connect(**conn_params)
         self.cursor = self.conn.cursor()
@@ -227,7 +223,7 @@ class MySQLClient(DatabaseClient):
 
     @classmethod
     def engine_name(cls) -> str:
-        return 'mysql'
+        return "mysql"
 
     def get_transaction_state(self) -> TransactionState:
         return self._transaction_state
@@ -302,4 +298,4 @@ class MySQLClient(DatabaseClient):
 
 
 # Register MySQL client
-DatabaseClientFactory.register('mysql', MySQLClient)
+DatabaseClientFactory.register("mysql", MySQLClient)

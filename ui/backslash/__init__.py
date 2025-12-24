@@ -57,6 +57,7 @@ def execute_backslash_command(
 
     if parse_result.error:
         from ui.console import console
+
         console.print(f"[red]{parse_result.error}[/red]")
         return True, CommandResult(success=False, message=parse_result.error)
 
@@ -78,6 +79,7 @@ def execute_backslash_command(
     except Exception as e:
         from ui.console import console
         from utils.logging import logger
+
         console.print(f"[red]Command error: {e}[/red]")
         logger.exception("Backslash command execution failed")
         return True, CommandResult(success=False, message=str(e))

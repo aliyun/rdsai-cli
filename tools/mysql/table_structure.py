@@ -29,6 +29,7 @@ class TableStructure(MySQLToolBase):
             return {"error": "Table name is required", "brief": "Table name is required"}
 
         from database import get_current_database
+
         current_database = get_current_database()
 
         if not current_database:
@@ -45,7 +46,7 @@ class TableStructure(MySQLToolBase):
             return {
                 "table_name": params.table_name,
                 "data": row[1],  # The CREATE TABLE statement
-                "message": f"Table structure retrieved for '{params.table_name}'"
+                "message": f"Table structure retrieved for '{params.table_name}'",
             }
         else:
             return {

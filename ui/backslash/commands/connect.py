@@ -32,9 +32,7 @@ def cmd_connect(ctx: CommandContext) -> CommandResult | None:
     try:
         if new_host:
             # Connecting to a new host is not supported in this version
-            console.print(
-                "[yellow]Connecting to a different host is not supported.[/yellow]"
-            )
+            console.print("[yellow]Connecting to a different host is not supported.[/yellow]")
             console.print("[dim]Use command line arguments to specify a different host.[/dim]")
             return CommandResult(success=False)
 
@@ -56,9 +54,7 @@ def cmd_connect(ctx: CommandContext) -> CommandResult | None:
         # Show connection info
         info = ctx.db_service.get_connection_info()
         console.print(f"Connection id:\t{connection_id or info.get('connection_id', 'N/A')}")
-        console.print(
-            f"Current database:\t{info.get('database') or '*** NONE ***'}"
-        )
+        console.print(f"Current database:\t{info.get('database') or '*** NONE ***'}")
 
         return None
 
@@ -87,14 +83,12 @@ def cmd_resetconnection(ctx: CommandContext) -> CommandResult | None:
 
         # Reset connection using mysql_reset_connection equivalent
         # In Python mysql-connector, we can use cmd_reset_connection
-        if hasattr(client, 'conn') and hasattr(client.conn, 'cmd_reset_connection'):
+        if hasattr(client, "conn") and hasattr(client.conn, "cmd_reset_connection"):
             client.conn.cmd_reset_connection()
             console.print("[green]Connection reset successfully.[/green]")
         else:
             # Fallback: just report that it's not supported
-            console.print(
-                "[yellow]Reset connection not supported by this driver.[/yellow]"
-            )
+            console.print("[yellow]Reset connection not supported by this driver.[/yellow]")
 
         return None
 

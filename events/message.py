@@ -60,26 +60,38 @@ class StatusUpdate(BaseModel):
 
 class ApprovalPending(BaseModel):
     """Indicates that a tool call is waiting for approval."""
+
     tool_call_id: str
     """The ID of the tool call waiting for approval."""
 
 
 class ApprovalGranted(BaseModel):
     """Indicates that a tool call has been approved and execution can begin."""
+
     tool_call_id: str
     """The ID of the tool call that was approved."""
 
 
 class ApprovalRejected(BaseModel):
     """Indicates that a tool call has been rejected by the user."""
+
     tool_call_id: str
     """The ID of the tool call that was rejected."""
 
 
 type ControlFlowEvent = StepBegin | StepInterrupted | CompactionBegin | CompactionEnd | StatusUpdate
 """Any control flow event."""
-type Event = (ControlFlowEvent | ContentPart | ToolCall | ToolCallPart | ToolResult | ThinkPart | ApprovalPending
-              | ApprovalGranted | ApprovalRejected)
+type Event = (
+    ControlFlowEvent
+    | ContentPart
+    | ToolCall
+    | ToolCallPart
+    | ToolResult
+    | ThinkPart
+    | ApprovalPending
+    | ApprovalGranted
+    | ApprovalRejected
+)
 """Any event, including control flow and content/tooling events."""
 
 

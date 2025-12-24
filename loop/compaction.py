@@ -66,11 +66,7 @@ class ChainCompaction:
 
     MAX_PRESERVED_MESSAGES = 2
 
-    async def compact(
-        self,
-        messages: Sequence[BaseMessage],
-        llm: LLM
-    ) -> tuple[list[BaseMessage], int]:
+    async def compact(self, messages: Sequence[BaseMessage], llm: LLM) -> tuple[list[BaseMessage], int]:
         """Compact a sequence of LangChain messages.
 
         Args:
@@ -146,9 +142,7 @@ class ChainCompaction:
         compacted_content = final_chunk.content if isinstance(final_chunk.content, str) else ""
 
         # Create the compacted message
-        compacted_message = AIMessage(
-            content=f"[Previous context has been compacted]\n\n{compacted_content}"
-        )
+        compacted_message = AIMessage(content=f"[Previous context has been compacted]\n\n{compacted_content}")
 
         # Build final message list
         compacted_messages: list[BaseMessage] = [compacted_message]

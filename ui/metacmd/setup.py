@@ -87,22 +87,21 @@ _PLATFORMS = [
 # Last updated: 2024-12
 _MODEL_CONTEXT_SIZES: dict[str, int] = {
     # OpenAI models
-    "gpt-4.1": 1_000_000,           # 1M tokens
-    "gpt-4.1-mini": 1_000_000,      # 1M tokens
-    "gpt-4.1-nano": 1_000_000,      # 1M tokens
-    "gpt-4o": 128_000,              # 128K tokens
-    "gpt-4o-mini": 128_000,         # 128K tokens
-    "gpt-4-turbo": 128_000,         # 128K tokens
-    "gpt-4-turbo-preview": 128_000, # 128K tokens
-    "gpt-4": 8_192,                 # 8K tokens
-    "gpt-4-32k": 32_768,            # 32K tokens
-    "gpt-3.5-turbo": 16_385,        # 16K tokens
-    "o1": 200_000,                  # 200K tokens
-    "o1-mini": 128_000,             # 128K tokens
-    "o1-preview": 128_000,          # 128K tokens
-    "o3": 200_000,                  # 200K tokens
-    "o3-mini": 200_000,             # 200K tokens
-
+    "gpt-4.1": 1_000_000,  # 1M tokens
+    "gpt-4.1-mini": 1_000_000,  # 1M tokens
+    "gpt-4.1-nano": 1_000_000,  # 1M tokens
+    "gpt-4o": 128_000,  # 128K tokens
+    "gpt-4o-mini": 128_000,  # 128K tokens
+    "gpt-4-turbo": 128_000,  # 128K tokens
+    "gpt-4-turbo-preview": 128_000,  # 128K tokens
+    "gpt-4": 8_192,  # 8K tokens
+    "gpt-4-32k": 32_768,  # 32K tokens
+    "gpt-3.5-turbo": 16_385,  # 16K tokens
+    "o1": 200_000,  # 200K tokens
+    "o1-mini": 128_000,  # 128K tokens
+    "o1-preview": 128_000,  # 128K tokens
+    "o3": 200_000,  # 200K tokens
+    "o3-mini": 200_000,  # 200K tokens
     # Anthropic Claude models (all support 200K by default)
     "claude-opus-4-20250514": 200_000,
     "claude-sonnet-4-20250514": 200_000,
@@ -122,24 +121,21 @@ _MODEL_CONTEXT_SIZES: dict[str, int] = {
     "claude-3-opus": 200_000,
     "claude-3-sonnet": 200_000,
     "claude-3-haiku": 200_000,
-
     # Google Gemini models
-    "gemini-2.5-pro": 1_048_576,        # 1M tokens
-    "gemini-2.5-flash": 1_048_576,      # 1M tokens
-    "gemini-2.0-flash": 1_048_576,      # 1M tokens
-    "gemini-2.0-flash-lite": 1_048_576, # 1M tokens
-    "gemini-1.5-pro": 2_097_152,        # 2M tokens
-    "gemini-1.5-flash": 1_048_576,      # 1M tokens
-    "gemini-1.5-flash-8b": 1_048_576,   # 1M tokens
-    "gemini-1.0-pro": 32_760,           # ~32K tokens
-
+    "gemini-2.5-pro": 1_048_576,  # 1M tokens
+    "gemini-2.5-flash": 1_048_576,  # 1M tokens
+    "gemini-2.0-flash": 1_048_576,  # 1M tokens
+    "gemini-2.0-flash-lite": 1_048_576,  # 1M tokens
+    "gemini-1.5-pro": 2_097_152,  # 2M tokens
+    "gemini-1.5-flash": 1_048_576,  # 1M tokens
+    "gemini-1.5-flash-8b": 1_048_576,  # 1M tokens
+    "gemini-1.0-pro": 32_760,  # ~32K tokens
     # DeepSeek models
-    "deepseek-chat": 131_072,       # 128K tokens (V3)
-    "deepseek-reasoner": 131_072,   # 128K tokens (R1)
-    "deepseek-coder": 131_072,      # 128K tokens
-
+    "deepseek-chat": 131_072,  # 128K tokens (V3)
+    "deepseek-reasoner": 131_072,  # 128K tokens (R1)
+    "deepseek-coder": 131_072,  # 128K tokens
     # Qwen models (Alibaba Cloud)
-    "qwen3-max": 262_144,           # 256K tokens
+    "qwen3-max": 262_144,  # 256K tokens
 }
 
 
@@ -261,8 +257,8 @@ class _FormResult(NamedTuple):
 
 
 async def _run_form(
-        title: str,
-        fields: list[_FormField],
+    title: str,
+    fields: list[_FormField],
 ) -> _FormResult:
     """Run a multi-field form with up/down navigation."""
     current_field_idx = 0
@@ -349,18 +345,20 @@ async def _run_form(
             label_text = f"{prefix}{f.label}:"
             label_width = len(prefix) + max_label_len + 2  # +2 for ": "
 
-            row = VSplit([
-                Window(
-                    FormattedTextControl([(label_style, label_text)]),
-                    width=label_width,
-                    height=1,
-                ),
-                Window(
-                    buffer_controls[i],
-                    height=1,
-                    style="bg:#1a1a2e" if is_current else "",
-                ),
-            ])
+            row = VSplit(
+                [
+                    Window(
+                        FormattedTextControl([(label_style, label_text)]),
+                        width=label_width,
+                        height=1,
+                    ),
+                    Window(
+                        buffer_controls[i],
+                        height=1,
+                        style="bg:#1a1a2e" if is_current else "",
+                    ),
+                ]
+            )
             windows.append(row)
 
             # Add spacing between fields
@@ -437,7 +435,7 @@ async def _setup() -> _SetupResult | None:
     current_language_code = current_config.language
     current_choice = next(
         (choice for choice, code in language_options.items() if code == current_language_code),
-        all_choices[0]  # Default to English if not found
+        all_choices[0],  # Default to English if not found
     )
 
     # Reorder choices to put current selection first
@@ -451,7 +449,7 @@ async def _setup() -> _SetupResult | None:
         console.print("[yellow]Setup cancelled[/yellow]")
         return None
 
-    language = language_options['English (en)']
+    language = language_options["English (en)"]
 
     # Step 2: Select platform
     platform_name = await _prompt_choice(
@@ -562,9 +560,7 @@ async def _setup() -> _SetupResult | None:
                 max_context_size = await _fetch_max_context_size(base_url, api_key, model_name, platform.id)
                 if max_context_size is None:
                     max_context_size = 0  # 0 means unknown, context usage will not be displayed
-                    console.print(
-                        "[yellow]Could not fetch model info, context usage will not be displayed[/yellow]"
-                    )
+                    console.print("[yellow]Could not fetch model info, context usage will not be displayed[/yellow]")
                 else:
                     console.print(f"[green]✓[/green] Model max_context_size: {max_context_size}")
             except aiohttp.ClientError as e:
@@ -615,9 +611,7 @@ async def _setup() -> _SetupResult | None:
             return None
 
 
-async def _fetch_max_context_size(
-        base_url: str, api_key: str, model_name: str, platform_id: str
-) -> int | None:
+async def _fetch_max_context_size(base_url: str, api_key: str, model_name: str, platform_id: str) -> int | None:
     """Fetch max_context_size from model API endpoint.
 
     Different platforms have different API formats and authentication methods.

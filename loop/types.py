@@ -27,6 +27,7 @@ class MergeableMixin:
 # --- AI Usage and Step Result ---
 class Usage(BaseModel):
     """Token usage statistics."""
+
     input: int = 0
     output: int = 0
     total: int = 0
@@ -35,18 +36,21 @@ class Usage(BaseModel):
 # --- Content Parts ---
 class TextPart(BaseModel, MergeableMixin):
     """Text content part."""
+
     type: Literal["text"] = "text"
     text: str
 
 
 class ImageURL(BaseModel):
     """Image URL configuration."""
+
     url: str
     detail: str | None = None
 
 
 class ImageURLPart(BaseModel, MergeableMixin):
     """Image content part."""
+
     type: Literal["image_url"] = "image_url"
     image_url: ImageURL | dict
 
@@ -55,11 +59,13 @@ class ImageURLPart(BaseModel, MergeableMixin):
 
 class AudioURL(BaseModel):
     """Audio URL configuration."""
+
     url: str
 
 
 class AudioURLPart(BaseModel, MergeableMixin):
     """Audio content part."""
+
     type: Literal["audio_url"] = "audio_url"
     audio_url: AudioURL | dict
 
@@ -68,18 +74,21 @@ class AudioURLPart(BaseModel, MergeableMixin):
 
 class ThinkPart(BaseModel, MergeableMixin):
     """Thinking content part for AI reasoning."""
+
     type: Literal["thinking"] = "thinking"
     think: str  # Changed from 'thinking' to 'think' to match test usage
 
 
 class FunctionBody(BaseModel):
     """Function call body definition."""
+
     name: str
     arguments: str | None
 
 
 class ToolCall(BaseModel, MergeableMixin):
     """Tool call definition."""
+
     id: str
     type: Literal["function"] = "function"
     function: FunctionBody | dict
@@ -89,6 +98,7 @@ class ToolCall(BaseModel, MergeableMixin):
 
 class ToolCallPart(BaseModel, MergeableMixin):
     """Tool call content part."""
+
     type: Literal["tool_calls"] = "tool_calls"
     tool_calls: list[ToolCall]
     arguments_part: str = ""

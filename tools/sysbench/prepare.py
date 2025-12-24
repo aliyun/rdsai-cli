@@ -12,27 +12,11 @@ from .base import SysbenchToolBase
 
 class Params(BaseModel):
     test_type: str = Field(
-        default="oltp_read_write",
-        description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
+        default="oltp_read_write", description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
     )
-    tables: int = Field(
-        default=1,
-        description="Number of tables to create",
-        ge=1,
-        le=100
-    )
-    table_size: int = Field(
-        default=10000,
-        description="Number of rows per table",
-        ge=1000,
-        le=100000000
-    )
-    threads: int = Field(
-        default=1,
-        description="Number of threads for data preparation",
-        ge=1,
-        le=32
-    )
+    tables: int = Field(default=1, description="Number of tables to create", ge=1, le=100)
+    table_size: int = Field(default=10000, description="Number of rows per table", ge=1000, le=100000000)
+    threads: int = Field(default=1, description="Number of threads for data preparation", ge=1, le=32)
 
 
 class SysbenchPrepare(SysbenchToolBase):

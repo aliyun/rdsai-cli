@@ -49,10 +49,10 @@ class Application:
 
     @staticmethod
     async def create(
-            session: Session,
-            *,
-            yolo: bool = False,
-            config_file: Path | None = None,
+        session: Session,
+        *,
+        yolo: bool = False,
+        config_file: Path | None = None,
     ) -> Application:
         """Create an Application instance.
 
@@ -71,6 +71,7 @@ class Application:
 
         # Load MCP configuration from default path
         from tools.mcp.config import load_mcp_config
+
         mcp_config = None
         try:
             mcp_config = load_mcp_config()
@@ -116,9 +117,9 @@ class Application:
         return Application(loop, runtime)
 
     def __init__(
-            self,
-            _loop: NeoLoop,
-            _runtime: Runtime,
+        self,
+        _loop: NeoLoop,
+        _runtime: Runtime,
     ) -> None:
         self._loop = _loop
         self._runtime = _runtime
@@ -168,7 +169,6 @@ class Application:
         await self._mcp_pool.shutdown()
         await shutdown_connection_pool()
 
-
     # --- Main Run Method ---
 
     async def run(self) -> bool:
@@ -202,39 +202,47 @@ class Application:
         ]
         # Add model information
         if not self._runtime.llm:
-            welcome_info.append(WelcomeInfoItem(
-                name="Model",
-                value="not set, send /setup to configure",
-                level=WelcomeInfoItem.Level.WARN,
-            ))
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Model",
+                    value="not set, send /setup to configure",
+                    level=WelcomeInfoItem.Level.WARN,
+                )
+            )
         else:
-            welcome_info.append(WelcomeInfoItem(
-                name="Model",
-                value=self._loop.model_name,
-                level=WelcomeInfoItem.Level.INFO,
-            ))
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Model",
+                    value=self._loop.model_name,
+                    level=WelcomeInfoItem.Level.INFO,
+                )
+            )
         # Add database connection info
         if self._db_connection and self._db_connection.is_connected:
-            welcome_info.append(WelcomeInfoItem(
-                name="Database",
-                value=self._db_connection.display_name,
-                level=WelcomeInfoItem.Level.INFO
-            ))
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Database", value=self._db_connection.display_name, level=WelcomeInfoItem.Level.INFO
+                )
+            )
         elif self._db_connection and not self._db_connection.is_connected:
             # Connection failed - show error message
             error_msg = self._db_connection.error or "Connection failed"
-            welcome_info.append(WelcomeInfoItem(
-                name="Database",
-                value=f"{error_msg}.\nUse /connect to reconnect.",
-                level=WelcomeInfoItem.Level.WARN,
-            ))
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Database",
+                    value=f"{error_msg}.\nUse /connect to reconnect.",
+                    level=WelcomeInfoItem.Level.WARN,
+                )
+            )
         else:
             # Not connected - no connection parameters provided
-            welcome_info.append(WelcomeInfoItem(
-                name="Database",
-                value="Not connected. Use /connect to connect.",
-                level=WelcomeInfoItem.Level.WARN,
-            ))
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Database",
+                    value="Not connected. Use /connect to connect.",
+                    level=WelcomeInfoItem.Level.WARN,
+                )
+            )
 
         return welcome_info
 
@@ -260,26 +268,15 @@ class Application:
         if not enabled_servers:
             return
 
-        logger.info(
-            "Starting background connection to {count} enabled MCP server(s)",
-            count=len(enabled_servers)
-        )
+        logger.info("Starting background connection to {count} enabled MCP server(s)", count=len(enabled_servers))
 
         for server in enabled_servers:
             try:
                 tools = await connect_and_load_tools(server)
                 added = self._loop.toolset.add_tools(tools)
-                logger.info(
-                    "Connected to MCP server '{name}', added {count} tools",
-                    name=server.name,
-                    count=added
-                )
+                logger.info("Connected to MCP server '{name}', added {count} tools", name=server.name, count=added)
             except asyncio.CancelledError:
                 logger.debug("MCP connection task cancelled")
                 break
             except Exception as e:
-                logger.warning(
-                    "Failed to connect to MCP server '{name}': {error}",
-                    name=server.name,
-                    error=str(e)
-                )
+                logger.warning("Failed to connect to MCP server '{name}': {error}", name=server.name, error=str(e))

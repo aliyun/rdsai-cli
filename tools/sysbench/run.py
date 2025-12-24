@@ -12,47 +12,18 @@ from .base import SysbenchToolBase
 
 class Params(BaseModel):
     test_type: str = Field(
-        default="oltp_read_write",
-        description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
+        default="oltp_read_write", description="Test type: oltp_read_write, oltp_read_only, select, insert, etc."
     )
-    threads: int = Field(
-        default=1,
-        description="Number of concurrent threads",
-        ge=1,
-        le=1000
-    )
-    time: int | None = Field(
-        default=None,
-        description="Test duration in seconds",
-        ge=1,
-        le=3600
-    )
+    threads: int = Field(default=1, description="Number of concurrent threads", ge=1, le=1000)
+    time: int | None = Field(default=None, description="Test duration in seconds", ge=1, le=3600)
     events: int | None = Field(
-        default=None,
-        description="Total number of events to execute (alternative to time)",
-        ge=1
+        default=None, description="Total number of events to execute (alternative to time)", ge=1
     )
-    rate: int | None = Field(
-        default=None,
-        description="Target transactions per second (rate limiting)",
-        ge=1
-    )
-    report_interval: int = Field(
-        default=10,
-        description="Report interval in seconds",
-        ge=1,
-        le=300
-    )
-    tables: int = Field(
-        default=1,
-        description="Number of tables to use",
-        ge=1,
-        le=100
-    )
+    rate: int | None = Field(default=None, description="Target transactions per second (rate limiting)", ge=1)
+    report_interval: int = Field(default=10, description="Report interval in seconds", ge=1, le=300)
+    tables: int = Field(default=1, description="Number of tables to use", ge=1, le=100)
     table_size: int | None = Field(
-        default=None,
-        description="Table size (rows per table). If not specified, uses existing tables.",
-        ge=1000
+        default=None, description="Table size (rows per table). If not specified, uses existing tables.", ge=1000
     )
 
 
@@ -151,11 +122,7 @@ class SysbenchRun(SysbenchToolBase):
 
             # Build command arguments
             kwargs = self._build_run_kwargs(params)
-            args = self._build_sysbench_args(
-                test_type=params.test_type,
-                command="run",
-                **kwargs
-            )
+            args = self._build_sysbench_args(test_type=params.test_type, command="run", **kwargs)
 
             # Execute command with calculated timeout
             timeout = self._calculate_timeout(params)

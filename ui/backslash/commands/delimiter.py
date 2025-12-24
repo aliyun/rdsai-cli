@@ -42,14 +42,12 @@ def cmd_delimiter(ctx: CommandContext) -> CommandResult | None:
     new_delimiter = ctx.args.strip()
 
     # Validate delimiter
-    if '\\' in new_delimiter:
+    if "\\" in new_delimiter:
         console.print("[red]DELIMITER cannot contain a backslash character.[/red]")
         return CommandResult(success=False)
 
     if not new_delimiter:
-        console.print(
-            "[red]DELIMITER must be followed by a 'delimiter' character or string.[/red]"
-        )
+        console.print("[red]DELIMITER must be followed by a 'delimiter' character or string.[/red]")
         return CommandResult(success=False)
 
     # Set new delimiter

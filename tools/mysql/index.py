@@ -35,13 +35,10 @@ class TableIndex(MySQLToolBase):
                 "type": f"Indexes for table '{params.table_name}'",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} index entries for table '{params.table_name}'"
+                "message": f"Found {len(rows)} index entries for table '{params.table_name}'",
             }
         else:
             return {
-                "error": (
-                    f"No indexes found for table '{params.table_name}' "
-                    "or table does not exist"
-                ),
+                "error": (f"No indexes found for table '{params.table_name}' or table does not exist"),
                 "brief": f"No indexes for '{params.table_name}'",
             }

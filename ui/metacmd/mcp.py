@@ -167,10 +167,7 @@ async def _mcp_connect(app: ShellREPL, server_name: str):
 
     try:
         # Connect with timeout and get tools
-        tools = await asyncio.wait_for(
-            connect_and_load_tools(server),
-            timeout=MCP_CONNECT_TIMEOUT
-        )
+        tools = await asyncio.wait_for(connect_and_load_tools(server), timeout=MCP_CONNECT_TIMEOUT)
 
         # Add tools to the dynamic toolset
         added_count = app.loop.toolset.add_tools(tools)
@@ -204,9 +201,7 @@ async def _mcp_disconnect(app: ShellREPL, server_name: str):
         return
 
     # Remove tools from this server using DynamicToolset API
-    removed_count = app.loop.toolset.remove_tools_by(
-        lambda t: isinstance(t, MCPTool) and t._server_name == server_name
-    )
+    removed_count = app.loop.toolset.remove_tools_by(lambda t: isinstance(t, MCPTool) and t._server_name == server_name)
 
     logger.info(
         "MCP disconnect: server={name}, tools_removed={removed}, toolset_version={version}",
@@ -270,8 +265,7 @@ def _mcp_view(app: ShellREPL, server_name: str):
 
     # Tools (if connected)
     if is_connected:
-        tools = [t for t in app.loop.toolset.tools
-                 if isinstance(t, MCPTool) and t._server_name == server_name]
+        tools = [t for t in app.loop.toolset.tools if isinstance(t, MCPTool) and t._server_name == server_name]
         if tools:
             console.print(f"\n  [bold]Tools ({len(tools)}):[/bold]")
 
@@ -286,7 +280,7 @@ def _mcp_view(app: ShellREPL, server_name: str):
                 annotations = tool.get_annotations_display()
 
                 # Take only the first line of description and truncate
-                first_line = tool.description.split('\n')[0].strip()
+                first_line = tool.description.split("\n")[0].strip()
                 desc = first_line[:50] + "..." if len(first_line) > 50 else first_line
 
                 tool_table.add_row(
@@ -326,9 +320,7 @@ async def _mcp_set_enabled(app: ShellREPL, server_name: str, enabled: bool):
     for i, s in enumerate(mcp_config.servers):
         if s.name == server_name:
             # Create new config with updated enabled status
-            updated = MCPServerConfig(
-                **{**s.model_dump(), "enabled": enabled}
-            )
+            updated = MCPServerConfig(**{**s.model_dump(), "enabled": enabled})
             mcp_config.servers[i] = updated
             break
 
@@ -374,8 +366,7 @@ async def _mcp_reload(app: ShellREPL):
                 await _mcp_connect(app, server.name)
 
         console.print(
-            f"[green]✓[/green] Reloaded. {len(new_config.servers)} servers configured, "
-            f"{len(enabled_servers)} enabled."
+            f"[green]✓[/green] Reloaded. {len(new_config.servers)} servers configured, {len(enabled_servers)} enabled."
         )
 
     except Exception as e:

@@ -13,6 +13,7 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     """No parameters needed for SHOW ENGINE INNODB STATUS."""
+
     pass
 
 
@@ -53,10 +54,7 @@ def _parse_innodb_sections(status_text: str) -> dict[str, str]:
 
     # Pattern to match section headers
     # Sections are delimited by lines of dashes with section name between
-    section_pattern = re.compile(
-        r'-{3,}\n([A-Z][A-Z /]+)\n-{3,}\n(.*?)(?=-{3,}\n[A-Z]|\Z)',
-        re.DOTALL
-    )
+    section_pattern = re.compile(r"-{3,}\n([A-Z][A-Z /]+)\n-{3,}\n(.*?)(?=-{3,}\n[A-Z]|\Z)", re.DOTALL)
 
     for match in section_pattern.finditer(status_text):
         section_name = match.group(1).strip()
@@ -71,20 +69,28 @@ def _extract_deadlock_summary(content: str) -> str:
     if not content:
         return "No deadlock detected."
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     summary_lines = []
 
     # Extract timestamp and transaction info
     for line in lines[:30]:  # First 30 lines usually contain key info
         line = line.strip()
-        if any(keyword in line.upper() for keyword in [
-            'TRANSACTION', 'WAITING FOR', 'HOLDS THE LOCK',
-            'RECORD LOCKS', 'TABLE', 'INDEX', 'ROLLED BACK'
-        ]):
+        if any(
+            keyword in line.upper()
+            for keyword in [
+                "TRANSACTION",
+                "WAITING FOR",
+                "HOLDS THE LOCK",
+                "RECORD LOCKS",
+                "TABLE",
+                "INDEX",
+                "ROLLED BACK",
+            ]
+        ):
             summary_lines.append(line)
 
     if summary_lines:
-        return '\n'.join(summary_lines[:15])  # Max 15 lines
+        return "\n".join(summary_lines[:15])  # Max 15 lines
     return content[:500] if len(content) > 500 else content
 
 
@@ -93,7 +99,7 @@ def _extract_transaction_summary(content: str) -> str:
     if not content:
         return "No active transactions."
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     summary_lines = []
 
     # Extract transaction list header and active transactions
@@ -103,16 +109,16 @@ def _extract_transaction_summary(content: str) -> str:
     for line in lines:
         line_stripped = line.strip()
         # Count active and lock-waiting transactions
-        if 'ACTIVE' in line_stripped.upper():
+        if "ACTIVE" in line_stripped.upper():
             active_count += 1
-        if 'LOCK WAIT' in line_stripped.upper():
+        if "LOCK WAIT" in line_stripped.upper():
             lock_wait_count += 1
 
         # Include important lines
-        if any(keyword in line_stripped.upper() for keyword in [
-            'TRX READ VIEW', 'HISTORY LIST LENGTH',
-            'LOCK WAIT', 'ROLLING BACK', 'COMMITTING'
-        ]):
+        if any(
+            keyword in line_stripped.upper()
+            for keyword in ["TRX READ VIEW", "HISTORY LIST LENGTH", "LOCK WAIT", "ROLLING BACK", "COMMITTING"]
+        ):
             summary_lines.append(line_stripped)
 
     # Build summary header
@@ -124,7 +130,7 @@ def _extract_transaction_summary(content: str) -> str:
     if summary_lines:
         result.extend(summary_lines[:10])  # Max 10 detail lines
 
-    return '\n'.join(result)
+    return "\n".join(result)
 
 
 def _extract_semaphore_summary(content: str) -> str:
@@ -132,23 +138,23 @@ def _extract_semaphore_summary(content: str) -> str:
     if not content:
         return "No semaphore contention."
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     summary_lines = []
 
     # Look for wait information
     has_waits = False
     for line in lines:
         line_stripped = line.strip()
-        if 'waited at' in line_stripped.lower() or 'OS WAIT' in line_stripped.upper():
+        if "waited at" in line_stripped.lower() or "OS WAIT" in line_stripped.upper():
             has_waits = True
             summary_lines.append(line_stripped)
-        elif any(kw in line_stripped for kw in ['Mutex spin', 'RW-shared', 'RW-excl']):
+        elif any(kw in line_stripped for kw in ["Mutex spin", "RW-shared", "RW-excl"]):
             summary_lines.append(line_stripped)
 
     if not has_waits:
         return "No significant semaphore contention detected."
 
-    return '\n'.join(summary_lines[:8])  # Max 8 lines
+    return "\n".join(summary_lines[:8])  # Max 8 lines
 
 
 def _extract_buffer_pool_summary(content: str) -> str:
@@ -156,20 +162,28 @@ def _extract_buffer_pool_summary(content: str) -> str:
     if not content:
         return "Buffer pool info not available."
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     key_metrics = []
 
     for line in lines:
         line_stripped = line.strip()
         # Extract key buffer pool metrics
-        if any(keyword in line_stripped for keyword in [
-            'Total large memory', 'Buffer pool size', 'Free buffers',
-            'Database pages', 'Modified db pages', 'Pages read',
-            'hit rate', 'young-making rate'
-        ]):
+        if any(
+            keyword in line_stripped
+            for keyword in [
+                "Total large memory",
+                "Buffer pool size",
+                "Free buffers",
+                "Database pages",
+                "Modified db pages",
+                "Pages read",
+                "hit rate",
+                "young-making rate",
+            ]
+        ):
             key_metrics.append(line_stripped)
 
-    return '\n'.join(key_metrics[:10]) if key_metrics else content[:300]
+    return "\n".join(key_metrics[:10]) if key_metrics else content[:300]
 
 
 def _extract_log_summary(content: str) -> str:
@@ -177,18 +191,18 @@ def _extract_log_summary(content: str) -> str:
     if not content:
         return "Log info not available."
 
-    lines = content.split('\n')
+    lines = content.split("\n")
     key_metrics = []
 
     for line in lines:
         line_stripped = line.strip()
-        if any(keyword in line_stripped for keyword in [
-            'Log sequence number', 'Log flushed up to',
-            'Last checkpoint', 'pending log', 'log i/o'
-        ]):
+        if any(
+            keyword in line_stripped
+            for keyword in ["Log sequence number", "Log flushed up to", "Last checkpoint", "pending log", "log i/o"]
+        ):
             key_metrics.append(line_stripped)
 
-    return '\n'.join(key_metrics[:6]) if key_metrics else content[:200]
+    return "\n".join(key_metrics[:6]) if key_metrics else content[:200]
 
 
 def _build_optimized_output(sections: dict[str, str]) -> str:
@@ -232,11 +246,11 @@ def _build_optimized_output(sections: dict[str, str]) -> str:
     output_parts.append("---")
     output_parts.append("Note: This is a summarized view. Key sections extracted for efficiency.")
 
-    result = '\n'.join(output_parts)
+    result = "\n".join(output_parts)
 
     # Final size check
     if len(result) > _MAX_OUTPUT_SIZE:
-        result = result[:_MAX_OUTPUT_SIZE - 50] + "\n\n... (truncated for context efficiency)"
+        result = result[: _MAX_OUTPUT_SIZE - 50] + "\n\n... (truncated for context efficiency)"
 
     return result
 
@@ -265,16 +279,12 @@ class InnodbStatus(MySQLToolBase):
                 return {
                     "data": optimized_output,
                     "message": (
-                        f"InnoDB status retrieved ({len(sections)} sections parsed, "
-                        "optimized for context efficiency)"
-                    )
+                        f"InnoDB status retrieved ({len(sections)} sections parsed, optimized for context efficiency)"
+                    ),
                 }
             else:
                 # Fallback: if parsing fails, truncate raw output
                 truncated = raw_status[:_MAX_OUTPUT_SIZE] if len(raw_status) > _MAX_OUTPUT_SIZE else raw_status
-                return {
-                    "data": truncated,
-                    "message": "InnoDB status retrieved (raw, parsing failed)"
-                }
+                return {"data": truncated, "message": "InnoDB status retrieved (raw, parsing failed)"}
         else:
             return {"error": "No InnoDB status found", "brief": "No InnoDB status found"}

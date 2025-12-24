@@ -169,9 +169,9 @@ async def research(app: ShellREPL, args: list[str]):
 
 
 async def _explore_database(
-        app: ShellREPL,
-        database: str,
-        filter_tables: list[str],
+    app: ShellREPL,
+    database: str,
+    filter_tables: list[str],
 ) -> tuple[DatabaseSchemaSnapshot | None, int]:
     """Explore database schema with progress display.
 

@@ -36,8 +36,9 @@ class ContextType(Enum):
 
     Lower enum value = higher priority.
     """
-    DATABASE = auto()   # Database connection info (highest priority in Layer 2)
-    QUERY = auto()      # Recent SQL query results
+
+    DATABASE = auto()  # Database connection info (highest priority in Layer 2)
+    QUERY = auto()  # Recent SQL query results
 
 
 # Default XML-like tags for each context type
@@ -53,8 +54,8 @@ class ContextEntry:
 
     type: ContextType
     content: str
-    tag: Optional[str] = None   # Custom tag, uses default if None
-    priority: int = 0           # Higher = more important (for custom ordering)
+    tag: Optional[str] = None  # Custom tag, uses default if None
+    priority: int = 0  # Higher = more important (for custom ordering)
 
     def __post_init__(self):
         if self.tag is None:
@@ -310,7 +311,6 @@ class ContextManager:
         """Check if database context has been injected in this session."""
         return self._session.is_injected(ContextType.DATABASE)
 
-
     # =========================================================================
     # Build & Format
     # =========================================================================
@@ -396,6 +396,7 @@ class ContextManager:
         """
         return self.build().wrap_user_input(user_input)
 
+
 def _load_database_connection_info() -> Optional[str]:
     """Load current database connection information.
 
@@ -416,13 +417,13 @@ def _load_database_connection_info() -> Optional[str]:
     parts.append(f"Port: {conn_info.get('port', 'N/A')}")
     parts.append(f"User: {conn_info.get('user', 'N/A')}")
 
-    database = conn_info.get('database')
+    database = conn_info.get("database")
     if database:
         parts.append(f"Current Database: {database}")
     else:
         parts.append("Current Database: (none selected)")
 
-    engine = conn_info.get('engine', 'mysql')
+    engine = conn_info.get("engine", "mysql")
     parts.append(f"Engine: {engine}")
 
     return "\n".join(parts)

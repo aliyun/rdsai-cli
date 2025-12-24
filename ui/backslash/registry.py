@@ -98,7 +98,7 @@ def backslash_command(
             name=cmd_name,
             char=char,
             func=f,
-            description=(f.__doc__ or "").strip().split('\n')[0],
+            description=(f.__doc__ or "").strip().split("\n")[0],
             takes_args=takes_args,
             position=position,
             category=category,

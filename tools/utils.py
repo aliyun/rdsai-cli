@@ -76,11 +76,7 @@ class ToolResultBuilder:
 
             original_line = line
             remaining_chars = self.max_chars - self._n_chars
-            limit = (
-                min(remaining_chars, self.max_line_length)
-                if self.max_line_length is not None
-                else remaining_chars
-            )
+            limit = min(remaining_chars, self.max_line_length) if self.max_line_length is not None else remaining_chars
             line = truncate_line(line, limit, self._marker)
             if line != original_line:
                 self._truncation_happened = True
@@ -146,9 +142,6 @@ class ToolResultBuilder:
 class ToolRejectedError(ToolError):
     def __init__(self):
         super().__init__(
-            message=(
-                "The tool call is rejected by the user. "
-                "Please follow the new instructions from the user."
-            ),
+            message=("The tool call is rejected by the user. Please follow the new instructions from the user."),
             brief="Rejected by user",
         )

@@ -16,29 +16,27 @@ class Params(BaseModel):
         description=(
             "Start time for filtering audit log entries (optional, format: 'YYYY-MM-DD HH:MM:SS'). "
             "This filters the mysql.general_log audit log, NOT business data tables."
-        )
+        ),
     )
     end_time: Optional[str] = Field(
         default=None,
         description=(
             "End time for filtering audit log entries (optional, format: 'YYYY-MM-DD HH:MM:SS'). "
             "This filters the mysql.general_log audit log, NOT business data tables."
-        )
+        ),
     )
     user_host: Optional[str] = Field(
-        default=None,
-        description="Filter by user and host pattern (supports % wildcard, e.g., 'root@%')"
+        default=None, description="Filter by user and host pattern (supports % wildcard, e.g., 'root@%')"
     )
     command_type: Optional[str] = Field(
-        default=None,
-        description="Filter by command type (e.g., 'Query', 'Connect', 'Quit', 'Init DB')"
+        default=None, description="Filter by command type (e.g., 'Query', 'Connect', 'Quit', 'Init DB')"
     )
     sql_pattern: Optional[str] = Field(
         default=None,
         description=(
             "Filter SQL text by pattern (supports % wildcard). "
             "This searches the audit log for SQL statements, NOT business data."
-        )
+        ),
     )
     limit: int = Field(
         default=100,
@@ -47,7 +45,7 @@ class Params(BaseModel):
             "DO NOT use this tool to query business data tables."
         ),
         ge=1,
-        le=10000
+        le=10000,
     )
 
 
@@ -92,5 +90,5 @@ class GeneralLog(MySQLToolBase):
             "type": "MySQL General Log",
             "columns": columns,
             "rows": rows,
-            "message": f"Found {len(rows)} general log entries"
+            "message": f"Found {len(rows)} general log entries",
         }

@@ -10,6 +10,7 @@ from langchain_core.messages import AIMessage
 # --- Chat Provider Errors ---
 class ChatProviderError(Exception):
     """Base exception for chat provider errors."""
+
     pass
 
 
@@ -44,11 +45,13 @@ class LLMInvocationError(ChatProviderError):
 
 class APIConnectionError(ChatProviderError):
     """Error connecting to the API."""
+
     pass
 
 
 class APIEmptyResponseError(ChatProviderError):
     """API returned empty response."""
+
     pass
 
 
@@ -62,6 +65,7 @@ class APIStatusError(ChatProviderError):
 
 class APITimeoutError(ChatProviderError):
     """API request timed out."""
+
     pass
 
 

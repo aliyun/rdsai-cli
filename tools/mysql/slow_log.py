@@ -12,19 +12,12 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     start_time: Optional[str] = Field(
-        default=None,
-        description="Start time for query (optional, format: 'YYYY-MM-DD HH:MM:SS')"
+        default=None, description="Start time for query (optional, format: 'YYYY-MM-DD HH:MM:SS')"
     )
     end_time: Optional[str] = Field(
-        default=None,
-        description="End time for query (optional, format: 'YYYY-MM-DD HH:MM:SS')"
+        default=None, description="End time for query (optional, format: 'YYYY-MM-DD HH:MM:SS')"
     )
-    limit: int = Field(
-        default=100,
-        description="Maximum number of rows to return (default: 100)",
-        ge=1,
-        le=10000
-    )
+    limit: int = Field(default=100, description="Maximum number of rows to return (default: 100)", ge=1, le=10000)
 
 
 class SlowLog(MySQLToolBase):
@@ -62,5 +55,5 @@ class SlowLog(MySQLToolBase):
             "type": "MySQL Slow Query Log",
             "columns": columns,
             "rows": rows,
-            "message": f"Found {len(rows)} slow query entries"
+            "message": f"Found {len(rows)} slow query entries",
         }

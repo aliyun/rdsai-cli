@@ -13,37 +13,41 @@ if TYPE_CHECKING:
 
 class CommandPosition(Enum):
     """Where a command can appear."""
-    STANDALONE = "standalone"      # Standalone command: \s
-    SQL_SUFFIX = "sql_suffix"      # At end of SQL: SELECT * FROM t\G
-    BOTH = "both"                  # Both positions allowed
+
+    STANDALONE = "standalone"  # Standalone command: \s
+    SQL_SUFFIX = "sql_suffix"  # At end of SQL: SELECT * FROM t\G
+    BOTH = "both"  # Both positions allowed
 
 
 class CommandCategory(Enum):
     """Command categories for help organization."""
-    CONNECTION = "connection"      # Connection related: \r
-    DISPLAY = "display"            # Display related: \W, \w
-    FILE = "file"                  # File related: \., \T
-    QUERY = "query"                # Query related: \g, \G, \d
-    SESSION = "session"            # Session related: \s
-    HELP = "help"                  # Help commands: \?, \h
+
+    CONNECTION = "connection"  # Connection related: \r
+    DISPLAY = "display"  # Display related: \W, \w
+    FILE = "file"  # File related: \., \T
+    QUERY = "query"  # Query related: \g, \G, \d
+    SESSION = "session"  # Session related: \s
+    HELP = "help"  # Help commands: \?, \h
 
 
 @dataclass
 class CommandContext:
     """Context passed to command execution."""
+
     db_service: DatabaseService | None
-    sql_buffer: str = ""           # Current SQL buffer (for SQL_SUFFIX commands)
-    args: str = ""                 # Command arguments
-    raw_input: str = ""            # Original raw input
+    sql_buffer: str = ""  # Current SQL buffer (for SQL_SUFFIX commands)
+    args: str = ""  # Command arguments
+    raw_input: str = ""  # Original raw input
 
 
 @dataclass
 class CommandResult:
     """Result of command execution."""
+
     success: bool = True
     message: str = ""
-    should_continue: bool = True   # Whether to continue the main loop
-    output: Any = None             # Optional output data
+    should_continue: bool = True  # Whether to continue the main loop
+    output: Any = None  # Optional output data
 
 
 # Type alias for command functions
@@ -53,11 +57,12 @@ CommandFunc = Callable[[CommandContext], CommandResult | None]
 @dataclass(frozen=True, slots=True)
 class BackslashCommand:
     """Definition of a backslash command."""
-    name: str                      # Command name: "status", "source", etc.
-    char: str                      # Shortcut character: "s", ".", etc.
-    func: CommandFunc              # Execution function
-    description: str               # Help description
-    takes_args: bool = False       # Whether command accepts arguments
+
+    name: str  # Command name: "status", "source", etc.
+    char: str  # Shortcut character: "s", ".", etc.
+    func: CommandFunc  # Execution function
+    description: str  # Help description
+    takes_args: bool = False  # Whether command accepts arguments
     position: CommandPosition = CommandPosition.STANDALONE
     category: CommandCategory = CommandCategory.SESSION
     aliases: tuple[str, ...] = field(default_factory=tuple)

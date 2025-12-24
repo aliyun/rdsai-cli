@@ -34,7 +34,7 @@ def cmd_status(ctx: CommandContext) -> CommandResult | None:
     console.print(f"Connection id:\t\t{info.get('connection_id', 'N/A')}")
 
     # Current database and user
-    current_db = info.get('database') or ""
+    current_db = info.get("database") or ""
     console.print(f"Current database:\t{current_db}")
 
     current_user = _get_current_user(ctx.db_service)
@@ -54,8 +54,8 @@ def cmd_status(ctx: CommandContext) -> CommandResult | None:
         console.print(f"Protocol version:\t{protocol}")
 
     # Connection type
-    host = info.get('host', 'localhost')
-    port = info.get('port', 3306)
+    host = info.get("host", "localhost")
+    port = info.get("port", 3306)
     console.print(f"Connection:\t\t{host} via TCP/IP")
     console.print(f"TCP port:\t\t{port}")
 
@@ -68,23 +68,23 @@ def cmd_status(ctx: CommandContext) -> CommandResult | None:
         console.print(f"Conn.  characterset:\t{charsets.get('connection', 'N/A')}")
 
     # Transaction and autocommit state
-    tx_state = info.get('transaction_state', 'NOT_IN_TRANSACTION')
-    autocommit = info.get('autocommit', True)
+    tx_state = info.get("transaction_state", "NOT_IN_TRANSACTION")
+    autocommit = info.get("autocommit", True)
     console.print(f"Autocommit:\t\t{'on' if autocommit else 'off'}")
 
-    if tx_state != 'NOT_IN_TRANSACTION':
+    if tx_state != "NOT_IN_TRANSACTION":
         console.print(f"Transaction:\t\t[yellow]active[/yellow]")
 
     # Server uptime and statistics
     stats = _get_server_stats(ctx.db_service)
     if stats:
-        if 'uptime' in stats:
+        if "uptime" in stats:
             console.print(f"\nUptime:\t\t\t{_format_uptime(stats['uptime'])}")
-        if 'threads' in stats:
+        if "threads" in stats:
             console.print(f"Threads:\t\t{stats['threads']}")
-        if 'questions' in stats:
+        if "questions" in stats:
             console.print(f"Questions:\t\t{stats['questions']}")
-        if 'slow_queries' in stats:
+        if "slow_queries" in stats:
             console.print(f"Slow queries:\t\t{stats['slow_queries']}")
 
     console.print("-" * 60)
@@ -124,7 +124,7 @@ def _get_protocol_version(db_service: DatabaseService) -> str | None:
         if not client:
             return None
         # This is MySQL-specific
-        if hasattr(client, 'conn') and hasattr(client.conn, '_protocol_version'):
+        if hasattr(client, "conn") and hasattr(client.conn, "_protocol_version"):
             return str(client.conn._protocol_version)
         return None
     except Exception:
@@ -159,10 +159,10 @@ def _get_character_sets(db_service: DatabaseService) -> dict[str, str]:
         result = client.fetchone()
         if result:
             return {
-                'client': result[0] or 'N/A',
-                'connection': result[1] or 'N/A',
-                'server': result[2] or 'N/A',
-                'database': result[3] or 'N/A',
+                "client": result[0] or "N/A",
+                "connection": result[1] or "N/A",
+                "server": result[2] or "N/A",
+                "database": result[3] or "N/A",
             }
         return {}
     except Exception:
@@ -182,25 +182,25 @@ def _get_server_stats(db_service: DatabaseService) -> dict[str, int]:
         client.execute("SHOW GLOBAL STATUS LIKE 'Uptime'")
         result = client.fetchone()
         if result:
-            stats['uptime'] = int(result[1])
+            stats["uptime"] = int(result[1])
 
         # Get threads
         client.execute("SHOW GLOBAL STATUS LIKE 'Threads_connected'")
         result = client.fetchone()
         if result:
-            stats['threads'] = int(result[1])
+            stats["threads"] = int(result[1])
 
         # Get questions
         client.execute("SHOW GLOBAL STATUS LIKE 'Questions'")
         result = client.fetchone()
         if result:
-            stats['questions'] = int(result[1])
+            stats["questions"] = int(result[1])
 
         # Get slow queries
         client.execute("SHOW GLOBAL STATUS LIKE 'Slow_queries'")
         result = client.fetchone()
         if result:
-            stats['slow_queries'] = int(result[1])
+            stats["slow_queries"] = int(result[1])
 
         return stats
     except Exception:

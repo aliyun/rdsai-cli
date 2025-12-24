@@ -87,7 +87,6 @@ class ShutdownCommand(Command):
         self.future = future
 
 
-
 class MCPConnectionPool:
     """Manages persistent connections to MCP servers using Actor pattern.
 
@@ -211,8 +210,6 @@ class MCPConnectionPool:
         finally:
             self._shutdown_complete.set()
             logger.debug("MCPConnectionPool manager loop exited")
-
-
 
     async def connect(self, config: MCPServerConfig) -> ClientSession:
         """Connect to an MCP server.
@@ -379,9 +376,7 @@ class MCPConnectionPool:
     # --- Transport-specific Connection Methods ---
 
     @staticmethod
-    async def _connect_stdio(
-            config: MCPServerConfig, exit_stack: AsyncExitStack
-    ) -> ClientSession:
+    async def _connect_stdio(config: MCPServerConfig, exit_stack: AsyncExitStack) -> ClientSession:
         """Connect via stdio transport with persistent process."""
         assert config.command is not None
 
@@ -402,9 +397,7 @@ class MCPConnectionPool:
 
         # Enter the stdio_client context and keep it open
         # Redirect stderr to suppress uvx installation messages
-        read, write = await exit_stack.enter_async_context(
-            stdio_client(server_params, errlog=subprocess.DEVNULL)
-        )
+        read, write = await exit_stack.enter_async_context(stdio_client(server_params, errlog=subprocess.DEVNULL))
         session = await exit_stack.enter_async_context(ClientSession(read, write))
 
         # Initialize the session
@@ -417,9 +410,7 @@ class MCPConnectionPool:
         return session
 
     @staticmethod
-    async def _connect_sse(
-            config: MCPServerConfig, exit_stack: AsyncExitStack
-    ) -> ClientSession:
+    async def _connect_sse(config: MCPServerConfig, exit_stack: AsyncExitStack) -> ClientSession:
         """Connect via SSE transport with persistent connection."""
         assert config.url is not None
 
@@ -435,18 +426,14 @@ class MCPConnectionPool:
         return session
 
     @staticmethod
-    async def _connect_streamable_http(
-            config: MCPServerConfig, exit_stack: AsyncExitStack
-    ) -> ClientSession:
+    async def _connect_streamable_http(config: MCPServerConfig, exit_stack: AsyncExitStack) -> ClientSession:
         """Connect via streamable HTTP transport with persistent connection."""
         assert config.url is not None
 
         # Build headers if provided
         headers = config.headers or {}
 
-        read, write = await exit_stack.enter_async_context(
-            streamablehttp_client(config.url, headers=headers)
-        )
+        read, write = await exit_stack.enter_async_context(streamablehttp_client(config.url, headers=headers))
         session = await exit_stack.enter_async_context(ClientSession(read, write))
 
         await session.initialize()

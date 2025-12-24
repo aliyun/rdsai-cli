@@ -1,5 +1,4 @@
-"""Console configuration for RDSAI CLI.
-"""
+"""Console configuration for RDSAI CLI."""
 
 from __future__ import annotations
 

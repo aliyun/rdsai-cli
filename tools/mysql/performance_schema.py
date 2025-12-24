@@ -16,14 +16,14 @@ class Params(BaseModel):
         description=(
             "Information type: 'statements', 'waits', 'table_io', 'table_lock', "
             "'threads', 'users', 'accounts', 'hosts', 'tables', 'memory'"
-        )
+        ),
     )
     table: Optional[str] = Field(
         default=None,
         description=(
             "Table name for table_io/table_lock queries, or memory analysis type "
             "(by_user, by_host, by_account, by_thread)"
-        )
+        ),
     )
 
 
@@ -47,7 +47,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Statement Summary by Digest",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} statement summaries"
+                "message": f"Found {len(rows)} statement summaries",
             }
         elif info_type == "waits":
             sql = "SELECT * FROM performance_schema.events_waits_summary_global_by_event_name"
@@ -56,7 +56,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Wait Events Summary",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} wait event summaries"
+                "message": f"Found {len(rows)} wait event summaries",
             }
         elif info_type == "threads":
             columns, rows = self._execute_query("SELECT * FROM performance_schema.threads")
@@ -64,7 +64,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Thread Information",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} threads"
+                "message": f"Found {len(rows)} threads",
             }
         elif info_type == "users":
             columns, rows = self._execute_query("SELECT * FROM performance_schema.users")
@@ -72,7 +72,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "User Statistics",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} user summaries"
+                "message": f"Found {len(rows)} user summaries",
             }
         elif info_type == "accounts":
             columns, rows = self._execute_query("SELECT * FROM performance_schema.accounts")
@@ -80,7 +80,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Account Statistics",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} account summaries"
+                "message": f"Found {len(rows)} account summaries",
             }
         elif info_type == "hosts":
             columns, rows = self._execute_query("SELECT * FROM performance_schema.hosts")
@@ -88,7 +88,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Host Statistics",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} host summaries"
+                "message": f"Found {len(rows)} host summaries",
             }
         elif info_type == "memory":
             # Support different memory analysis dimensions
@@ -107,7 +107,7 @@ class PerformanceSchema(MySQLToolBase):
                 "type": f"Memory Summary - {memory_table}",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} memory summaries from {memory_table}"
+                "message": f"Found {len(rows)} memory summaries from {memory_table}",
             }
         else:  # Default to 'tables'
             columns, rows = self._execute_query("SHOW TABLES FROM performance_schema")
@@ -115,5 +115,5 @@ class PerformanceSchema(MySQLToolBase):
                 "type": "Performance Schema Tables",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} tables in performance_schema"
+                "message": f"Found {len(rows)} tables in performance_schema",
             }

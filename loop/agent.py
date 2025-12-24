@@ -84,9 +84,7 @@ async def load_agent(
     )
 
 
-def _load_system_prompt(
-    path: Path, args: dict[str, str], builtin_args: BuiltinSystemPromptArgs
-) -> str:
+def _load_system_prompt(path: Path, args: dict[str, str], builtin_args: BuiltinSystemPromptArgs) -> str:
     """Load and substitute the system prompt."""
     logger.info("Loading system prompt: {path}", path=path)
     system_prompt = path.read_text(encoding="utf-8").strip()

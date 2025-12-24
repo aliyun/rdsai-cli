@@ -13,11 +13,10 @@ from .base import MySQLToolBase
 class Params(BaseModel):
     info_type: Optional[str] = Field(
         default="tables",
-        description="Information type: 'index', 'buffer_pool', 'tablespace', 'tables', 'perf_statistics'"
+        description="Information type: 'index', 'buffer_pool', 'tablespace', 'tables', 'perf_statistics'",
     )
     table: Optional[str] = Field(
-        default=None,
-        description="Table name for specific queries (used with 'index' info_type)"
+        default=None, description="Table name for specific queries (used with 'index' info_type)"
     )
 
 
@@ -41,7 +40,7 @@ class InformationSchema(MySQLToolBase):
                 "type": f"Index Statistics for table '{params.table}'",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} index statistics for table '{params.table}'"
+                "message": f"Found {len(rows)} index statistics for table '{params.table}'",
             }
         elif info_type == "buffer_pool":
             columns, rows = self._execute_query("SELECT * FROM information_schema.INNODB_BUFFER_POOL_STATS")
@@ -49,7 +48,7 @@ class InformationSchema(MySQLToolBase):
                 "type": "InnoDB Buffer Pool Statistics",
                 "columns": columns,
                 "rows": rows,
-                "message": "InnoDB buffer pool statistics retrieved"
+                "message": "InnoDB buffer pool statistics retrieved",
             }
         elif info_type == "tablespace":
             columns, rows = self._execute_query("SELECT * FROM information_schema.TABLES")
@@ -57,7 +56,7 @@ class InformationSchema(MySQLToolBase):
                 "type": "Table Information",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} tables in information_schema.TABLES"
+                "message": f"Found {len(rows)} tables in information_schema.TABLES",
             }
         else:  # Default to 'tables'
             columns, rows = self._execute_query("SHOW TABLES FROM information_schema")
@@ -65,5 +64,5 @@ class InformationSchema(MySQLToolBase):
                 "type": "Information Schema Tables",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} tables in information_schema"
+                "message": f"Found {len(rows)} tables in information_schema",
             }

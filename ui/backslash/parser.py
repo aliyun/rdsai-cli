@@ -16,9 +16,10 @@ if TYPE_CHECKING:
 @dataclass
 class ParseResult:
     """Result of parsing input for backslash commands."""
+
     command: BackslashCommand | None = None
-    sql_before: str = ""           # SQL before the command (for SQL_SUFFIX)
-    args: str = ""                 # Command arguments
+    sql_before: str = ""  # SQL before the command (for SQL_SUFFIX)
+    args: str = ""  # Command arguments
     is_backslash_command: bool = False
     error: str = ""
 
@@ -28,7 +29,7 @@ class BackslashParser:
 
     # Match standalone backslash command: \s, \. file.sql, \r db host
     # Captures: (1) command char, (2) rest of line as args
-    STANDALONE_PATTERN = re.compile(r'^\\([a-zA-Z.#!?])(.*)$')
+    STANDALONE_PATTERN = re.compile(r"^\\([a-zA-Z.#!?])(.*)$")
 
     def parse(self, input_text: str) -> ParseResult:
         r"""
@@ -47,7 +48,7 @@ class BackslashParser:
             return ParseResult()
 
         # 1. Check for standalone backslash command (\s, \. file.sql, etc.)
-        if input_text.startswith('\\'):
+        if input_text.startswith("\\"):
             return self._parse_standalone(input_text)
 
         # 2. Not a backslash command

@@ -235,9 +235,7 @@ class TestDatabaseService:
         service = DatabaseService()
         mock_client = MagicMock()
         service._active_connection = mock_client
-        service._connection_config = ConnectionConfig(
-            engine="mysql", host="localhost", port=3306, user="test"
-        )
+        service._connection_config = ConnectionConfig(engine="mysql", host="localhost", port=3306, user="test")
         service._current_database = "test_db"
 
         service.disconnect()
@@ -251,9 +249,7 @@ class TestDatabaseService:
     def test_reconnect(self):
         """Test reconnection."""
         service = DatabaseService()
-        config = ConnectionConfig(
-            engine="mysql", host="localhost", port=3306, user="test", password="pass"
-        )
+        config = ConnectionConfig(engine="mysql", host="localhost", port=3306, user="test", password="pass")
         service._connection_config = config
 
         with patch.object(service, "connect") as mock_connect:
@@ -605,7 +601,12 @@ class TestDatabaseService:
         service = DatabaseService()
         mock_client = MagicMock()
         mock_client.execute.return_value = None
-        mock_client.fetchall.return_value = [("col1", "int",)]
+        mock_client.fetchall.return_value = [
+            (
+                "col1",
+                "int",
+            )
+        ]
         service._active_connection = mock_client
 
         structure = service.get_table_structure("test_table")

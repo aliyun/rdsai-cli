@@ -41,8 +41,8 @@ class LLM:
 
 
 def create_llm(
-        provider: LLMProvider,
-        model: LLMModel,
+    provider: LLMProvider,
+    model: LLMModel,
 ) -> LLM:
     chat_provider: BaseChatModel
 
@@ -50,6 +50,7 @@ def create_llm(
         case "qwen":
             # Qwen uses Qwen API (DashScope)
             from langchain_qwq import ChatQwQ
+
             chat_provider = ChatQwQ(
                 model=model.model,
                 base_url=provider.base_url,
@@ -65,6 +66,7 @@ def create_llm(
         case "openai":
             # OpenAI official API
             from langchain_openai import ChatOpenAI
+
             chat_provider = ChatOpenAI(
                 model=model.model,
                 base_url=provider.base_url,
@@ -79,6 +81,7 @@ def create_llm(
 
         case "deepseek":
             from langchain_deepseek import ChatDeepSeek
+
             chat_provider = ChatDeepSeek(
                 model=model.model,
                 base_url=provider.base_url,
@@ -94,6 +97,7 @@ def create_llm(
         case "anthropic":
             # Anthropic Claude
             from langchain_anthropic import ChatAnthropic
+
             chat_provider = ChatAnthropic(
                 model_name=model.model,
                 api_key=provider.api_key,
@@ -105,12 +109,13 @@ def create_llm(
                 streaming=True,
                 stream_usage=True,
                 timeout=None,
-                stop=None
+                stop=None,
             )
 
         case "gemini":
             # Google Gemini
             from langchain_google_genai import ChatGoogleGenerativeAI
+
             chat_provider = ChatGoogleGenerativeAI(
                 model=model.model,
                 google_api_key=provider.api_key,
@@ -119,6 +124,7 @@ def create_llm(
         case "openai_compatible" | "openai_legacy" | "openai_responses":
             # OpenAI compatible API (third-party providers)
             from langchain_openai import ChatOpenAI
+
             chat_provider = ChatOpenAI(
                 model=model.model,
                 base_url=provider.base_url,

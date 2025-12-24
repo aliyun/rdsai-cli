@@ -78,12 +78,14 @@ async def agent_node(
     # Bind tools to LLM
     lc_tools = []
     for tool in agent.toolset.tools:
-        lc_tools.append(StructuredTool(
-            name=tool.name,
-            description=tool.description,
-            args_schema=tool.params,
-            func=lambda **kwargs: None,  # Placeholder, we handle execution in tools_node
-        ))
+        lc_tools.append(
+            StructuredTool(
+                name=tool.name,
+                description=tool.description,
+                args_schema=tool.params,
+                func=lambda **kwargs: None,  # Placeholder, we handle execution in tools_node
+            )
+        )
 
     if lc_tools:
         model = llm.chat_provider.bind_tools(lc_tools)
@@ -219,11 +221,13 @@ async def tools_node(
                 # Send ApprovalRejected to UI to mark the tool as rejected
                 if stream_send:
                     stream_send(ApprovalRejected(tool_call_id=tool_call_id))
-                results.append(ToolMessage(
-                    tool_call_id=tool_call_id,
-                    content="Tool execution rejected by user.",
-                    name=tool_name,
-                ))
+                results.append(
+                    ToolMessage(
+                        tool_call_id=tool_call_id,
+                        content="Tool execution rejected by user.",
+                        name=tool_name,
+                    )
+                )
                 continue
 
             # If approved, send ApprovalGranted to UI
@@ -247,11 +251,13 @@ async def tools_node(
             if tool_result.result.output:
                 content += f"\n{tool_result.result.output}"
 
-        results.append(ToolMessage(
-            tool_call_id=tool_call_id,
-            content=content,
-            name=tool_name,
-        ))
+        results.append(
+            ToolMessage(
+                tool_call_id=tool_call_id,
+                content=content,
+                name=tool_name,
+            )
+        )
 
     return {"messages": results}
 

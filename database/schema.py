@@ -19,6 +19,7 @@ from database.client import validate_identifier
 @dataclass
 class ColumnInfo:
     """Information about a table column."""
+
     name: str
     data_type: str
     is_nullable: bool
@@ -31,6 +32,7 @@ class ColumnInfo:
 @dataclass
 class IndexInfo:
     """Information about a table index."""
+
     name: str
     columns: list[str]
     is_unique: bool
@@ -40,6 +42,7 @@ class IndexInfo:
 @dataclass
 class ForeignKeyInfo:
     """Information about a foreign key relationship."""
+
     constraint_name: str
     table_name: str
     column_name: str
@@ -50,6 +53,7 @@ class ForeignKeyInfo:
 @dataclass
 class TableInfo:
     """Comprehensive information about a single table."""
+
     name: str
     comment: Optional[str]
     engine: str
@@ -64,6 +68,7 @@ class TableInfo:
 @dataclass
 class DatabaseStatistics:
     """Overall database statistics."""
+
     total_tables: int
     total_rows_estimate: int
     total_data_size_bytes: int
@@ -76,6 +81,7 @@ class DatabaseSchemaSnapshot:
 
     Contains all metadata collected from exploring a database.
     """
+
     database_name: str
     host: str
     port: int
@@ -87,11 +93,7 @@ class DatabaseSchemaSnapshot:
 
     def get_tables_by_row_count(self, descending: bool = True) -> list[TableInfo]:
         """Get tables sorted by estimated row count."""
-        return sorted(
-            self.tables,
-            key=lambda t: t.row_count_estimate,
-            reverse=descending
-        )
+        return sorted(self.tables, key=lambda t: t.row_count_estimate, reverse=descending)
 
     @staticmethod
     def compute_schema_hash(tables: list[TableInfo]) -> str:
@@ -101,10 +103,7 @@ class DatabaseSchemaSnapshot:
         """
         schema_str_parts = []
         for table in sorted(tables, key=lambda t: t.name):
-            cols_str = ",".join(
-                f"{c.name}:{c.data_type}:{c.column_key}"
-                for c in table.columns
-            )
+            cols_str = ",".join(f"{c.name}:{c.data_type}:{c.column_key}" for c in table.columns)
             schema_str_parts.append(f"{table.name}({cols_str})")
 
         schema_str = "|".join(schema_str_parts)
@@ -114,6 +113,7 @@ class DatabaseSchemaSnapshot:
 @dataclass
 class TableExploreProgress:
     """Progress information for table exploration."""
+
     current: int
     total: int
     table_name: str
@@ -203,15 +203,15 @@ class DatabaseExplorer:
             DatabaseSchemaSnapshot as the final yield
         """
         conn_info = self._db_service.get_connection_info()
-        if not conn_info.get('connected'):
+        if not conn_info.get("connected"):
             raise ValueError("Not connected to a database")
 
-        database_name = conn_info.get('database')
+        database_name = conn_info.get("database")
         if not database_name:
             raise ValueError("No database selected")
 
-        host = conn_info.get('host', 'localhost')
-        port = conn_info.get('port', 3306)
+        host = conn_info.get("host", "localhost")
+        port = conn_info.get("port", 3306)
 
         # First, get table list and foreign keys (with filtering if specified)
         tables = self._collect_tables(database_name, table_filter)
@@ -233,9 +233,7 @@ class DatabaseExplorer:
                 # Collect detailed info for this table
                 table.columns = self._collect_columns(database_name, table.name)
                 table.indexes = self._collect_indexes(table.name)
-                table.primary_key_columns = [
-                    col.name for col in table.columns if col.column_key == 'PRI'
-                ]
+                table.primary_key_columns = [col.name for col in table.columns if col.column_key == "PRI"]
                 completed_tables.append(table)
 
             except Exception as e:
@@ -313,14 +311,16 @@ class DatabaseExplorer:
 
         tables = []
         for row in rows:
-            tables.append(TableInfo(
-                name=row[0],
-                comment=row[1] if row[1] else None,
-                engine=row[2] or 'InnoDB',
-                row_count_estimate=row[3] or 0,
-                data_size_bytes=row[4] or 0,
-                index_size_bytes=row[5] or 0,
-            ))
+            tables.append(
+                TableInfo(
+                    name=row[0],
+                    comment=row[1] if row[1] else None,
+                    engine=row[2] or "InnoDB",
+                    row_count_estimate=row[3] or 0,
+                    data_size_bytes=row[4] or 0,
+                    index_size_bytes=row[5] or 0,
+                )
+            )
 
         return tables
 
@@ -344,15 +344,17 @@ class DatabaseExplorer:
 
         result = []
         for row in rows:
-            result.append(ColumnInfo(
-                name=row[0],
-                data_type=row[1],
-                is_nullable=(row[2] == 'YES'),
-                column_key=row[3] or '',
-                default=row[4],
-                extra=row[5] or '',
-                comment=row[6] if row[6] else None,
-            ))
+            result.append(
+                ColumnInfo(
+                    name=row[0],
+                    data_type=row[1],
+                    is_nullable=(row[2] == "YES"),
+                    column_key=row[3] or "",
+                    default=row[4],
+                    extra=row[5] or "",
+                    comment=row[6] if row[6] else None,
+                )
+            )
 
         return result
 
@@ -370,7 +372,7 @@ class DatabaseExplorer:
             key_name = row[2]
             non_unique = row[1]
             column_name = row[4]
-            index_type = row[10] if len(row) > 10 else 'BTREE'
+            index_type = row[10] if len(row) > 10 else "BTREE"
 
             if key_name not in index_map:
                 index_map[key_name] = IndexInfo(
@@ -414,10 +416,9 @@ class DatabaseExplorer:
                     logger.warning(f"Invalid table name '{name}' in filter, skipping: {e}")
                     continue
             if validated_tables:
-                table_list = ', '.join(validated_tables)
+                table_list = ", ".join(validated_tables)
                 where_clause += (
-                    f" AND (kcu.TABLE_NAME IN ({table_list}) "
-                    f"OR kcu.REFERENCED_TABLE_NAME IN ({table_list}))"
+                    f" AND (kcu.TABLE_NAME IN ({table_list}) OR kcu.REFERENCED_TABLE_NAME IN ({table_list}))"
                 )
             else:
                 # No valid tables in filter, return empty list
@@ -438,13 +439,15 @@ class DatabaseExplorer:
 
         fks = []
         for row in rows:
-            fks.append(ForeignKeyInfo(
-                constraint_name=row[0],
-                table_name=row[1],
-                column_name=row[2],
-                referenced_table=row[3],
-                referenced_column=row[4],
-            ))
+            fks.append(
+                ForeignKeyInfo(
+                    constraint_name=row[0],
+                    table_name=row[1],
+                    column_name=row[2],
+                    referenced_table=row[3],
+                    referenced_column=row[4],
+                )
+            )
 
         return fks
 

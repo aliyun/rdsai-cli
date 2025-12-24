@@ -9,18 +9,20 @@ from rich.text import Text
 
 from database import QueryResult, QueryType, SchemaInfo, DatabaseError, format_error
 from ui.console import console
+
 format_error_for_console = format_error
 
 # Explain hint constants
 EXPLAIN_HINT_RESULT = "💡 [dim]Ctrl+E: Explain result[/dim]"
 EXPLAIN_HINT_ERROR = "💡 [dim]Ctrl+E: Explain error[/dim]"
 
+
 def _format_cell(cell):
     if cell is None:
-        return 'NULL'
+        return "NULL"
     if isinstance(cell, bytes):
         try:
-            return cell.decode('utf-8')
+            return cell.decode("utf-8")
         except Exception:
             return cell.hex()
     return str(cell)
@@ -34,15 +36,20 @@ def print_table_from_rows(description, rows):
         for i, cell in enumerate(row):
             col_widths[i] = max(col_widths[i], len(_format_cell(cell)) if cell is not None else 4)
     col_widths = [w + 2 for w in col_widths]
-    sep = '+' + '+'.join('-' * w for w in col_widths) + '+'
+    sep = "+" + "+".join("-" * w for w in col_widths) + "+"
     print(sep)
-    header = '|' + '|'.join(' ' + str(col).ljust(col_widths[i] - 1) for i, col in enumerate(columns)) + '|'
+    header = "|" + "|".join(" " + str(col).ljust(col_widths[i] - 1) for i, col in enumerate(columns)) + "|"
     print(header)
     print(sep)
     for row in rows:
-        print('|' + '|'.join(
-            ' ' + (_format_cell(cell) if cell is not None else 'NULL').ljust(col_widths[i] - 1) for i, cell in
-            enumerate(row)) + '|')
+        print(
+            "|"
+            + "|".join(
+                " " + (_format_cell(cell) if cell is not None else "NULL").ljust(col_widths[i] - 1)
+                for i, cell in enumerate(row)
+            )
+            + "|"
+        )
     print(sep)
 
 
@@ -72,8 +79,13 @@ class DatabaseResultFormatter:
             DatabaseResultFormatter._display_query_error(result)
             return
 
-        if result.query_type in [QueryType.SELECT, QueryType.SHOW, QueryType.DESCRIBE, QueryType.DESC,
-                                 QueryType.EXPLAIN]:
+        if result.query_type in [
+            QueryType.SELECT,
+            QueryType.SHOW,
+            QueryType.DESCRIBE,
+            QueryType.DESC,
+            QueryType.EXPLAIN,
+        ]:
             DatabaseResultFormatter._display_query_data(result, sql, use_vertical)
         else:
             DatabaseResultFormatter._display_command_result(result)
@@ -84,6 +96,7 @@ class DatabaseResultFormatter:
         if not result.has_data:
             empty_text = f"Empty set ({result.execution_time:.3f} sec)"
             from ui.repl import ShellREPL
+
             if ShellREPL.is_llm_configured():
                 console.print(f"{empty_text} {EXPLAIN_HINT_RESULT}")
             else:
@@ -137,10 +150,10 @@ class DatabaseResultFormatter:
         # Show query stats if available
         if result.execution_time:
             timing_text = (
-                f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} "
-                f"in {result.execution_time:.3f} sec)"
+                f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} in {result.execution_time:.3f} sec)"
             )
             from ui.repl import ShellREPL
+
             if ShellREPL.is_llm_configured():
                 console.print(f"{timing_text} {EXPLAIN_HINT_RESULT}")
             else:
@@ -154,8 +167,13 @@ class DatabaseResultFormatter:
             console.print(f"[green]✓[/green] {row_text}")
             return
         elif result.affected_rows is not None:
-            if result.query_type in [QueryType.CREATE, QueryType.INSERT, QueryType.UPDATE, QueryType.DELETE,
-                                     QueryType.REPLACE]:
+            if result.query_type in [
+                QueryType.CREATE,
+                QueryType.INSERT,
+                QueryType.UPDATE,
+                QueryType.DELETE,
+                QueryType.REPLACE,
+            ]:
                 row_text = f"{result.affected_rows} row{'s' if result.affected_rows != 1 else ''} affected"
             else:
                 row_text = "Query OK"
@@ -164,6 +182,7 @@ class DatabaseResultFormatter:
         if result.execution_time:
             row_text += f" ({result.execution_time:.3f} sec)"
         from ui.repl import ShellREPL
+
         if ShellREPL.is_llm_configured():
             console.print(f"[green]✓[/green] {row_text} {EXPLAIN_HINT_RESULT}")
         else:
@@ -174,6 +193,7 @@ class DatabaseResultFormatter:
         """Display query execution error."""
         error_text = f"ERROR: {result.error}"
         from ui.repl import ShellREPL
+
         if ShellREPL.is_llm_configured():
             console.print(f"[red]{error_text}[/red] {EXPLAIN_HINT_ERROR}")
         else:
@@ -186,7 +206,7 @@ class ConnectionInfoFormatter:
     @staticmethod
     def format_connection_info(info: dict[str, Any]) -> None:
         """Display connection information in a table."""
-        if not info.get('connected'):
+        if not info.get("connected"):
             console.print("[yellow]Not connected to any database.[/yellow]")
             return
 
@@ -196,29 +216,29 @@ class ConnectionInfoFormatter:
 
         # Format display names and values
         display_mapping = {
-            'engine': 'Engine',
-            'host': 'Host',
-            'port': 'Port',
-            'user': 'User',
-            'database': 'Current Database',
-            'transaction_state': 'Transaction State',
-            'autocommit': 'Autocommit',
-            'ssl_enabled': 'SSL Enabled'
+            "engine": "Engine",
+            "host": "Host",
+            "port": "Port",
+            "user": "User",
+            "database": "Current Database",
+            "transaction_state": "Transaction State",
+            "autocommit": "Autocommit",
+            "ssl_enabled": "SSL Enabled",
         }
 
         for key, value in info.items():
-            if key == 'connected':
+            if key == "connected":
                 continue
 
-            display_name = display_mapping.get(key, key.replace('_', ' ').title())
+            display_name = display_mapping.get(key, key.replace("_", " ").title())
 
             # Format specific values
-            if key == 'autocommit':
-                display_value = 'ON' if value else 'OFF'
-            elif key == 'ssl_enabled':
-                display_value = 'Yes' if value else 'No'
+            if key == "autocommit":
+                display_value = "ON" if value else "OFF"
+            elif key == "ssl_enabled":
+                display_value = "Yes" if value else "No"
             elif value is None:
-                display_value = 'Not set'
+                display_value = "Not set"
             else:
                 display_value = str(value)
 
@@ -287,11 +307,7 @@ class TransactionFormatter:
     """Formats transaction-related information."""
 
     @staticmethod
-    def format_transaction_status(
-            transaction_state: str,
-            autocommit: bool,
-            title: str = "Transaction Status"
-    ) -> None:
+    def format_transaction_status(transaction_state: str, autocommit: bool, title: str = "Transaction Status") -> None:
         """Display transaction status information."""
         table = Table(title=title)
         table.add_column("Property", style="cyan")
@@ -320,16 +336,16 @@ class HistoryFormatter:
         table.add_column("Status", style="green", width=8)
 
         for i, entry in enumerate(reversed(history_entries), 1):
-            sql = entry.get('sql', '')
-            truncated_sql = sql[:80] + ('...' if len(sql) > 80 else '')
+            sql = entry.get("sql", "")
+            truncated_sql = sql[:80] + ("..." if len(sql) > 80 else "")
 
-            status_style = "green" if entry.get('status') == 'success' else "red"
+            status_style = "green" if entry.get("status") == "success" else "red"
 
             table.add_row(
                 str(i),
-                entry.get('timestamp', 'Unknown'),
+                entry.get("timestamp", "Unknown"),
                 truncated_sql,
-                Text(entry.get('status', 'Unknown'), style=status_style)
+                Text(entry.get("status", "Unknown"), style=status_style),
             )
 
         console.print(table)
@@ -370,6 +386,7 @@ def display_database_error(error: DatabaseError) -> None:
     """Convenience function to display database error."""
     formatted_msg = format_error_for_console(error)
     from ui.repl import ShellREPL
+
     if ShellREPL.is_llm_configured():
         console.print(f"[red]{formatted_msg}[/red] {EXPLAIN_HINT_ERROR}")
     else:

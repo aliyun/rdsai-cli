@@ -29,6 +29,7 @@ class LoopControl(BaseModel):
 
 class Services(BaseModel):
     """Services configuration."""
+
     pass
 
 
@@ -37,9 +38,7 @@ class Config(BaseModel):
 
     default_model: str = Field(default="", description="Default model to use")
     models: dict[str, LLMModel] = Field(default_factory=dict, description="List of LLM models")
-    providers: dict[str, LLMProvider] = Field(
-        default_factory=dict, description="List of LLM providers"
-    )
+    providers: dict[str, LLMProvider] = Field(default_factory=dict, description="List of LLM providers")
     services: Services = Field(default_factory=Services, description="Services configuration")
     language: str = Field(default="en", description="Language preference (en/zh)")
 

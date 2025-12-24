@@ -19,6 +19,7 @@ from utils.logging import logger
 # --- Exception Types ---
 class SubagentError(Exception):
     """Base exception for subagent errors."""
+
     pass
 
 
@@ -63,12 +64,9 @@ class Params(BaseModel):
             "automatically discovered from the prompts directory."
         )
     )
-    task_description: str = Field(
-        description="Detailed description of the task to be performed by the subagent."
-    )
+    task_description: str = Field(description="Detailed description of the task to be performed by the subagent.")
     parameters: dict[str, Any] | None = Field(
-        default=None,
-        description="Optional parameters for the subagent (specific to each subagent type)."
+        default=None, description="Optional parameters for the subagent (specific to each subagent type)."
     )
 
     @classmethod
@@ -152,9 +150,9 @@ class Subagent(BaseTool[Params]):
         if tool_errors:
             parts.append("\nFailed Tools:")
             for err in tool_errors:
-                tool_name = err.get('tool_name', 'Unknown')
-                error_msg = err.get('error_message', 'Unknown error')
-                brief = err.get('brief')
+                tool_name = err.get("tool_name", "Unknown")
+                error_msg = err.get("error_message", "Unknown error")
+                brief = err.get("brief")
                 if brief and brief != error_msg:
                     parts.append(f"  - {tool_name}: {error_msg} ({brief})")
                 else:
@@ -163,10 +161,10 @@ class Subagent(BaseTool[Params]):
         # Add context information if available
         if context:
             context_parts = []
-            if 'task_description' in context:
+            if "task_description" in context:
                 context_parts.append(f"Task: {context['task_description']}")
-            if 'parameters' in context and context['parameters']:
-                params_str = ", ".join(f"{k}={v}" for k, v in context['parameters'].items())
+            if "parameters" in context and context["parameters"]:
+                params_str = ", ".join(f"{k}={v}" for k, v in context["parameters"].items())
                 context_parts.append(f"Parameters: {params_str}")
             if context_parts:
                 parts.append(f"\nContext: {'; '.join(context_parts)}")
@@ -197,7 +195,7 @@ class Subagent(BaseTool[Params]):
             return
 
         # Extract error messages from tool errors
-        error_messages = [err['error_message'] for err in tool_errors]
+        error_messages = [err["error_message"] for err in tool_errors]
         primary_error = error_messages[0] if error_messages else (original_error or "Unknown error")
 
         # Build comprehensive error message
@@ -207,8 +205,8 @@ class Subagent(BaseTool[Params]):
             original_message=primary_error,
             tool_errors=tool_errors,
             context={
-                'task_description': task_description,
-                'parameters': parameters,
+                "task_description": task_description,
+                "parameters": parameters,
             },
         )
 
@@ -239,8 +237,7 @@ class Subagent(BaseTool[Params]):
         if executor is None:
             available = ", ".join(self._registry.list_all())
             raise ValueError(
-                f"Unknown subagent: {executor_name}. "
-                f"Available subagents: {available if available else 'none'}"
+                f"Unknown subagent: {executor_name}. Available subagents: {available if available else 'none'}"
             )
 
         # Load agent
@@ -292,12 +289,14 @@ class Subagent(BaseTool[Params]):
                     # Collect tool errors from ToolResult messages
                     if isinstance(msg, ToolResult):
                         if isinstance(msg.result, ToolError):
-                            tool_errors.append({
-                                'tool_name': msg.name or 'Unknown',
-                                'error_message': msg.result.message,
-                                'brief': msg.result.brief,
-                                'output': msg.result.output,
-                            })
+                            tool_errors.append(
+                                {
+                                    "tool_name": msg.name or "Unknown",
+                                    "error_message": msg.result.message,
+                                    "brief": msg.result.brief,
+                                    "output": msg.result.output,
+                                }
+                            )
             except Exception:
                 pass  # Stream closed or queue shutdown
 
@@ -380,7 +379,7 @@ Result:
             # Tool errors - include tool details
             return ToolError(
                 message=str(e),
-                brief=e.tool_errors[0]['brief'] if e.tool_errors else str(e),
+                brief=e.tool_errors[0]["brief"] if e.tool_errors else str(e),
             )
         except SubagentExecutionError as e:
             # General execution errors

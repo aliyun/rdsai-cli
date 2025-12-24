@@ -12,6 +12,7 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     """No parameters needed for SHOW PROCESSLIST."""
+
     pass
 
 
@@ -32,5 +33,5 @@ class ShowProcess(MySQLToolBase):
             "type": "MySQL Process List",
             "columns": columns,
             "rows": rows,
-            "message": f"Found {len(rows)} active database connections"
+            "message": f"Found {len(rows)} active database connections",
         }

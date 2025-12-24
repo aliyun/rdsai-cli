@@ -21,6 +21,7 @@ format_error_for_console = format_error
 
 class ToolQueryError(Exception):
     """Query error with pre-formatted message from database service."""
+
     pass
 
 
@@ -95,17 +96,12 @@ class MySQLToolBase(BaseTool):
             result = await self._execute_tool(params)
 
             if "error" in result:
-                return ToolError(
-                    message=result["error"],
-                    brief=result.get("brief")
-                )
+                return ToolError(message=result["error"], brief=result.get("brief"))
 
             # Format output based on result structure
             if "columns" in result and "rows" in result:
                 output = self._format_table_output(
-                    result["columns"],
-                    result["rows"],
-                    result.get("type", "Query Result")
+                    result["columns"], result["rows"], result.get("type", "Query Result")
                 )
             elif "data" in result:
                 output = result["data"]
@@ -129,13 +125,9 @@ class MySQLToolBase(BaseTool):
         except ValueError as e:
             # Handle connection/parameter errors
             return ToolError(
-                message=str(e),
-                brief="Connection error" if "connection" in str(e).lower() else "Invalid parameter"
+                message=str(e), brief="Connection error" if "connection" in str(e).lower() else "Invalid parameter"
             )
 
         except Exception as e:
             # Fallback for unexpected errors
-            return ToolError(
-                message=f"Unexpected error: {e}",
-                brief="Internal error"
-            )
+            return ToolError(message=f"Unexpected error: {e}", brief="Internal error")

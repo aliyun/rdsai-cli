@@ -45,10 +45,10 @@ def cmd_source(ctx: CommandContext) -> CommandResult | None:
         return CommandResult(success=False)
 
     try:
-        content = filepath.read_text(encoding='utf-8')
+        content = filepath.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         try:
-            content = filepath.read_text(encoding='latin-1')
+            content = filepath.read_text(encoding="latin-1")
         except Exception as e:
             console.print(f"[red]Failed to read file: {e}[/red]")
             return CommandResult(success=False)
@@ -107,10 +107,7 @@ def _execute_script(
     if error_count == 0:
         console.print(f"[green]Query OK, {success_count} statement(s) executed[/green]")
     else:
-        console.print(
-            f"[yellow]{success_count} statement(s) succeeded, "
-            f"{error_count} failed[/yellow]"
-        )
+        console.print(f"[yellow]{success_count} statement(s) succeeded, {error_count} failed[/yellow]")
 
     return CommandResult(success=error_count == 0)
 
@@ -132,7 +129,7 @@ def _split_sql_statements(content: str, delimiter: str = ";") -> list[str]:
     in_string: str | None = None
     in_comment = False
 
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     for line in lines:
         stripped = line.strip()
@@ -143,15 +140,15 @@ def _split_sql_statements(content: str, delimiter: str = ";") -> list[str]:
                 current.append(line)
             continue
 
-        if stripped.startswith('--') or stripped.startswith('#'):
+        if stripped.startswith("--") or stripped.startswith("#"):
             continue
 
         # Handle DELIMITER command
-        if stripped.upper().startswith('DELIMITER'):
+        if stripped.upper().startswith("DELIMITER"):
             # Flush current statement if any
             if current:
-                stmt = '\n'.join(current).strip()
-                if stmt and not stmt.upper().startswith('DELIMITER'):
+                stmt = "\n".join(current).strip()
+                if stmt and not stmt.upper().startswith("DELIMITER"):
                     statements.append(stmt)
                 current = []
 
@@ -167,17 +164,17 @@ def _split_sql_statements(content: str, delimiter: str = ";") -> list[str]:
         # Check if line ends with delimiter (simple check)
         # Note: This is simplified and doesn't handle delimiters inside strings
         if stripped.endswith(current_delimiter):
-            stmt = '\n'.join(current)
+            stmt = "\n".join(current)
             # Remove the delimiter
             if stmt.rstrip().endswith(current_delimiter):
-                stmt = stmt.rstrip()[:-len(current_delimiter)].strip()
+                stmt = stmt.rstrip()[: -len(current_delimiter)].strip()
             if stmt:
                 statements.append(stmt)
             current = []
 
     # Handle last statement without delimiter
     if current:
-        stmt = '\n'.join(current).strip()
+        stmt = "\n".join(current).strip()
         if stmt:
             statements.append(stmt)
 

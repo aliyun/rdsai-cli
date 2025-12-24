@@ -33,9 +33,13 @@ class ShellREPL:
 
     _current: ShellREPL | None = None
 
-    def __init__(self, loop: Loop, welcome_info: list[WelcomeInfoItem] | None = None,
-                 db_service: DatabaseService | None = None,
-                 query_history: QueryHistory | None = None):
+    def __init__(
+        self,
+        loop: Loop,
+        welcome_info: list[WelcomeInfoItem] | None = None,
+        db_service: DatabaseService | None = None,
+        query_history: QueryHistory | None = None,
+    ):
         self.loop = loop
         self._welcome_info = list(welcome_info or [])
         self._db_service = db_service
@@ -87,7 +91,6 @@ class ShellREPL:
     def db_connected(self) -> bool:
         """Check if database is connected."""
         return self._db_service is not None and self._db_service.is_connected()
-
 
     async def run(self) -> bool:
         console.clear()
@@ -160,8 +163,7 @@ class ShellREPL:
                     if not self.llm_configured and not self.db_connected:
                         console.print("[yellow]Neither LLM nor database connection is configured.[/yellow]")
                         console.print(
-                            "[yellow]Use /setup to configure LLM or /connect "
-                            "to connect to a database.[/yellow]"
+                            "[yellow]Use /setup to configure LLM or /connect to connect to a database.[/yellow]"
                         )
                         continue
 
@@ -224,6 +226,7 @@ class ShellREPL:
 
         # Format query context
         from database.service import format_query_context_for_agent
+
         context_str = format_query_context_for_agent(last_context)
 
         # Load or get cached explain agent
@@ -242,6 +245,7 @@ class ShellREPL:
 
         # Build user message
         from database import QueryStatus
+
         if last_context.status == QueryStatus.ERROR:
             user_message = "Please explain the cause of this SQL error.\n\n" + context_str
         else:
@@ -434,10 +438,10 @@ class ShellREPL:
             if self._query_history:
                 self._query_history.record_query(
                     sql=sql,
-                    status='success' if result.success else 'error',
+                    status="success" if result.success else "error",
                     execution_time=result.execution_time,
                     affected_rows=result.affected_rows,
-                    error_message=result.error
+                    error_message=result.error,
                 )
 
         except DatabaseError as e:
@@ -451,8 +455,9 @@ class ShellREPL:
                 )
             # Record failed execution and display error
             if self._query_history:
-                self._query_history.record_query(sql, 'error', error_message=str(e))
+                self._query_history.record_query(sql, "error", error_message=str(e))
             from ui.formatters.database_formatter import display_database_error
+
             display_database_error(e)
         except Exception as e:
             # Save failed query for agent context injection
@@ -465,8 +470,7 @@ class ShellREPL:
                 )
             # Handle unexpected errors
             if self._query_history:
-                self._query_history.record_query(sql, 'error', error_message=str(e))
-
+                self._query_history.record_query(sql, "error", error_message=str(e))
 
     def _handle_transaction_control(self, tx_type: Any) -> None:
         """Handle transaction control statements (BEGIN/COMMIT/ROLLBACK)."""
@@ -528,8 +532,7 @@ class ShellREPL:
         # There's an uncommitted transaction, warn user
         console.print("[yellow]Warning: You have an uncommitted transaction.[/yellow]")
         console.print(
-            "[yellow]Use COMMIT to save changes, ROLLBACK to discard, "
-            "or type 'exit' again to force quit.[/yellow]"
+            "[yellow]Use COMMIT to save changes, ROLLBACK to discard, or type 'exit' again to force quit.[/yellow]"
         )
         self._exit_warned = True
         return True

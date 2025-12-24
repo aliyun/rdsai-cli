@@ -41,19 +41,19 @@ class QueryHistory:
     def record_query(
         self,
         sql: str,
-        status: str = 'success',
+        status: str = "success",
         execution_time: float | None = None,
         affected_rows: int | None = None,
-        error_message: str | None = None
+        error_message: str | None = None,
     ) -> None:
         """Record a query execution in history."""
         entry = QueryHistoryEntry(
-            timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             sql=sql.strip(),
             status=status,
             execution_time=execution_time,
             affected_rows=affected_rows,
-            error_message=error_message
+            error_message=error_message,
         )
         self._entries.append(entry)
         logger.debug(f"Recorded query in history: {sql[:50]}...")
@@ -68,7 +68,7 @@ class QueryHistory:
         """Get recent successful SQL queries."""
         successful_queries = []
         for entry in reversed(self._entries):
-            if entry.status == 'success':
+            if entry.status == "success":
                 successful_queries.append(entry.sql)
                 if len(successful_queries) >= limit:
                     break
@@ -87,14 +87,14 @@ class QueryHistory:
         """Get statistics about query history."""
         if not self._entries:
             return {
-                'total_queries': 0,
-                'successful_queries': 0,
-                'failed_queries': 0,
-                'success_rate': 0.0,
-                'average_execution_time': None
+                "total_queries": 0,
+                "successful_queries": 0,
+                "failed_queries": 0,
+                "success_rate": 0.0,
+                "average_execution_time": None,
             }
 
-        successful_count = sum(1 for entry in self._entries if entry.status == 'success')
+        successful_count = sum(1 for entry in self._entries if entry.status == "success")
         failed_count = len(self._entries) - successful_count
 
         timed_queries = [entry for entry in self._entries if entry.execution_time is not None]
@@ -103,11 +103,11 @@ class QueryHistory:
             avg_time = sum(entry.execution_time for entry in timed_queries) / len(timed_queries)
 
         return {
-            'total_queries': len(self._entries),
-            'successful_queries': successful_count,
-            'failed_queries': failed_count,
-            'success_rate': (successful_count / len(self._entries)) * 100,
-            'average_execution_time': avg_time
+            "total_queries": len(self._entries),
+            "successful_queries": successful_count,
+            "failed_queries": failed_count,
+            "success_rate": (successful_count / len(self._entries)) * 100,
+            "average_execution_time": avg_time,
         }
 
     def find_queries_by_pattern(self, pattern: str, limit: int = 10) -> list[QueryHistoryEntry]:
@@ -133,17 +133,14 @@ class QueryHistory:
 
     def to_dict(self) -> dict[str, Any]:
         """Export history to dictionary format."""
-        return {
-            'max_entries': self._max_entries,
-            'entries': [entry.to_dict() for entry in self._entries]
-        }
+        return {"max_entries": self._max_entries, "entries": [entry.to_dict() for entry in self._entries]}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> QueryHistory:
         """Import history from dictionary format."""
-        max_entries = data.get('max_entries', 100)
+        max_entries = data.get("max_entries", 100)
         instance = cls(max_entries=max_entries)
-        entries = data.get('entries', [])
+        entries = data.get("entries", [])
         for entry_data in entries[-max_entries:]:
             entry = QueryHistoryEntry.from_dict(entry_data)
             instance._entries.append(entry)

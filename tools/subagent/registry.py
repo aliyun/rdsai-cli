@@ -54,7 +54,6 @@ class SubagentRegistry:
             self.register(SysBenchSubagentExecutor("sysbench", sysbench_file))
 
 
-
 # Global registry instance
 _registry: SubagentRegistry | None = None
 

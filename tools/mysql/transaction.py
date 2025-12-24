@@ -13,7 +13,7 @@ from .base import MySQLToolBase
 class Params(BaseModel):
     info_type: Optional[str] = Field(
         default="trx",
-        description="Diagnosis type: 'trx' (active transactions), 'locks' (lock details), 'waits' (lock waits)"
+        description="Diagnosis type: 'trx' (active transactions), 'locks' (lock details), 'waits' (lock waits)",
     )
 
 
@@ -36,7 +36,7 @@ class Transaction(MySQLToolBase):
                 "type": "InnoDB Lock Details",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} active locks"
+                "message": f"Found {len(rows)} active locks",
             }
         else:  # Default to 'trx'
             columns, rows = self._execute_query("SELECT * FROM information_schema.INNODB_TRX")
@@ -44,5 +44,5 @@ class Transaction(MySQLToolBase):
                 "type": "Active InnoDB Transactions",
                 "columns": columns,
                 "rows": rows,
-                "message": f"Found {len(rows)} active transactions"
+                "message": f"Found {len(rows)} active transactions",
             }

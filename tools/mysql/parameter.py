@@ -40,11 +40,7 @@ class KernelParameter(MySQLToolBase):
         if len(rows) == 1:
             # Single result - return simple format
             row = rows[0]
-            return {
-                "param_name": row[0],
-                "value": row[1],
-                "message": f"Parameter '{row[0]}' = '{row[1]}'"
-            }
+            return {"param_name": row[0], "value": row[1], "message": f"Parameter '{row[0]}' = '{row[1]}'"}
         else:
             # Multiple results - return all parameters
             parameters = [{"name": row[0], "value": row[1]} for row in rows]
@@ -52,5 +48,5 @@ class KernelParameter(MySQLToolBase):
                 "pattern": params.param_name,
                 "count": len(rows),
                 "parameters": parameters,
-                "message": f"Found {len(rows)} parameters matching '{params.param_name}'"
+                "message": f"Found {len(rows)} parameters matching '{params.param_name}'",
             }

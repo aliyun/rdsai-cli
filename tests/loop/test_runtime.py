@@ -15,10 +15,7 @@ class TestBuiltinSystemPromptArgs:
 
     def test_init(self):
         """Test BuiltinSystemPromptArgs initialization."""
-        args = BuiltinSystemPromptArgs(
-            CLI_NOW="2024-01-01T00:00:00",
-            CLI_LANGUAGE="en"
-        )
+        args = BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en")
         assert args.CLI_NOW == "2024-01-01T00:00:00"
         assert args.CLI_LANGUAGE == "en"
 
@@ -49,10 +46,7 @@ class TestRuntime:
             config=mock_config,
             llm=None,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            )
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
         )
         assert runtime.config == mock_config
         assert runtime.llm is None
@@ -66,10 +60,7 @@ class TestRuntime:
             config=mock_config,
             llm=mock_llm,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            )
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
         )
         assert runtime.llm == mock_llm
 
@@ -79,11 +70,8 @@ class TestRuntime:
             config=mock_config,
             llm=None,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            ),
-            yolo=True
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
+            yolo=True,
         )
         assert runtime.yolo is True
 
@@ -93,10 +81,7 @@ class TestRuntime:
             config=mock_config,
             llm=None,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            )
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
         )
         runtime.set_llm(mock_llm)
         assert runtime.llm == mock_llm
@@ -107,10 +92,7 @@ class TestRuntime:
             config=mock_config,
             llm=mock_llm,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            )
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
         )
         runtime.set_llm(None)
         assert runtime.llm is None
@@ -121,11 +103,8 @@ class TestRuntime:
             config=mock_config,
             llm=None,
             session=mock_session,
-            builtin_args=BuiltinSystemPromptArgs(
-                CLI_NOW="2024-01-01T00:00:00",
-                CLI_LANGUAGE="en"
-            ),
-            yolo=False
+            builtin_args=BuiltinSystemPromptArgs(CLI_NOW="2024-01-01T00:00:00", CLI_LANGUAGE="en"),
+            yolo=False,
         )
         runtime.set_yolo(True)
         assert runtime.yolo is True
@@ -135,11 +114,7 @@ class TestRuntime:
     @pytest.mark.asyncio
     async def test_create(self, mock_config, mock_session):
         """Test Runtime.create static method."""
-        runtime = await Runtime.create(
-            config=mock_config,
-            llm=None,
-            session=mock_session
-        )
+        runtime = await Runtime.create(config=mock_config, llm=None, session=mock_session)
         assert isinstance(runtime, Runtime)
         assert runtime.config == mock_config
         assert runtime.llm is None
@@ -151,32 +126,19 @@ class TestRuntime:
     @pytest.mark.asyncio
     async def test_create_with_llm(self, mock_config, mock_session, mock_llm):
         """Test Runtime.create with LLM."""
-        runtime = await Runtime.create(
-            config=mock_config,
-            llm=mock_llm,
-            session=mock_session
-        )
+        runtime = await Runtime.create(config=mock_config, llm=mock_llm, session=mock_session)
         assert runtime.llm == mock_llm
 
     @pytest.mark.asyncio
     async def test_create_with_yolo(self, mock_config, mock_session):
         """Test Runtime.create with yolo mode."""
-        runtime = await Runtime.create(
-            config=mock_config,
-            llm=None,
-            session=mock_session,
-            yolo=True
-        )
+        runtime = await Runtime.create(config=mock_config, llm=None, session=mock_session, yolo=True)
         assert runtime.yolo is True
 
     @pytest.mark.asyncio
     async def test_create_builtin_args_format(self, mock_config, mock_session):
         """Test that Runtime.create formats CLI_NOW correctly."""
-        runtime = await Runtime.create(
-            config=mock_config,
-            llm=None,
-            session=mock_session
-        )
+        runtime = await Runtime.create(config=mock_config, llm=None, session=mock_session)
         # CLI_NOW should be ISO format datetime string
         assert isinstance(runtime.builtin_args.CLI_NOW, str)
         # Should be parseable as ISO format
@@ -186,10 +148,5 @@ class TestRuntime:
     async def test_create_with_mcp_config(self, mock_config, mock_session):
         """Test Runtime.create with MCP config."""
         mock_mcp_config = MagicMock()
-        runtime = await Runtime.create(
-            config=mock_config,
-            llm=None,
-            session=mock_session,
-            mcp_config=mock_mcp_config
-        )
+        runtime = await Runtime.create(config=mock_config, llm=None, session=mock_session, mcp_config=mock_mcp_config)
         assert runtime.mcp_config == mock_mcp_config

@@ -71,47 +71,47 @@ def _parse_benchmark_args(args: list[str]) -> tuple[dict[str, Any], list[str]]:
 
     # Check for test_type as first positional argument
     # Skip 'run' as it's a subcommand, not a test_type
-    if args and not args[0].startswith('--') and args[0] not in ('-h', '--help', 'run'):
-        params['test_type'] = args[0]
+    if args and not args[0].startswith("--") and args[0] not in ("-h", "--help", "run"):
+        params["test_type"] = args[0]
         i = 1
 
     while i < len(args):
         arg = args[i]
 
         # Handle --help
-        if arg in ('-h', '--help'):
-            return {'help': True}, []
+        if arg in ("-h", "--help"):
+            return {"help": True}, []
 
         # Handle --key=value format
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            key = key.lstrip('-')
-            params[key.replace('-', '_')] = _parse_value(value)
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+            key = key.lstrip("-")
+            params[key.replace("-", "_")] = _parse_value(value)
             i += 1
             continue
 
         # Handle --key value or -k value format
-        if arg.startswith('--'):
-            key = arg[2:].replace('-', '_')
-            if i + 1 < len(args) and not args[i + 1].startswith('-'):
+        if arg.startswith("--"):
+            key = arg[2:].replace("-", "_")
+            if i + 1 < len(args) and not args[i + 1].startswith("-"):
                 params[key] = _parse_value(args[i + 1])
                 i += 2
             else:
                 # Boolean flag (like --no-cleanup)
-                if key == 'no_cleanup':
-                    params['no_cleanup'] = True
+                if key == "no_cleanup":
+                    params["no_cleanup"] = True
                 else:
                     params[key] = True
                 i += 1
-        elif arg.startswith('-') and len(arg) == 2:
+        elif arg.startswith("-") and len(arg) == 2:
             # Short option like -t, -T, -e
             key_map = {
-                't': 'threads',
-                'T': 'time',
-                'e': 'events',
+                "t": "threads",
+                "T": "time",
+                "e": "events",
             }
             key = key_map.get(arg[1:], arg[1:])
-            if i + 1 < len(args) and not args[i + 1].startswith('-'):
+            if i + 1 < len(args) and not args[i + 1].startswith("-"):
                 params[key] = _parse_value(args[i + 1])
                 i += 2
             else:
@@ -133,9 +133,9 @@ def _parse_value(value: str) -> Any:
         pass
 
     # Try boolean
-    if value.lower() in ('true', 'yes', 'on', '1'):
+    if value.lower() in ("true", "yes", "on", "1"):
         return True
-    if value.lower() in ('false', 'no', 'off', '0'):
+    if value.lower() in ("false", "no", "off", "0"):
         return False
 
     # Return as string
@@ -153,21 +153,21 @@ def _format_param_description(params: dict[str, Any]) -> str:
     """
     param_parts = []
 
-    if 'test_type' in params:
+    if "test_type" in params:
         param_parts.append(f"Test type: {params['test_type']}")
-    if 'tables' in params:
+    if "tables" in params:
         param_parts.append(f"Tables: {params['tables']}")
-    if 'table_size' in params:
+    if "table_size" in params:
         param_parts.append(f"Table size: {params['table_size']:,} rows")
-    if 'threads' in params:
+    if "threads" in params:
         param_parts.append(f"Threads: {params['threads']}")
-    if 'time' in params:
+    if "time" in params:
         param_parts.append(f"Duration: {params['time']} seconds")
-    if 'events' in params:
+    if "events" in params:
         param_parts.append(f"Events: {params['events']:,}")
-    if 'rate' in params:
+    if "rate" in params:
         param_parts.append(f"Rate limit: {params['rate']} TPS")
-    if 'report_interval' in params and params.get('report_interval', 10) != 10:
+    if "report_interval" in params and params.get("report_interval", 10) != 10:
         param_parts.append(f"Report interval: {params['report_interval']} seconds")
 
     return "\n".join(f"- {p}" for p in param_parts)
@@ -185,31 +185,31 @@ def _build_tool_params_string(params: dict[str, Any], tool_type: str) -> str:
     """
     parts = []
 
-    if tool_type == 'prepare':
-        test_type = params.get('test_type', 'oltp_read_write')
-        tables = params.get('tables', 1)
-        table_size = params.get('table_size', 10000)
+    if tool_type == "prepare":
+        test_type = params.get("test_type", "oltp_read_write")
+        tables = params.get("tables", 1)
+        table_size = params.get("table_size", 10000)
         parts.append(f"test_type={test_type}, tables={tables}, table_size={table_size}")
-        if 'threads' in params:
+        if "threads" in params:
             parts.append(f"threads={params['threads']}")
 
-    elif tool_type == 'run':
-        test_type = params.get('test_type', 'oltp_read_write')
-        tables = params.get('tables', 1)
+    elif tool_type == "run":
+        test_type = params.get("test_type", "oltp_read_write")
+        tables = params.get("tables", 1)
         parts.append(f"test_type={test_type}, tables={tables}")
-        if 'threads' in params:
+        if "threads" in params:
             parts.append(f"threads={params['threads']}")
-        if 'time' in params:
+        if "time" in params:
             parts.append(f"time={params['time']}")
-        if 'events' in params:
+        if "events" in params:
             parts.append(f"events={params['events']}")
-        if 'rate' in params:
+        if "rate" in params:
             parts.append(f"rate={params['rate']}")
-        if 'report_interval' in params and params.get('report_interval', 10) != 10:
+        if "report_interval" in params and params.get("report_interval", 10) != 10:
             parts.append(f"report_interval={params['report_interval']}")
 
-    elif tool_type == 'cleanup':
-        test_type = params.get('test_type', 'oltp_read_write')
+    elif tool_type == "cleanup":
+        test_type = params.get("test_type", "oltp_read_write")
         parts.append(f"test_type={test_type}")
 
     return ", ".join(parts)
@@ -246,7 +246,7 @@ Please intelligently select other unspecified test parameters and execute the be
     elif params:
         # Explicit parameters mode: use specified parameters
         param_desc = _format_param_description(params)
-        no_cleanup = params.get('no_cleanup', False)
+        no_cleanup = params.get("no_cleanup", False)
 
         cleanup_note = " Keep test data after benchmark." if no_cleanup else ""
 
@@ -276,7 +276,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
         return
 
     # Check for 'run' subcommand (let agent choose parameters)
-    if args[0] == 'run':
+    if args[0] == "run":
         # Remove 'run' from args and let agent choose
         remaining_args = args[1:]
         params, unparsed = _parse_benchmark_args(remaining_args)
@@ -285,7 +285,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
         params, unparsed = _parse_benchmark_args(args)
 
     # Handle help
-    if params.get('help'):
+    if params.get("help"):
         console.print(_BENCHMARK_HELP)
         return
 
@@ -302,7 +302,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
 
     # Check if database is selected
     conn_info = app.db_service.get_connection_info()
-    database = conn_info.get('database')
+    database = conn_info.get("database")
     if not database:
         console.print("[red]✗[/red] No database selected.")
         console.print("[yellow]Please create or switch to a database first.[/yellow]")
@@ -340,7 +340,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
         return
 
     # Determine if running in 'run' mode (let agent choose parameters)
-    is_run_mode = args and args[0] == 'run'
+    is_run_mode = args and args[0] == "run"
 
     # Display benchmark configuration and ask for confirmation
     console.print("\n[cyan]Benchmark Configuration:[/cyan]")
@@ -352,13 +352,13 @@ async def benchmark(app: ShellREPL, args: list[str]):
             param_desc = _format_param_description(params)
             if param_desc:
                 console.print("  Specified parameters:")
-                for line in param_desc.split('\n'):
+                for line in param_desc.split("\n"):
                     console.print(f"    {line}")
     elif params:
         param_desc = _format_param_description(params)
         if param_desc:
             console.print("  Parameters:")
-            for line in param_desc.split('\n'):
+            for line in param_desc.split("\n"):
                 console.print(f"    {line}")
     else:
         console.print("  Mode: [yellow]Agent will intelligently choose parameters[/yellow]")

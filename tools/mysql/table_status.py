@@ -12,12 +12,10 @@ from .base import MySQLToolBase
 
 class Params(BaseModel):
     db_name: Optional[str] = Field(
-        default=None,
-        description="The name of the database to query (optional, uses current database if not specified)"
+        default=None, description="The name of the database to query (optional, uses current database if not specified)"
     )
     table_name: Optional[str] = Field(
-        default=None,
-        description="The name of the table to query (optional, shows all tables if not specified)"
+        default=None, description="The name of the table to query (optional, shows all tables if not specified)"
     )
 
 
@@ -33,14 +31,12 @@ class TableStatus(MySQLToolBase):
     async def _execute_tool(self, params: Params) -> dict[str, Any]:
         """Execute SHOW TABLE STATUS to get table statistics."""
         from database import get_current_database
+
         # Determine database to use
         database = params.db_name or get_current_database()
         if not database:
             return {
-                "error": (
-                    "No database selected. Please specify db_name "
-                    "or use 'USE database_name' first"
-                ),
+                "error": ("No database selected. Please specify db_name or use 'USE database_name' first"),
                 "brief": "No database selected",
             }
 
@@ -60,5 +56,5 @@ class TableStatus(MySQLToolBase):
             "type": f"Table Status for {table_info}",
             "columns": columns,
             "rows": rows,
-            "message": f"Found {len(rows)} table(s) in {table_info}"
+            "message": f"Found {len(rows)} table(s) in {table_info}",
         }

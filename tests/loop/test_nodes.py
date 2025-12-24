@@ -1,4 +1,5 @@
 """Tests for loop.nodes module."""
+
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from loop.nodes import (
@@ -119,20 +120,11 @@ class TestShouldContinue:
         state: AgentState = {
             "messages": [
                 HumanMessage(content="Hello"),
-                AIMessage(
-                    content="I'll help you",
-                    tool_calls=[
-                        {
-                            "name": "test_tool",
-                            "args": {},
-                            "id": "call-1"
-                        }
-                    ]
-                )
+                AIMessage(content="I'll help you", tool_calls=[{"name": "test_tool", "args": {}, "id": "call-1"}]),
             ],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "tools"
@@ -140,13 +132,10 @@ class TestShouldContinue:
     def test_should_continue_without_tool_calls(self):
         """Test should_continue returns 'end' when no tool calls."""
         state: AgentState = {
-            "messages": [
-                HumanMessage(content="Hello"),
-                AIMessage(content="Hello! How can I help?")
-            ],
+            "messages": [HumanMessage(content="Hello"), AIMessage(content="Hello! How can I help?")],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "end"
@@ -154,13 +143,10 @@ class TestShouldContinue:
     def test_should_continue_with_empty_tool_calls(self):
         """Test should_continue returns 'end' when tool_calls is empty."""
         state: AgentState = {
-            "messages": [
-                HumanMessage(content="Hello"),
-                AIMessage(content="Response", tool_calls=[])
-            ],
+            "messages": [HumanMessage(content="Hello"), AIMessage(content="Response", tool_calls=[])],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "end"
@@ -168,13 +154,10 @@ class TestShouldContinue:
     def test_should_continue_with_human_message_last(self):
         """Test should_continue returns 'end' when last message is HumanMessage."""
         state: AgentState = {
-            "messages": [
-                AIMessage(content="Response"),
-                HumanMessage(content="Follow up")
-            ],
+            "messages": [AIMessage(content="Response"), HumanMessage(content="Follow up")],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "end"
@@ -184,11 +167,11 @@ class TestShouldContinue:
         state: AgentState = {
             "messages": [
                 AIMessage(content="Response", tool_calls=[{"name": "tool", "args": {}, "id": "1"}]),
-                ToolMessage(content="Result", tool_call_id="1", name="tool")
+                ToolMessage(content="Result", tool_call_id="1", name="tool"),
             ],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "end"
@@ -202,13 +185,13 @@ class TestShouldContinue:
                     content="I'll use multiple tools",
                     tool_calls=[
                         {"name": "tool1", "args": {}, "id": "call-1"},
-                        {"name": "tool2", "args": {}, "id": "call-2"}
-                    ]
-                )
+                        {"name": "tool2", "args": {}, "id": "call-2"},
+                    ],
+                ),
             ],
             "token_count": 0,
             "step_number": 1,
-            "yolo": False
+            "yolo": False,
         }
         result = should_continue(state)
         assert result == "tools"

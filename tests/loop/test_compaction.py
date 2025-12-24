@@ -67,16 +67,7 @@ class TestCountTokens:
 
     def test_message_with_tool_calls(self):
         """Test counting tokens for message with tool calls."""
-        msg = AIMessage(
-            content="",
-            tool_calls=[
-                {
-                    "name": "test_tool",
-                    "args": {"param": "value"},
-                    "id": "call-1"
-                }
-            ]
-        )
+        msg = AIMessage(content="", tool_calls=[{"name": "test_tool", "args": {"param": "value"}, "id": "call-1"}])
         tokens = count_tokens([msg])
         assert tokens > 0
         # Should include tool call tokens
@@ -88,8 +79,8 @@ class TestCountTokens:
             content="",
             tool_calls=[
                 {"name": "tool1", "args": {}, "id": "call-1"},
-                {"name": "tool2", "args": {"key": "value"}, "id": "call-2"}
-            ]
+                {"name": "tool2", "args": {"key": "value"}, "id": "call-2"},
+            ],
         )
         tokens = count_tokens([msg])
         assert tokens > 0
@@ -129,10 +120,7 @@ class TestChainCompaction:
         """Test compacting two messages (should not compact)."""
         compactor = ChainCompaction()
         mock_llm = MagicMock()
-        messages = [
-            HumanMessage(content="Hello"),
-            AIMessage(content="World")
-        ]
+        messages = [HumanMessage(content="Hello"), AIMessage(content="World")]
         result_messages, tokens = await compactor.compact(messages, mock_llm)
         assert len(result_messages) == 2
         assert result_messages == messages
@@ -155,7 +143,7 @@ class TestChainCompaction:
         messages = [
             HumanMessage(content="Message 1"),
             AIMessage(content="Response 1"),
-            HumanMessage(content="Message 2")
+            HumanMessage(content="Message 2"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:
@@ -187,7 +175,7 @@ class TestChainCompaction:
             AIMessage(content="Response 1"),
             HumanMessage(content="Message 2"),
             AIMessage(content="Response 2"),
-            HumanMessage(content="Message 3")
+            HumanMessage(content="Message 3"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:
@@ -218,7 +206,7 @@ class TestChainCompaction:
             SystemMessage(content="System prompt"),
             HumanMessage(content="Message 1"),
             AIMessage(content="Response 1"),
-            HumanMessage(content="Message 2")
+            HumanMessage(content="Message 2"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:
@@ -247,7 +235,7 @@ class TestChainCompaction:
             AIMessage(content="Response 1"),
             HumanMessage(content="Message 2"),
             AIMessage(content="Response 2"),
-            HumanMessage(content="Message 3")
+            HumanMessage(content="Message 3"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:
@@ -275,7 +263,7 @@ class TestChainCompaction:
             AIMessage(content="Response 1"),
             HumanMessage(content="Message 2"),
             AIMessage(content="Response 2"),
-            HumanMessage(content="Message 3")
+            HumanMessage(content="Message 3"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:
@@ -303,7 +291,7 @@ class TestChainCompaction:
             AIMessage(content="Response 1"),
             HumanMessage(content="Message 2"),
             AIMessage(content="Response 2"),
-            HumanMessage(content="Message 3")
+            HumanMessage(content="Message 3"),
         ]
 
         with patch("loop.compaction.prompts") as mock_prompts:

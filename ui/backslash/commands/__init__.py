@@ -4,13 +4,13 @@ Import all command modules to trigger registration.
 """
 
 from ui.backslash.commands import (
-    help,      # \?, \h
-    status,    # \s
-    source,    # \.
-    delimiter, # \d
-    connect,   # \r
-    execute,   # \g, \G
-    quit,      # \q
+    help,  # \?, \h
+    status,  # \s
+    source,  # \.
+    delimiter,  # \d
+    connect,  # \r
+    execute,  # \g, \G
+    quit,  # \q
 )
 
 __all__ = [

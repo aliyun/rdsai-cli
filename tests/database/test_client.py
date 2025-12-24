@@ -56,6 +56,7 @@ class TestDatabaseClientFactory:
 
     def test_register_and_create(self):
         """Test registering and creating a client."""
+
         class MockClient:
             def __init__(self, **kwargs):
                 self.kwargs = kwargs
@@ -88,13 +89,7 @@ class TestMySQLClient:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        client = MySQLClient(
-            host="localhost",
-            port=None,
-            user="test_user",
-            password="test_pass",
-            database="test_db"
-        )
+        client = MySQLClient(host="localhost", port=None, user="test_user", password="test_pass", database="test_db")
 
         assert client._transaction_state == TransactionState.NOT_IN_TRANSACTION
         assert client._autocommit is True
@@ -115,12 +110,7 @@ class TestMySQLClient:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        client = MySQLClient(
-            host="localhost",
-            port=3307,
-            user="test_user",
-            password="test_pass"
-        )
+        client = MySQLClient(host="localhost", port=3307, user="test_user", password="test_pass")
 
         call_kwargs = mock_connect.call_args[1]
         assert call_kwargs["port"] == 3307
@@ -141,7 +131,7 @@ class TestMySQLClient:
             ssl_ca="/path/to/ca.pem",
             ssl_cert="/path/to/cert.pem",
             ssl_key="/path/to/key.pem",
-            ssl_mode="VERIFY_CA"
+            ssl_mode="VERIFY_CA",
         )
 
         call_kwargs = mock_connect.call_args[1]

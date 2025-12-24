@@ -41,8 +41,10 @@ PROMPT_SYMBOL = "🐬"
 
 # Prompt mode and user input types
 
+
 class PromptMode(Enum):
     """Input mode for the prompt."""
+
     AGENT = "agent"
     SHELL = "shell"
 
@@ -55,6 +57,7 @@ class PromptMode(Enum):
 
 class UserInput(BaseModel):
     """Represents user input from the prompt."""
+
     mode: PromptMode
     command: str
     """The plain text representation of the user input."""
@@ -69,6 +72,7 @@ class UserInput(BaseModel):
 
 
 # History management
+
 
 class _HistoryEntry(BaseModel):
     content: str
@@ -121,6 +125,7 @@ _REFRESH_INTERVAL = 1.0
 @dataclass(slots=True)
 class _ToastEntry:
     """A toast notification entry."""
+
     topic: str | None
     """There can be only one toast of each non-None topic in the queue."""
     message: str
@@ -155,7 +160,6 @@ def _current_toast() -> _ToastEntry | None:
     if not _toast_queue:
         return None
     return _toast_queue[0]
-
 
 
 class CustomPromptSession:
@@ -226,7 +230,6 @@ class CustomPromptSession:
                     completion = buff.complete_state.completions[0]
                 buff.apply_completion(completion)
 
-
         @_kb.add("c-j", eager=True)
         def _insert_newline(event: KeyPressEvent) -> None:
             """Insert a newline when Ctrl-J is pressed."""
@@ -275,8 +278,8 @@ class CustomPromptSession:
             mode_text = "enabled" if self._thinking_enabled else "disabled"
             toast(f" Thinking mode {mode_text}", duration=3.0, topic="thinking", immediate=True)
 
-
         if is_clipboard_available():
+
             @_kb.add("c-v", eager=True)
             def _paste(event: KeyPressEvent) -> None:
                 clipboard_data = event.app.clipboard.get_data()
@@ -353,18 +356,17 @@ class CustomPromptSession:
         prefix = "rdsai"
         if self._db_service and self._db_service.is_connected():
             db_info = self._db_service.get_connection_info()
-            db_name = db_info.get('database', 'db')
+            db_name = db_info.get("database", "db")
             if db_name:
                 db_indicator = f"@{db_name}"
 
                 # Add transaction indicator
-                tx_state = db_info.get('transaction_state', 'NOT_IN_TRANSACTION')
-                if tx_state != 'NOT_IN_TRANSACTION':
+                tx_state = db_info.get("transaction_state", "NOT_IN_TRANSACTION")
+                if tx_state != "NOT_IN_TRANSACTION":
                     db_indicator += "[TX]"
-            prefix = db_info.get('user') or prefix
+            prefix = db_info.get("user") or prefix
 
         return FormattedText([("bold", f"{prefix}{db_indicator}{symbol} ")])
-
 
     def __enter__(self) -> CustomPromptSession:
         if self._status_refresh_task is not None and not self._status_refresh_task.done():
@@ -494,11 +496,11 @@ class CustomPromptSession:
             db_status = ""
             if self._db_service and self._db_service.is_connected():
                 db_info = self._db_service.get_connection_info()
-                db_name = db_info.get('database', '')
+                db_name = db_info.get("database", "")
                 if db_name:
                     db_status = f" | {db_name}"
-                    tx_state = db_info.get('transaction_state', 'NOT_IN_TRANSACTION')
-                    if tx_state != 'NOT_IN_TRANSACTION':
+                    tx_state = db_info.get("transaction_state", "NOT_IN_TRANSACTION")
+                    if tx_state != "NOT_IN_TRANSACTION":
                         db_status += "[TX]"
 
             current_toast = _current_toast()

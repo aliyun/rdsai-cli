@@ -19,12 +19,14 @@ from loop.types import FunctionBody, ToolCall
 
 class MockParams(BaseModel):
     """Test parameters model."""
+
     name: str
     value: int
 
 
 class MockTool(BaseTool[MockParams]):
     """Test tool implementation."""
+
     name = "MockTool"
     description = "A test tool"
     params = MockParams
@@ -35,6 +37,7 @@ class MockTool(BaseTool[MockParams]):
 
 class ErrorTool(BaseTool[MockParams]):
     """Tool that raises an error."""
+
     name = "ErrorTool"
     description = "A tool that errors"
     params = MockParams
@@ -45,6 +48,7 @@ class ErrorTool(BaseTool[MockParams]):
 
 class ExceptionTool(BaseTool[MockParams]):
     """Tool that raises an exception."""
+
     name = "ExceptionTool"
     description = "A tool that raises exception"
     params = MockParams
@@ -66,6 +70,7 @@ class TestBaseTool:
 
     def test_parameters_property_no_params(self):
         """Test parameters property when no params defined."""
+
         class NoParamsTool(BaseTool):
             name = "NoParams"
             description = "No params"
@@ -160,8 +165,7 @@ class TestSimpleToolset:
         """Test handling successful tool call."""
         toolset = SimpleToolset([MockTool()])
         tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="MockTool", arguments='{"name": "test", "value": 42}')
+            id="test-id", function=FunctionBody(name="MockTool", arguments='{"name": "test", "value": 42}')
         )
         result = await toolset.handle(tool_call)
         assert isinstance(result, ToolResult)
@@ -175,8 +179,7 @@ class TestSimpleToolset:
         """Test handling tool that returns error."""
         toolset = SimpleToolset([ErrorTool()])
         tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="ErrorTool", arguments='{"name": "test", "value": 42}')
+            id="test-id", function=FunctionBody(name="ErrorTool", arguments='{"name": "test", "value": 42}')
         )
         result = await toolset.handle(tool_call)
         assert isinstance(result.result, ToolRuntimeError)
@@ -187,8 +190,7 @@ class TestSimpleToolset:
         """Test handling tool that raises exception."""
         toolset = SimpleToolset([ExceptionTool()])
         tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="ExceptionTool", arguments='{"name": "test", "value": 42}')
+            id="test-id", function=FunctionBody(name="ExceptionTool", arguments='{"name": "test", "value": 42}')
         )
         result = await toolset.handle(tool_call)
         assert isinstance(result.result, ToolRuntimeError)
@@ -198,10 +200,7 @@ class TestSimpleToolset:
     async def test_handle_tool_not_found(self):
         """Test handling tool not found."""
         toolset = SimpleToolset([MockTool()])
-        tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="NonExistentTool", arguments='{}')
-        )
+        tool_call = ToolCall(id="test-id", function=FunctionBody(name="NonExistentTool", arguments="{}"))
         result = await toolset.handle(tool_call)
         assert isinstance(result.result, ToolRuntimeError)
         assert "not found" in result.result.message.lower()
@@ -210,10 +209,7 @@ class TestSimpleToolset:
     async def test_handle_invalid_json(self):
         """Test handling invalid JSON arguments."""
         toolset = SimpleToolset([MockTool()])
-        tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="MockTool", arguments="invalid json")
-        )
+        tool_call = ToolCall(id="test-id", function=FunctionBody(name="MockTool", arguments="invalid json"))
         result = await toolset.handle(tool_call)
         assert isinstance(result.result, ToolRuntimeError)
         assert "Invalid JSON" in result.result.message
@@ -222,10 +218,7 @@ class TestSimpleToolset:
     async def test_handle_dict_function(self):
         """Test handling tool call with dict function."""
         toolset = SimpleToolset([MockTool()])
-        tool_call = ToolCall(
-            id="test-id",
-            function={"name": "MockTool", "arguments": '{"name": "test", "value": 42}'}
-        )
+        tool_call = ToolCall(id="test-id", function={"name": "MockTool", "arguments": '{"name": "test", "value": 42}'})
         result = await toolset.handle(tool_call)
         assert isinstance(result.result, ToolOk)
 
@@ -347,8 +340,7 @@ class TestDynamicToolset:
         """Test that handle preserves tool call context."""
         toolset = DynamicToolset([MockTool()])
         tool_call = ToolCall(
-            id="test-id",
-            function=FunctionBody(name="MockTool", arguments='{"name": "test", "value": 42}')
+            id="test-id", function=FunctionBody(name="MockTool", arguments='{"name": "test", "value": 42}')
         )
         # Context should be set during handle
         result = await toolset.handle(tool_call)
