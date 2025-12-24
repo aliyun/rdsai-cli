@@ -38,3 +38,11 @@ jobs:
         run: |
           uv run pytest
 
+      - name: Verify rdsai CLI installation
+        run: |
+          # Test that rdsai command is available and --help works correctly
+          echo "Testing rdsai --help command..."
+          uv run rdsai --help
+          
+          echo "✓ rdsai CLI is installed and --help works correctly"
+
