@@ -43,7 +43,6 @@ dependencies = [
     "langgraph>=1.0.4",
 
     # Async & HTTP
-    "aiofiles>=25.1.0",
     "aiohttp>=3.13.0",
 
     # Data & Parsing
