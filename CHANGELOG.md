@@ -13,6 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security enhancements
 - Diagnostic report export
 
+## [v0.1.5] - 2025-12-25
+
+### Fixed
+- **SQL Detection**: Enhanced SHOW statement detection with support for optional modifiers (FULL, EXTENDED, GLOBAL, SESSION, MASTER, SLAVE, REPLICA)
+- **SQL Detection**: Support CTE (Common Table Expressions) queries in SQL statement detection
+- **UI**: Improved keyboard interrupt handling and visualization logic
+
+### Changed
+- **Performance**: Optimized `is_sql_statement` method complexity
+  - Replaced list lookups with frozenset for O(1) lookup performance
+  - Optimized token parsing using generator expressions
+  - Reduced redundant string operations
+- **Code Quality**: Standardized code formatting and string quotation conventions
+- **CI/CD**: Migrated from pylint to Ruff for faster linting
+
+### Added
+- **Testing**: Added comprehensive test coverage for UI module (completers, prompt, repl)
+- **Testing**: Added SQL statement parsing test cases for database service
+- **Testing**: Added unit tests for AgentSpec, compaction context, and nodes module
+- **Tooling**: Added Ruff configuration file for code quality checks
+
+
 ## [v0.1.4] - 2025-12-24
 
 ### Changed
