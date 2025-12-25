@@ -511,9 +511,27 @@ class DatabaseService:
             if not rest:
                 return False  # "SHOW" alone is incomplete
 
+            # List of optional modifiers that can appear before the actual SHOW target
+            # These are stripped to find the real target keyword
+            optional_modifiers = ["FULL", "EXTENDED", "GLOBAL", "SESSION", "MASTER", "SLAVE", "REPLICA"]
+
+            # Strip leading modifiers to find the actual target
+            tokens = rest.split()
+            target_idx = 0
+            for i, token in enumerate(tokens):
+                if token not in optional_modifiers:
+                    target_idx = i
+                    break
+
+            if target_idx >= len(tokens):
+                return False  # Only modifiers, no actual target
+
+            target = tokens[target_idx]
+
             # Check if followed by valid SHOW targets
             valid_show_targets = [
                 "TABLES",
+                "SCHEMAS",  # Alias for DATABASES
                 "CREATE",
                 "INDEX",
                 "DATABASES",
@@ -535,8 +553,8 @@ class DatabaseService:
                 "FUNCTION",
             ]
 
-            # Check if starts with valid target
-            if any(rest.startswith(target) for target in valid_show_targets):
+            # Check if the actual target is valid
+            if target in valid_show_targets:
                 return True  # Valid SHOW statement
 
             # Not a valid SHOW target - likely natural language

@@ -414,6 +414,24 @@ class TestDatabaseService:
         assert service.is_sql_statement("") is False
         assert service.is_sql_statement("   ") is False
 
+    def test_is_sql_statement_show_with_modifiers(self):
+        """Test SHOW statements with optional modifiers (FULL, GLOBAL, SESSION, etc)."""
+        service = DatabaseService()
+        # SHOW with modifiers should be recognized as SQL
+        assert service.is_sql_statement("SHOW FULL PROCESSLIST") is True
+        assert service.is_sql_statement("SHOW GLOBAL VARIABLES") is True
+        assert service.is_sql_statement("SHOW SESSION STATUS") is True
+        assert service.is_sql_statement("SHOW EXTENDED TABLES") is True
+        assert service.is_sql_statement("SHOW FULL TABLES FROM information_schema") is True
+        assert service.is_sql_statement("SHOW GLOBAL VARIABLES LIKE 'max_connections'") is True
+        # Multiple modifiers
+        assert service.is_sql_statement("SHOW FULL GLOBAL PROCESSLIST") is True
+        # SHOW with invalid target should still be rejected
+        assert service.is_sql_statement("SHOW me the tables") is False
+        # SHOW alone should be rejected
+        assert service.is_sql_statement("SHOW") is False
+        assert service.is_sql_statement("SHOW FULL") is False
+
     def test_execute_query_select(self):
         """Test executing SELECT query."""
         service = DatabaseService()
