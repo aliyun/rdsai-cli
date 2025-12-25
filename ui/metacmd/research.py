@@ -153,13 +153,7 @@ async def research(app: ShellREPL, args: list[str]):
     except RunCancelled:
         logger.info("Research cancelled by user")
         console.print("\n[yellow]Research cancelled by user[/yellow]")
-    except KeyboardInterrupt:
-        # Ctrl+C pressed - set cancel event and let run_loop handle it
-        cancel_event.set()
-        # Wait a bit for cancellation to propagate
-        await asyncio.sleep(0.1)
-        logger.info("Research interrupted by user (Ctrl+C)")
-        console.print("\n[yellow]Research interrupted by user[/yellow]")
+        return
     except Exception as e:
         logger.exception("Research failed")
         console.print(f"[red]✗[/red] Research failed: {e}")

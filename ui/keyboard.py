@@ -16,6 +16,7 @@ class KeyEvent(Enum):
     ENTER = auto()
     ESCAPE = auto()
     TAB = auto()
+    CTRL_C = auto()
 
 
 async def listen_for_keyboard() -> AsyncGenerator[KeyEvent]:
@@ -24,7 +25,6 @@ async def listen_for_keyboard() -> AsyncGenerator[KeyEvent]:
     cancel_event = threading.Event()
 
     def emit(event: KeyEvent) -> None:
-        # print(f"emit: {event}")
         loop.call_soon_threadsafe(queue.put_nowait, event)
 
     listener = threading.Thread(
@@ -109,6 +109,8 @@ def _listen_for_keyboard_unix(
                 emit(KeyEvent.ENTER)
             elif c == b"\t":
                 emit(KeyEvent.TAB)
+            elif c == b"\x03":
+                emit(KeyEvent.CTRL_C)
     finally:
         # restore the terminal settings
         termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
@@ -155,6 +157,8 @@ def _listen_for_keyboard_windows(
                 emit(KeyEvent.ENTER)
             elif c == b"\t":
                 emit(KeyEvent.TAB)
+            elif c == b"\x03":
+                emit(KeyEvent.CTRL_C)
         else:
             if cancel.is_set():
                 break
@@ -174,12 +178,3 @@ _WINDOWS_KEY_MAP: dict[bytes, KeyEvent] = {
     b"M": KeyEvent.RIGHT,  # Right arrow
     b"K": KeyEvent.LEFT,  # Left arrow
 }
-
-
-if __name__ == "__main__":
-
-    async def dev_main():
-        async for event in listen_for_keyboard():
-            print(event)
-
-    asyncio.run(dev_main())

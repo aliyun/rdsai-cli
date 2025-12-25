@@ -414,13 +414,7 @@ async def benchmark(app: ShellREPL, args: list[str]):
     except RunCancelled:
         logger.info("Benchmark cancelled by user")
         console.print("\n[yellow]Benchmark cancelled by user[/yellow]")
-    except KeyboardInterrupt:
-        # Ctrl+C pressed - set cancel event and let run_loop handle it
-        cancel_event.set()
-        # Wait a bit for cancellation to propagate
-        await asyncio.sleep(0.1)
-        logger.info("Benchmark interrupted by user (Ctrl+C)")
-        console.print("\n[yellow]Benchmark interrupted by user[/yellow]")
+        return
     except Exception as e:
         logger.exception("Benchmark failed")
         console.print(f"[red]✗[/red] Benchmark failed: {e}")

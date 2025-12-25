@@ -542,24 +542,47 @@ class _LiveView:
                     live.update(self.compose())
                     self._need_recompose = False
 
+            def update_display() -> None:
+                """Update the live display."""
+                live.update(self.compose())
+
+            def finish_loop(is_interrupt: bool) -> None:
+                """Cleanup and update display when loop finishes."""
+                self.cleanup(is_interrupt)
+                update_display()
+
             async with _keyboard_listener(keyboard_handler):
                 while True:
+                    # Check for cancellation before waiting
+                    if self._cancel_event is not None and self._cancel_event.is_set():
+                        finish_loop(is_interrupt=True)
+                        break
+
+                    # Wait for message
                     try:
                         msg = await stream.receive()
                     except asyncio.QueueShutDown:
-                        self.cleanup(is_interrupt=False)
-                        live.update(self.compose())
+                        finish_loop(is_interrupt=False)
                         break
 
+                    # Check for cancellation after receiving message
+                    if self._cancel_event is not None and self._cancel_event.is_set():
+                        finish_loop(is_interrupt=True)
+                        break
+
+                    # Process the received message
                     if isinstance(msg, StepInterrupted):
-                        self.cleanup(is_interrupt=True)
-                        live.update(self.compose())
+                        finish_loop(is_interrupt=True)
                         break
 
-                    self.dispatch_stream_message(msg)
-                    if self._need_recompose:
-                        live.update(self.compose())
-                        self._need_recompose = False
+                    try:
+                        self.dispatch_stream_message(msg)
+                        if self._need_recompose:
+                            update_display()
+                            self._need_recompose = False
+                    except asyncio.QueueShutDown:
+                        finish_loop(is_interrupt=False)
+                        break
 
     def refresh_soon(self) -> None:
         self._need_recompose = True
@@ -628,8 +651,8 @@ class _LiveView:
                 self.request_approval(msg)
 
     def dispatch_keyboard_event(self, event: KeyEvent) -> None:
-        # handle ESC key to cancel the run
-        if event == KeyEvent.ESCAPE and self._cancel_event is not None:
+        # handle ESC key or Ctrl+C to cancel the run
+        if event in (KeyEvent.ESCAPE, KeyEvent.CTRL_C) and self._cancel_event is not None:
             self._cancel_event.set()
             return
 
