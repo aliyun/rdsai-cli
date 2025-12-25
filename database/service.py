@@ -548,7 +548,7 @@ class DatabaseService:
             # Use efficient token parsing with next() and generator expression
             tokens = rest.split()
             target = next(
-                (token.rstrip(';') for token in tokens if token not in self._OPTIONAL_MODIFIERS),
+                (token.rstrip(";") for token in tokens if token not in self._OPTIONAL_MODIFIERS),
                 None,
             )
 
