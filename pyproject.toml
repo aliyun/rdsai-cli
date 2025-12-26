@@ -55,6 +55,7 @@ dependencies = [
     "loguru>=0.7.0",
     "tenacity>=9.1.0",
     "pyperclip>=1.11.0",
+    "packaging>=24.0",
 
     # mcp
     "fastmcp>=2.13.3",
@@ -65,8 +66,8 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
-    "ruff>=0.8.0",
-    "mypy>=1.13.0",
+    "ruff>=0.14.8",
+    "mypy>=1.19.0",
 ]
 
 [project.scripts]

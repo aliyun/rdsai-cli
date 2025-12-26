@@ -37,7 +37,7 @@ def help(app: ShellREPL, args: list[str]):
     db_cmds = []
 
     for cmd in get_meta_commands():
-        if cmd.name in ("setup", "exit", "help", "version", "reload"):
+        if cmd.name in ("setup", "exit", "help", "version", "reload", "upgrade"):
             general_cmds.append(cmd)
         elif cmd.name in ("model", "compact", "clear", "yolo"):
             ai_cmds.append(cmd)
@@ -135,6 +135,121 @@ def version(app: ShellREPL, args: list[str]):
     from config import VERSION
 
     console.print(f"version {VERSION}")
+
+
+@meta_command(aliases=["check-update"])
+async def upgrade(app: ShellREPL, args: list[str]):
+    """Check for available updates and manage upgrade settings."""
+    # Handle --help flag
+    if "--help" in args or "-h" in args:
+        _upgrade_help()
+        return
+
+    # If no args, default to check
+    if not args:
+        await _upgrade_check()
+        return
+
+    subcommand = args[0].lower()
+    subargs = args[1:]
+
+    match subcommand:
+        case "check" | "update":
+            await _upgrade_check()
+        case "auto-check" | "autocheck":
+            if not subargs:
+                _upgrade_show_auto_check()
+            else:
+                _upgrade_set_auto_check(subargs[0])
+        case _:
+            console.print(f"[red]Unknown subcommand: {subcommand}[/red]")
+            console.print("[dim]Use /upgrade --help for usage information[/dim]")
+
+
+def _upgrade_help():
+    """Show help for upgrade command."""
+    from rich.table import Table
+
+    console.print("\n[bold]Upgrade Command[/bold]\n")
+
+    table = Table(show_header=False, show_edge=False, box=None, padding=(0, 1))
+    table.add_column("Command", style="cyan", no_wrap=True, width=30)
+    table.add_column("Description")
+
+    table.add_row("/upgrade", "Check for available updates")
+    table.add_row("/upgrade auto-check", "Show auto-check status")
+    table.add_row("/upgrade auto-check on", "Enable auto-check")
+    table.add_row("/upgrade auto-check off", "Disable auto-check")
+    table.add_row("/upgrade --help", "Show this help message")
+
+    console.print(table)
+    console.print()
+
+
+async def _upgrade_check():
+    """Check for available updates."""
+    from config import VERSION
+    from rich.panel import Panel
+    from rich.text import Text
+    from utils.upgrade import UpgradeConfig, check_for_updates
+
+    config = UpgradeConfig()
+
+    # Show current version and auto-check status
+    auto_check_status = "enabled" if config.auto_check else "disabled"
+    status_color = "green" if config.auto_check else "dim"
+    console.print(f"Current version: [cyan]{VERSION}[/cyan]")
+    console.print(f"Auto check: [{status_color}]{auto_check_status}[/{status_color}]")
+
+    # Check for updates
+    console.print("[dim]Checking for updates...[/dim]")
+    upgrade_info = await check_for_updates(VERSION, force=True)
+
+    if upgrade_info is None:
+        console.print("[green]✓[/green] You are using the latest version.")
+        return
+
+    # Show upgrade information
+    upgrade_text = Text()
+    upgrade_text.append("New version available!\n\n", style="bold yellow")
+    upgrade_text.append(f"Current: ", style="dim")
+    upgrade_text.append(f"{upgrade_info.current_version}\n", style="cyan")
+    upgrade_text.append(f"Latest:  ", style="dim")
+    upgrade_text.append(f"{upgrade_info.latest_version}\n\n", style="green bold")
+    upgrade_text.append("To upgrade, run:\n", style="dim")
+    upgrade_text.append("  ", style="dim")
+    upgrade_text.append("$ ", style="dim")
+    upgrade_text.append(upgrade_info.upgrade_command, style="bold cyan")
+
+    console.print(Panel(upgrade_text, title="Update Available", border_style="yellow"))
+
+
+def _upgrade_show_auto_check():
+    """Show auto-check status."""
+    from utils.upgrade import UpgradeConfig
+
+    config = UpgradeConfig()
+    status = "enabled" if config.auto_check else "disabled"
+    status_color = "green" if config.auto_check else "dim"
+    console.print(f"Auto check: [{status_color}]{status}[/{status_color}]")
+
+
+def _upgrade_set_auto_check(value: str):
+    """Set auto-check setting."""
+    from utils.upgrade import UpgradeConfig
+
+    config = UpgradeConfig()
+    value_lower = value.lower()
+
+    if value_lower in ("on", "true", "1", "yes", "enable"):
+        config.auto_check = True
+        console.print("[green]✓[/green] Auto check enabled.")
+    elif value_lower in ("off", "false", "0", "no", "disable"):
+        config.auto_check = False
+        console.print("[green]✓[/green] Auto check disabled.")
+    else:
+        console.print(f"[yellow]Invalid value: {value}. Use 'on' or 'off'.[/yellow]")
+        console.print("[dim]Usage: /upgrade auto-check [on|off][/dim]")
 
 
 @meta_command(aliases=["reset"], loop_only=True)

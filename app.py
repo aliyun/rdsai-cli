@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import warnings
-from collections.abc import Generator
+from collections.abc import Awaitable, Generator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -23,9 +23,11 @@ from utils.logging import StreamToLogger, logger
 if TYPE_CHECKING:
     from database import ConnectionContext
     from ui import ShellREPL
+    from utils.upgrade import UpgradeInfo
 else:
     ConnectionContext = Any
     ShellREPL = Any
+    UpgradeInfo = Any
 
 DatabaseConnectionContext = ConnectionContext
 
@@ -125,6 +127,9 @@ class Application:
         self._runtime = _runtime
         self._mcp_task: asyncio.Task[None] | None = None
         self._mcp_pool = get_connection_pool()
+        self._upgrade_task: asyncio.Task[None] | None = None
+        self._upgrade_info: UpgradeInfo | None = None
+        self._repl: ShellREPL | None = None  # Reference to REPL for refreshing welcome info
 
     @property
     def loop(self) -> NeoLoop:
@@ -143,13 +148,24 @@ class Application:
 
     # --- Async Context Manager ---
 
+    def _start_background_task(self, coro: Awaitable[None], task_attr: str) -> None:
+        """Start a background task and store reference.
+
+        Args:
+            coro: Coroutine to run in background
+            task_attr: Attribute name to store the task (e.g., '_mcp_task')
+        """
+        task = asyncio.create_task(coro)
+        setattr(self, task_attr, task)
+
     async def __aenter__(self) -> Application:
         """Start all resources."""
         # Start MCP connection pool manager
         await self._mcp_pool.start()
 
-        # Start background task to connect enabled MCP servers (non-blocking)
-        self._mcp_task = asyncio.create_task(self._connect_enabled_mcp_servers())
+        # Start background tasks (non-blocking)
+        self._start_background_task(self._connect_enabled_mcp_servers(), "_mcp_task")
+        self._start_background_task(self._check_for_updates(), "_upgrade_task")
 
         return self
 
@@ -164,6 +180,12 @@ class Application:
             self._mcp_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._mcp_task
+
+        # Cancel upgrade check task if still running
+        if self._upgrade_task:
+            self._upgrade_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._upgrade_task
 
         # Shutdown MCP connection pool (safely closes all connections)
         await self._mcp_pool.shutdown()
@@ -187,6 +209,7 @@ class Application:
                 db_service=db_service,
                 query_history=query_history,
             )
+            self._repl = repl  # Store reference for upgrade check
             return await repl.run()
 
     # --- Helper Methods ---
@@ -200,6 +223,19 @@ class Application:
             WelcomeInfoItem(name="Version", value=VERSION),
             WelcomeInfoItem(name="Session", value=self._runtime.session.id),
         ]
+        # Add upgrade information if available
+        if self._upgrade_info:
+            upgrade_msg = (
+                f"New version available: {self._upgrade_info.latest_version}\n"
+                f"Run '/upgrade' for details or '{self._upgrade_info.upgrade_command}'"
+            )
+            welcome_info.append(
+                WelcomeInfoItem(
+                    name="Update",
+                    value=upgrade_msg,
+                    level=WelcomeInfoItem.Level.WARN,
+                )
+            )
         # Add model information
         if not self._runtime.llm:
             welcome_info.append(
@@ -280,3 +316,30 @@ class Application:
                 break
             except Exception as e:
                 logger.warning("Failed to connect to MCP server '{name}': {error}", name=server.name, error=str(e))
+
+    async def _check_for_updates(self):
+        """Check for available updates in the background.
+
+        This runs as a background task and does not block CLI startup.
+        When an update is detected, refreshes the welcome info panel.
+        """
+        from config import VERSION
+        from utils.upgrade import check_for_updates
+
+        try:
+            upgrade_info = await check_for_updates(VERSION, force=False)
+            if upgrade_info:
+                self._upgrade_info = upgrade_info
+                logger.info(
+                    "Update available: {current} -> {latest}",
+                    current=upgrade_info.current_version,
+                    latest=upgrade_info.latest_version,
+                )
+                # Refresh welcome info in REPL if available
+                if self._repl:
+                    new_welcome_info = self._build_welcome_info()
+                    self._repl.refresh_welcome_info(new_welcome_info)
+        except asyncio.CancelledError:
+            logger.debug("Upgrade check task cancelled")
+        except Exception as e:
+            logger.debug("Failed to check for updates: {error}", error=e)

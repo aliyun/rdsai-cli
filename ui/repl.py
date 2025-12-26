@@ -92,8 +92,37 @@ class ShellREPL:
         """Check if database is connected."""
         return self._db_service is not None and self._db_service.is_connected()
 
+    def refresh_welcome_info(self, new_info_items: list[WelcomeInfoItem]) -> None:
+        """Refresh the welcome information display by printing upgrade notice.
+
+        Args:
+            new_info_items: Updated list of welcome information items
+        """
+        self._welcome_info = list(new_info_items)
+
+        # Find upgrade info item
+        upgrade_item = None
+        for item in new_info_items:
+            if item.name == "Update":
+                upgrade_item = item
+                break
+
+        if upgrade_item:
+            # Print lightweight upgrade notice below the welcome panel
+            console.print()
+            # Extract version info from upgrade message
+            lines = upgrade_item.value.split("\n")
+            console.print(f"[yellow]⚠[/yellow]  [yellow]{lines[0]}[/yellow]")
+            if len(lines) > 1:
+                # Format command nicely
+                command_line = lines[1].strip()
+                console.print(f"   [dim]$[/dim] [cyan]{command_line}[/cyan]")
+            console.print()  # Add spacing before prompt
+
     async def run(self) -> bool:
         console.clear()
+
+        # Print initial welcome info
         _print_welcome_info(self.loop.name or "RDSAI CLI", self._welcome_info)
 
         # Set current REPL instance for global access
@@ -195,6 +224,9 @@ class ShellREPL:
 
                     # Not SQL, route to LLM
                     await self._run_loop_command(user_input.content)
+        except Exception as e:
+            logger.exception("Unexpected error in REPL loop")
+            console.print(f"[red]Unexpected error: {e}[/red]")
         finally:
             # Clear current REPL instance on exit
             self._set_current(None)
@@ -567,8 +599,16 @@ class WelcomeInfoItem:
     level: Level = Level.INFO
 
 
-def _print_welcome_info(name: str, info_items: list[WelcomeInfoItem]) -> None:
-    """Print the welcome banner and information."""
+def _build_welcome_renderable(name: str, info_items: list[WelcomeInfoItem]) -> RenderableType:
+    """Build the welcome banner and information as a renderable object.
+
+    Args:
+        name: Application name
+        info_items: List of welcome information items
+
+    Returns:
+        Renderable object that can be displayed or updated
+    """
     head = Text.from_markup(f"[bold]Welcome to {name}，Your Next-gen AI CLI![/bold]")
     help_text = Text.from_markup("[grey50]Send /help for help information.[/grey50]")
 
@@ -586,11 +626,15 @@ def _print_welcome_info(name: str, info_items: list[WelcomeInfoItem]) -> None:
     for item in info_items:
         rows.append(Text(f"{item.name}: {item.value}", style=item.level.value))
 
-    console.print(
-        Panel(
-            Group(*rows),
-            border_style=_CLI_BLUE,
-            expand=False,
-            padding=(1, 2),
-        )
+    return Panel(
+        Group(*rows),
+        border_style=_CLI_BLUE,
+        expand=False,
+        padding=(1, 2),
     )
+
+
+def _print_welcome_info(name: str, info_items: list[WelcomeInfoItem]) -> None:
+    """Print the welcome banner and information."""
+    renderable = _build_welcome_renderable(name, info_items)
+    console.print(renderable)
