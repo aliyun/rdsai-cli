@@ -282,7 +282,6 @@ class SQLCompleter(Completer):
         if not text.strip():
             return False
 
-
         # Check for SQL keywords at the beginning
         text_upper = text.strip().upper()
         sql_starters = [
