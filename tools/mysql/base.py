@@ -1,5 +1,6 @@
 """Base class for MySQL tools."""
 
+import re
 from abc import abstractmethod
 from typing import Any
 
@@ -38,6 +39,54 @@ class MySQLToolBase(BaseTool):
         if db_service is None:
             raise ValueError("No database connection available. Please connect to a database first.")
         return db_service
+
+    def _get_mysql_version(self) -> str | None:
+        """Get MySQL server version string.
+
+        Returns:
+            Version string (e.g., "8.0.22") or None if unable to determine
+        """
+        try:
+            db_service = self._get_database_service()
+            result = db_service.execute_query("SELECT VERSION()")
+            if result.success and result.rows:
+                return str(result.rows[0][0]) if result.rows[0] else None
+        except Exception:
+            pass
+        return None
+
+    def _is_mysql_version_at_least(self, major: int, minor: int, patch: int) -> bool:
+        """Check if MySQL version is at least the specified version.
+
+        Args:
+            major: Major version number (e.g., 8)
+            minor: Minor version number (e.g., 0)
+            patch: Patch version number (e.g., 22)
+
+        Returns:
+            True if version is at least the specified version, False otherwise
+        """
+        version_str = self._get_mysql_version()
+        if not version_str:
+            # If we can't determine version, assume older version for backward compatibility
+            return False
+
+        # Parse version string (e.g., "8.0.22", "8.0.22-0ubuntu0.20.04.1")
+        match = re.match(r"(\d+)\.(\d+)\.(\d+)", version_str)
+        if not match:
+            return False
+
+        v_major, v_minor, v_patch = int(match.group(1)), int(match.group(2)), int(match.group(3))
+
+        if v_major > major:
+            return True
+        if v_major < major:
+            return False
+        if v_minor > minor:
+            return True
+        if v_minor < minor:
+            return False
+        return v_patch >= patch
 
     def _execute_query(self, sql: str) -> tuple[list[str], list[tuple]]:
         """Execute a SQL query and return columns and rows.
