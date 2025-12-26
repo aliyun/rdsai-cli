@@ -11,7 +11,7 @@ from .base import MySQLToolBase
 
 
 class Params(BaseModel):
-    """No parameters needed for SHOW SLAVE STATUS."""
+    """No parameters needed for SHOW REPLICA STATUS / SHOW SLAVE STATUS."""
 
     pass
 
@@ -26,8 +26,14 @@ class ReplicaStatus(MySQLToolBase):
 
     @override
     async def _execute_tool(self, params: Params) -> dict[str, Any]:
-        """Execute SHOW SLAVE STATUS to get replication information."""
-        columns, rows = self._execute_query("SHOW SLAVE STATUS")
+        """Execute SHOW REPLICA STATUS (MySQL 8.0.22+) or SHOW SLAVE STATUS (older versions) to get replication information."""
+        # MySQL 8.0.22+ uses SHOW REPLICA STATUS, older versions use SHOW SLAVE STATUS
+        if self._is_mysql_version_at_least(8, 0, 22):
+            sql = "SHOW REPLICA STATUS"
+        else:
+            sql = "SHOW SLAVE STATUS"
+        
+        columns, rows = self._execute_query(sql)
 
         return {
             "type": "MySQL Replica Status",
