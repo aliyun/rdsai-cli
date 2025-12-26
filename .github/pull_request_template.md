@@ -1,3 +1,10 @@
+> **⚠️ Important: Before submitting this PR, please ensure:**
+> - [ ] Your code follows the project's style guidelines
+> - [ ] You have performed a self-review of your changes
+> - [ ] Related issues are linked (if applicable), Fixes #123
+> - [ ] You have run `./dev/code-style.sh --check` to verify code style, and `./dev/pytest.sh` to ensure all tests pass
+
+
 ## Description
 
 
@@ -11,7 +18,16 @@
 
 ## Related Issues
 
-<!-- Fixes #123, Closes #456 -->
+<!-- 
+Link related GitHub issues here. Use the format: #issue_number
+Examples:
+  - Fixes #123        (This PR fixes issue #123)
+  - Related to #789   (This PR is related to issue #789)
+  
+If no related issue exists, please create one first or leave this section empty.
+-->
+
+- Fixes: #<!-- Issue number that this PR fixes -->
 
 ## Changes Made
 
