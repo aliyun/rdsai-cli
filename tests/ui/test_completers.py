@@ -1,11 +1,12 @@
 """Tests for ui.completers module - completion functionality."""
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from prompt_toolkit.document import Document
 
 from ui.completers import MetaCommandCompleter, SQLCompleter
+from ui.metacmd.registry import MetaCommand, SubCommand
 
 
 class TestMetaCommandCompleter:
@@ -15,6 +16,41 @@ class TestMetaCommandCompleter:
     def completer(self):
         """Create a MetaCommandCompleter instance."""
         return MetaCommandCompleter()
+
+    @pytest.fixture
+    def mock_cmd_with_subcommands(self):
+        """Create a mock command with subcommands."""
+        subcmd1 = SubCommand(
+            name="check",
+            aliases=[],
+            description="Check for updates",
+        )
+        subcmd2 = SubCommand(
+            name="auto-check",
+            aliases=["autocheck"],
+            description="Manage auto-check",
+            arg_completer=lambda args: ["on", "off"] if len(args) == 0 else [],
+        )
+        return MetaCommand(
+            name="upgrade",
+            description="Upgrade command",
+            func=lambda app, args: None,
+            aliases=["check-update"],
+            loop_only=False,
+            subcommands=[subcmd1, subcmd2],
+        )
+
+    @pytest.fixture
+    def mock_cmd_without_subcommands(self):
+        """Create a mock command without subcommands."""
+        return MetaCommand(
+            name="help",
+            description="Show help",
+            func=lambda app, args: None,
+            aliases=["h", "?"],
+            loop_only=False,
+            subcommands=[],
+        )
 
     def test_get_completions_no_slash(self, completer):
         """Test get_completions without slash prefix."""
@@ -48,6 +84,223 @@ class TestMetaCommandCompleter:
         document = Document("prefix /")
         completions = list(completer.get_completions(document, None))
         # Should not provide completions when there's a prefix
+        assert len(completions) == 0
+
+    def test_get_completions_command_with_space_shows_subcommands(self, completer, mock_cmd_with_subcommands):
+        """Test that command followed by space shows subcommands."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade ")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 2
+            assert all(comp.text in ["check", "auto-check"] for comp in completions)
+            assert all(comp.start_position == 0 for comp in completions)
+
+    def test_get_completions_command_with_space_no_subcommands(self, completer, mock_cmd_without_subcommands):
+        """Test that command without subcommands shows no completions after space."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_without_subcommands):
+            document = Document("/help ")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 0
+
+    def test_get_completions_subcommand_partial_match(self, completer, mock_cmd_with_subcommands):
+        """Test subcommand name completion with partial match."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade auto-")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 1
+            assert completions[0].text == "auto-check"
+            assert completions[0].start_position == -len("auto-")
+
+    def test_get_completions_subcommand_alias_match(self, completer, mock_cmd_with_subcommands):
+        """Test subcommand completion matches aliases."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade autocheck")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 1
+            assert completions[0].text == "auto-check"
+
+    def test_get_completions_subcommand_with_space_no_arg_completer(self, completer, mock_cmd_with_subcommands):
+        """Test that subcommand without arg_completer shows no completions after space."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade check ")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 0
+
+    def test_get_completions_subcommand_with_space_with_arg_completer(self, completer, mock_cmd_with_subcommands):
+        """Test that subcommand with arg_completer shows argument completions after space."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade auto-check ")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 2
+            assert {comp.text for comp in completions} == {"on", "off"}
+            assert all(comp.start_position == 0 for comp in completions)
+
+    def test_get_completions_argument_partial_match(self, completer, mock_cmd_with_subcommands):
+        """Test argument completion with partial match."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            document = Document("/upgrade auto-check o")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 2  # "on" and "off" both start with "o"
+            assert all(comp.text in ["on", "off"] for comp in completions)
+            assert all(comp.start_position == -len("o") for comp in completions)
+
+    def test_get_completions_argument_with_existing_args(self, completer, mock_cmd_with_subcommands):
+        """Test argument completion with existing arguments."""
+
+        # Create a subcommand with arg_completer that uses existing args
+        def arg_completer(args):
+            if len(args) == 0:
+                return ["first"]
+            elif len(args) == 1:
+                return ["second"]
+            return []
+
+        subcmd = SubCommand(
+            name="test",
+            aliases=[],
+            description="Test subcommand",
+            arg_completer=arg_completer,
+        )
+        cmd = MetaCommand(
+            name="testcmd",
+            description="Test command",
+            func=lambda app, args: None,
+            aliases=[],
+            loop_only=False,
+            subcommands=[subcmd],
+        )
+
+        with patch("ui.metacmd.get_meta_command", return_value=cmd):
+            document = Document("/testcmd test first ")
+            completions = list(completer.get_completions(document, None))
+            assert len(completions) == 1
+            assert completions[0].text == "second"
+
+    def test_get_completions_argument_completer_exception(self, completer, mock_cmd_with_subcommands):
+        """Test that exception in arg_completer doesn't crash."""
+
+        # Create a subcommand with failing arg_completer
+        def failing_completer(args):
+            raise ValueError("Test error")
+
+        subcmd = SubCommand(
+            name="failing",
+            aliases=[],
+            description="Failing subcommand",
+            arg_completer=failing_completer,
+        )
+        cmd = MetaCommand(
+            name="testcmd",
+            description="Test command",
+            func=lambda app, args: None,
+            aliases=[],
+            loop_only=False,
+            subcommands=[subcmd],
+        )
+
+        with patch("ui.metacmd.get_meta_command", return_value=cmd):
+            document = Document("/testcmd failing ")
+            completions = list(completer.get_completions(document, None))
+            # Should return empty list instead of crashing
+            assert len(completions) == 0
+
+    def test_complete_main_command_empty(self, completer):
+        """Test _complete_main_command with empty input."""
+        with patch("ui.metacmd.get_meta_commands") as mock_get:
+            mock_get.return_value = [
+                MetaCommand(
+                    name="help",
+                    description="Help command",
+                    func=lambda app, args: None,
+                    aliases=[],
+                    loop_only=False,
+                ),
+                MetaCommand(
+                    name="exit",
+                    description="Exit command",
+                    func=lambda app, args: None,
+                    aliases=["quit"],
+                    loop_only=False,
+                ),
+            ]
+            completions = list(completer._complete_main_command("/"))
+            assert len(completions) == 2
+            assert all(comp.text.startswith("/") for comp in completions)
+
+    def test_complete_main_command_partial(self, completer):
+        """Test _complete_main_command with partial match."""
+        with patch("ui.metacmd.get_meta_commands") as mock_get:
+            mock_get.return_value = [
+                MetaCommand(
+                    name="help",
+                    description="Help command",
+                    func=lambda app, args: None,
+                    aliases=[],
+                    loop_only=False,
+                ),
+                MetaCommand(
+                    name="exit",
+                    description="Exit command",
+                    func=lambda app, args: None,
+                    aliases=[],
+                    loop_only=False,
+                ),
+            ]
+            completions = list(completer._complete_main_command("/he"))
+            assert len(completions) == 1
+            assert completions[0].text == "/help"
+
+    def test_complete_subcommands(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_subcommands."""
+        with patch("ui.metacmd.get_meta_command", return_value=mock_cmd_with_subcommands):
+            completions = list(completer._complete_subcommands("upgrade"))
+            assert len(completions) == 2
+            # Should be sorted by name
+            assert completions[0].text == "auto-check"
+            assert completions[1].text == "check"
+
+    def test_complete_subcommands_no_command(self, completer):
+        """Test _complete_subcommands when command doesn't exist."""
+        with patch("ui.metacmd.get_meta_command", return_value=None):
+            completions = list(completer._complete_subcommands("nonexistent"))
+            assert len(completions) == 0
+
+    def test_complete_subcommand_name(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_subcommand_name."""
+        completions = list(completer._complete_subcommand_name(mock_cmd_with_subcommands, "auto-"))
+        assert len(completions) == 1
+        assert completions[0].text == "auto-check"
+        assert completions[0].start_position == -len("auto-")
+
+    def test_complete_subcommand_name_empty(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_subcommand_name with empty token."""
+        completions = list(completer._complete_subcommand_name(mock_cmd_with_subcommands, ""))
+        assert len(completions) == 2
+        assert all(comp.text in ["auto-check", "check"] for comp in completions)
+
+    def test_complete_arguments(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_arguments."""
+        subcmd = mock_cmd_with_subcommands.get_subcommand("auto-check")
+        assert subcmd is not None
+
+        completions = list(completer._complete_arguments(subcmd, mock_cmd_with_subcommands, "", []))
+        assert len(completions) == 2
+        assert {comp.text for comp in completions} == {"on", "off"}
+
+    def test_complete_arguments_partial(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_arguments with partial match."""
+        subcmd = mock_cmd_with_subcommands.get_subcommand("auto-check")
+        assert subcmd is not None
+
+        completions = list(completer._complete_arguments(subcmd, mock_cmd_with_subcommands, "o", []))
+        assert len(completions) == 2  # "on" and "off" both start with "o"
+
+    def test_complete_arguments_no_match(self, completer, mock_cmd_with_subcommands):
+        """Test _complete_arguments with no matching completions."""
+        subcmd = mock_cmd_with_subcommands.get_subcommand("auto-check")
+        assert subcmd is not None
+
+        completions = list(completer._complete_arguments(subcmd, mock_cmd_with_subcommands, "xyz", []))
         assert len(completions) == 0
 
 

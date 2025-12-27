@@ -11,7 +11,7 @@ from rich.spinner import Spinner
 from loop import NeoLoop
 from ui.formatters.database_formatter import HistoryFormatter
 from ui.console import console
-from ui.metacmd.registry import get_meta_commands, meta_command
+from ui.metacmd.registry import SubCommand, get_meta_commands, meta_command
 
 if TYPE_CHECKING:
     from ui.repl import ShellREPL
@@ -137,7 +137,26 @@ def version(app: ShellREPL, args: list[str]):
     console.print(f"version {VERSION}")
 
 
-@meta_command(aliases=["check-update"])
+def _upgrade_auto_check_arg_completer(args: list[str]) -> list[str]:
+    """Provide argument completions for auto-check subcommand."""
+    if len(args) == 0:
+        return ["on", "off"]
+    return []
+
+
+@meta_command(
+    aliases=["check-update"],
+    subcommands=[
+        SubCommand(name="check", aliases=[], description="Check for available updates"),
+        SubCommand(name="update", aliases=[], description="Check for available updates (alias for check)"),
+        SubCommand(
+            name="auto-check",
+            aliases=["autocheck"],
+            description="Manage auto-check settings",
+            arg_completer=_upgrade_auto_check_arg_completer,
+        ),
+    ],
+)
 async def upgrade(app: ShellREPL, args: list[str]):
     """Check for available updates and manage upgrade settings."""
     # Handle --help flag

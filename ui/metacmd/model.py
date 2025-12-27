@@ -9,13 +9,38 @@ from rich.table import Table
 from config.app import save_config
 from loop import NeoLoop
 from ui.console import console
-from ui.metacmd.registry import meta_command
+from ui.metacmd.registry import SubCommand, meta_command
 
 if TYPE_CHECKING:
     from ui.repl import ShellREPL
 
 
-@meta_command(aliases=["models"], loop_only=True)
+def _model_name_completer(args: list[str]) -> list[str]:
+    """Provide model name completions for model subcommands."""
+    # This will be called dynamically, so we need to get the app instance
+    # For now, return empty list - can be enhanced later with dynamic lookup
+    return []
+
+
+@meta_command(
+    aliases=["models"],
+    loop_only=True,
+    subcommands=[
+        SubCommand(name="list", aliases=["ls"], description="List all configured models"),
+        SubCommand(
+            name="use", aliases=["switch"], description="Switch to a model", arg_completer=_model_name_completer
+        ),
+        SubCommand(
+            name="delete", aliases=["del", "rm"], description="Delete a model", arg_completer=_model_name_completer
+        ),
+        SubCommand(
+            name="info",
+            aliases=[],
+            description="Show detailed information about a model",
+            arg_completer=_model_name_completer,
+        ),
+    ],
+)
 def model(app: ShellREPL, args: list[str]):
     """Manage models. Usage: /model [list|use|delete|info] [name]"""
     assert isinstance(app.loop, NeoLoop)

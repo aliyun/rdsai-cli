@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from prompt_toolkit.shortcuts.choice_input import ChoiceInput
 
 from ui.console import console
-from ui.metacmd.registry import meta_command
+from ui.metacmd.registry import SubCommand, meta_command
 
 if TYPE_CHECKING:
     from ui.repl import ShellREPL
@@ -262,7 +262,12 @@ Please intelligently select other unspecified test parameters and execute the be
         )
 
 
-@meta_command(loop_only=True)
+@meta_command(
+    loop_only=True,
+    subcommands=[
+        SubCommand(name="run", aliases=[], description="Let agent intelligently choose test parameters"),
+    ],
+)
 async def benchmark(app: ShellREPL, args: list[str]):
     """Run sysbench performance test"""
     from loop import NeoLoop, RunCancelled, run_loop

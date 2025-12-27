@@ -15,32 +15,72 @@ if TYPE_CHECKING:
 
 
 class MetaCommandCompleter(Completer):
-    """Completer for meta commands (slash commands).
+    """Completer for meta commands (slash commands) with subcommand support.
 
     - Shows one line per meta command in the form: "/name (alias1, alias2)"
     - Matches by primary name or any alias while inserting the canonical "/name"
-    - Only activates when the current token starts with '/'
+    - Supports subcommand completion: "/command subcommand"
+    - Supports argument completion for subcommands with arg_completer
     """
 
     @override
     def get_completions(self, document, complete_event):
+        from ui.metacmd import get_meta_command
+
+        text_before = document.text_before_cursor
+        text_after = document.text_after_cursor
+
+        # Only autocomplete when the input buffer has no other content after cursor.
+        if text_after.strip():
+            return
+
+        # Parse input state
+        ends_with_space = text_before.rstrip() != text_before
+        parts = text_before.split()
+        if not parts or not parts[0].startswith("/"):
+            return
+
+        cmd_name = parts[0][1:]
+        num_parts = len(parts)
+
+        # Case 1: Only command name (len(parts) == 1)
+        if num_parts == 1:
+            if ends_with_space:
+                # Command followed by space - show subcommands
+                yield from self._complete_subcommands(cmd_name)
+            else:
+                # Completing main command name
+                yield from self._complete_main_command(parts[0])
+            return
+
+        # Case 2: Command + subcommand/arguments (len(parts) >= 2)
+        cmd = get_meta_command(cmd_name)
+        if not cmd or not cmd.subcommands:
+            return
+
+        # Completing subcommand name (len(parts) == 2 and not ends_with_space)
+        if num_parts == 2 and not ends_with_space:
+            yield from self._complete_subcommand_name(cmd, parts[1])
+            return
+
+        # Completing arguments (len(parts) == 2 with space, or len(parts) >= 3)
+        # Get subcommand from parts[1]
+        subcmd = cmd.get_subcommand(parts[1]) if num_parts >= 2 else None
+        if subcmd and subcmd.arg_completer:
+            # Calculate current token and args_so_far based on state
+            if ends_with_space:
+                current_token = ""
+                args_so_far = parts[2:] if num_parts >= 3 else []
+            else:
+                current_token = parts[-1]
+                args_so_far = parts[2:-1] if num_parts >= 3 else []
+
+            yield from self._complete_arguments(subcmd, cmd, current_token, args_so_far)
+
+    @staticmethod
+    def _complete_main_command(token: str):
+        """Complete main command name."""
         from ui.metacmd import get_meta_commands
-
-        text = document.text_before_cursor
-
-        # Only autocomplete when the input buffer has no other content.
-        if document.text_after_cursor.strip():
-            return
-
-        # Only consider the last token (allowing future arguments after a space)
-        last_space = text.rfind(" ")
-        token = text[last_space + 1 :]
-        prefix = text[: last_space + 1] if last_space != -1 else ""
-
-        if prefix.strip():
-            return
-        if not token.startswith("/"):
-            return
 
         typed = token[1:]
         typed_lower = typed.lower()
@@ -54,6 +94,63 @@ class MetaCommandCompleter(Completer):
                     display=cmd.slash_name(),
                     display_meta=cmd.description,
                 )
+
+    @staticmethod
+    def _complete_subcommands(cmd_name: str):
+        """Show all subcommands for a command."""
+        from ui.metacmd import get_meta_command
+
+        cmd = get_meta_command(cmd_name)
+        if not cmd or not cmd.subcommands:
+            return
+
+        for subcmd in sorted(cmd.subcommands, key=lambda s: s.name):
+            display = subcmd.name
+            if subcmd.aliases:
+                display += f" ({', '.join(subcmd.aliases)})"
+            yield Completion(
+                text=subcmd.name,
+                start_position=0,
+                display=display,
+                display_meta=subcmd.description or f"Subcommand of /{cmd.name}",
+            )
+
+    @staticmethod
+    def _complete_subcommand_name(cmd, current_token: str):
+        """Complete subcommand name with partial matching."""
+        typed_lower = current_token.lower()
+
+        for subcmd in sorted(cmd.subcommands, key=lambda s: s.name):
+            names = subcmd.all_names()
+            if not current_token or any(n.lower().startswith(typed_lower) for n in names):
+                display = subcmd.name
+                if subcmd.aliases:
+                    display += f" ({', '.join(subcmd.aliases)})"
+                yield Completion(
+                    text=subcmd.name,
+                    start_position=-len(current_token),
+                    display=display,
+                    display_meta=subcmd.description or f"Subcommand of /{cmd.name}",
+                )
+
+    @staticmethod
+    def _complete_arguments(subcmd, cmd, current_token: str, args_so_far: list[str]):
+        """Complete arguments for a subcommand."""
+        typed_lower = current_token.lower()
+
+        try:
+            completions = subcmd.arg_completer(args_so_far)
+            for comp in completions:
+                if not current_token or comp.lower().startswith(typed_lower):
+                    yield Completion(
+                        text=comp,
+                        start_position=-len(current_token),
+                        display=comp,
+                        display_meta=f"Argument for /{cmd.name} {subcmd.name}",
+                    )
+        except Exception:
+            # If arg_completer fails, don't provide completions
+            pass
 
 
 class SQLCompleter(Completer):
