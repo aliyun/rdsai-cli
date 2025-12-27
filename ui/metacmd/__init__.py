@@ -3,6 +3,7 @@
 from ui.metacmd.registry import (
     MetaCommand,
     MetaCmdFunc,
+    SubCommand,
     get_meta_command,
     get_meta_commands,
     meta_command,
@@ -20,6 +21,7 @@ from ui.metacmd import setup  # noqa: F401
 __all__ = [
     "MetaCommand",
     "MetaCmdFunc",
+    "SubCommand",
     "get_meta_command",
     "get_meta_commands",
     "meta_command",

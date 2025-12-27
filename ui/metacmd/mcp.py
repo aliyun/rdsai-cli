@@ -12,7 +12,7 @@ from tools.mcp.client import get_connection_pool
 from tools.mcp.config import MCPServerConfig
 from tools.mcp.toolset import MCPTool, connect_and_load_tools
 from ui.console import console
-from ui.metacmd.registry import meta_command
+from ui.metacmd.registry import SubCommand, meta_command
 from utils.logging import logger
 
 if TYPE_CHECKING:
@@ -22,7 +22,39 @@ if TYPE_CHECKING:
 MCP_CONNECT_TIMEOUT = 60  # seconds
 
 
-@meta_command(loop_only=True)
+def _mcp_server_name_completer(args: list[str]) -> list[str]:
+    """Provide server name completions for MCP subcommands."""
+    # This will be called dynamically, so we need to get the app instance
+    # For now, return empty list - can be enhanced later with dynamic lookup
+    return []
+
+
+@meta_command(
+    loop_only=True,
+    subcommands=[
+        SubCommand(name="list", aliases=["ls"], description="List all configured MCP servers"),
+        SubCommand(
+            name="view",
+            aliases=["info"],
+            description="View details of a server",
+            arg_completer=_mcp_server_name_completer,
+        ),
+        SubCommand(
+            name="connect", aliases=[], description="Connect to a server", arg_completer=_mcp_server_name_completer
+        ),
+        SubCommand(
+            name="disconnect",
+            aliases=[],
+            description="Disconnect from a server",
+            arg_completer=_mcp_server_name_completer,
+        ),
+        SubCommand(name="enable", aliases=[], description="Enable a server", arg_completer=_mcp_server_name_completer),
+        SubCommand(
+            name="disable", aliases=[], description="Disable a server", arg_completer=_mcp_server_name_completer
+        ),
+        SubCommand(name="reload", aliases=[], description="Reload MCP configuration"),
+    ],
+)
 async def mcp(app: ShellREPL, args: list[str]):
     """Manage MCP servers. Usage: /mcp [list|view|connect|disconnect|enable|disable|reload]"""
     assert isinstance(app.loop, NeoLoop)
