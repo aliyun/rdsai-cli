@@ -10,7 +10,7 @@
 <!-- 
 Provide a high-level overview of what this PR does and why it's needed.
 Focus on the problem being solved, the motivation, and the overall impact.
-Keep it concise (2-3 sentences).
+Brief description (2-3 sentences).
 Examples:
   - This PR adds a new agent capability for SQL query optimization, allowing the agent to automatically suggest and apply performance improvements to user queries.
   - This PR fixes a critical bug where agent context was lost during multi-turn conversations, causing the agent to forget previous interactions and user preferences.
