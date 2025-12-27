@@ -7,6 +7,15 @@
 
 ## Description
 
+<!-- 
+Provide a clear and concise description of what this PR does and why it's needed.
+Include context about the problem being solved or the feature being added.
+Examples:
+  - This PR adds subcommand completion support to improve user experience when using meta commands
+  - This PR fixes a bug where agent context was not properly maintained across multiple turns
+  - This PR refactors the completion logic to reduce complexity and improve maintainability
+-->
+
 
 ## Type of Change
 
@@ -31,19 +40,21 @@ If no related issue exists, please create one first or leave this section empty.
 
 ## Changes Made
 
-<!-- List key changes -->
-
-## Testing
-
-- [ ] Tests added/updated
-- [ ] Manual testing performed
+<!-- 
+List the key changes made in this PR. Be specific and concise.
+Examples:
+  - Added new agent capability for SQL query optimization
+  - Fixed agent context handling bug in multi-turn conversations
+  - Refactored agent loop to improve error handling
+  - Added unit tests for agent tool execution
+-->
 
 ## Checklist
 
-- [ ] Ran `./dev/code-style.sh` to auto-fix code style issues
-- [ ] Ran `./dev/code-style.sh --check` and all checks passed
-- [ ] Ran `./dev/pytest.sh` and all tests passed
-- [ ] Code follows project style guidelines
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] Tests pass locally
+- [x] I understand that this PR may be closed in case there was no previous discussion or issues.
+- [ ] I've added unit tests for each change that was introduced, and I tried as much as possible to make a single atomic change.
+- [ ] I've performed manual testing and verified the changes work as expected.
+- [x] I ran `./dev/code-style.sh --check` to verify code style compliance.
+- [x] I ran `./dev/pytest.sh` and all tests pass.
+- [ ] This change requires a documentation update: <!-- Yes/No, if Yes, please specify which docs need updating -->
+
