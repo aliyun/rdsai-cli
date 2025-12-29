@@ -13,6 +13,7 @@ from ui.metacmd.registry import (
 from ui.metacmd import basic  # noqa: F401
 from ui.metacmd import benchmark  # noqa: F401
 from ui.metacmd import connect  # noqa: F401
+from ui.metacmd import explain  # noqa: F401
 from ui.metacmd import mcp  # noqa: F401
 from ui.metacmd import model  # noqa: F401
 from ui.metacmd import research  # noqa: F401
