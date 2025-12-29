@@ -192,6 +192,10 @@ Shell 会自动：
 
 ## 📚 文档
 
+### 完整教程
+
+- **[完整教程](docs/tutorial_zh.md)** — 从入门到精通的完整使用指南，包含快速开始、基础操作、AI 功能、高级特性、最佳实践和常见问题
+
 ### 核心功能
 
 - **[Database Schema分析 (`/research`)](docs/features/research_zh.md)** — 全面的模式分析和符合阿里巴巴数据库开发标准的合规性检查

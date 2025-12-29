@@ -192,6 +192,10 @@ You can still run shell commands via the built-in shell mode when prefixed appro
 
 ## 📚 Documentation
 
+### Complete Tutorial
+
+- **[Complete Tutorial](docs/tutorial.md)** — Comprehensive guide from beginner to advanced, including quick start, basic operations, AI features, advanced capabilities, best practices, and FAQ
+
 ### Core Features
 
 - **[Database Schema Analysis (`/research`)](docs/features/research.md)** — Comprehensive schema analysis and compliance checking against Alibaba Database Development Standards
