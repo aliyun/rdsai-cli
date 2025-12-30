@@ -184,6 +184,7 @@ Meta commands start with `/` and never hit MySQL directly.
 | `/yolo`       |                | Toggle YOLO mode (auto-approve actions)          |
 | `/history`    | `/hist`        | Show SQL query execution history                 |
 | `/model`      | `/models`      | Manage LLM models (list/use/delete/info)         |
+| `/explain`    |                | Analyze SQL execution plan with AI-powered insights        |
 | `/research`   |                | Generate comprehensive database schema analysis report      |
 | `/benchmark`  |                | Run sysbench performance test with AI-powered analysis      |
 | `/mcp`        |                | Manage MCP servers (list/connect/disconnect/enable/disable) |
@@ -194,6 +195,7 @@ You can still run shell commands via the built-in shell mode when prefixed appro
 
 ### Core Features
 
+- **[Execution Plan Analysis (`/explain`)](docs/features/execution-plan-analysis.md)** — AI-powered SQL execution plan analysis with performance optimization suggestions
 - **[Database Schema Analysis (`/research`)](docs/features/research.md)** — Comprehensive schema analysis and compliance checking against Alibaba Database Development Standards
 - **[Performance Benchmarking (`/benchmark`)](docs/features/benchmark.md)** — AI-powered sysbench testing with automated workflow and comprehensive analysis reports
 - **[MCP Integration](docs/features/mcp.md)** — Extend capabilities by connecting to external MCP servers for cloud RDS management and more
