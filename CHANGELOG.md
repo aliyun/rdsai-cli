@@ -13,6 +13,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security enhancements
 - Diagnostic report export
 
+## [v0.1.6] - 2025-12-30
+
+### Added
+- **SQL Analysis**: SQL execution plan analysis functionality (`/explain` command)
+  - AI-powered execution plan analysis and optimization suggestions
+  - Automatic EXPLAIN execution and result formatting
+  - Integration with existing explain agent for comprehensive analysis
+- **Configuration**: Embedding model configuration support
+  - Support for configuring embedding models in LLM settings
+  - Multiple embedding provider adapters (OpenAI, Qwen, etc.)
+  - Embedding service for text vectorization
+- **Meta Commands**: Subcommand support and completion functionality for meta-commands
+  - Enhanced command completion with subcommand awareness
+  - Improved command discovery and help system
+- **Version Management**: Automatic version upgrade check functionality
+  - Periodic check for new versions from PyPI
+  - Configurable check interval and auto-check settings
+  - Upgrade notifications and command suggestions
+- **Compatibility**: MySQL 8.0.22+ version compatibility support
+  - Enhanced compatibility with newer MySQL versions
+  - Improved handling of MySQL-specific features
+
+### Fixed
+- **Code Quality**: Fixed whitespace character issues in base.py and replica_status.py
+  - Removed trailing whitespace characters
+  - Improved code consistency
+
+### Changed
+- **Testing**: Enhanced test coverage
+  - Added comprehensive unit tests for settings module
+  - Added unit tests for upgrade module
+  - Improved test infrastructure and coverage
+
+### Documentation
+- **Tutorials**: Added complete tutorial documentation (English/中文)
+  - Comprehensive getting started guide
+  - Step-by-step usage instructions
+  - Best practices and examples
+- **Features**: Added execution plan analysis feature documentation
+  - Detailed feature description and usage guide
+  - Examples and use cases
+- **Contributing**: Updated contributing guidelines and PR template
+  - Enhanced development script instructions
+  - Improved PR template with better descriptions and checklists
+  - Added development workflow documentation
+
+### Development
+- **Tooling**: Added development scripts and templates
+  - Code style checking script
+  - Pytest execution script
+  - PR template for better contribution workflow
+
 ## [v0.1.5] - 2025-12-25
 
 ### Fixed
