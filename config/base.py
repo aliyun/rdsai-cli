@@ -14,7 +14,10 @@ from importlib.metadata import PackageNotFoundError, version as get_package_vers
 from pathlib import Path
 
 from utils.logging import logger
-from database import create_database_connection_context, ConnectionContext
+from database import (
+    ConnectionContext,
+    create_database_connection_context,
+)
 
 # Backward compatibility alias
 DatabaseConnectionContext = ConnectionContext

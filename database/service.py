@@ -370,10 +370,29 @@ class DatabaseService:
 
     def connect(self, config: ConnectionConfig) -> str:
         """Create a new database connection."""
-        if config.password is None and config.user:
-            config.password = getpass.getpass("Enter password: ")
+        client = None
+
+        def _cleanup_client() -> None:
+            """Helper to clean up partially created client."""
+            if client is not None:
+                try:
+                    client.close()
+                except Exception as e:
+                    logger.debug(f"Error closing client during cleanup: {e}")
+
+        def _clear_connection_state() -> None:
+            """Helper to clear connection state if it matches the current client."""
+            with self._lock:
+                if self._active_connection == client:
+                    self._active_connection = None
+                    self._connection_config = None
+                    self._connection_id = None
 
         try:
+            # Prompt for password if needed (may raise KeyboardInterrupt)
+            if config.password is None and config.user:
+                config.password = getpass.getpass("Enter password: ")
+
             client = DatabaseClientFactory.create(**config.to_dict())
 
             with self._lock:
@@ -407,7 +426,17 @@ class DatabaseService:
 
             return self._connection_id
 
+        except KeyboardInterrupt:
+            # Clean up partially created connection
+            _cleanup_client()
+            _clear_connection_state()
+
+            logger.info("Database connection cancelled by user")
+            raise ConnectionError("Connection cancelled by user") from None
         except Exception as e:
+            # Clean up partially created connection
+            _cleanup_client()
+
             logger.error(f"Failed to connect to database: {e}")
             raise ConnectionError(f"Connection failed: {e}") from e
 
@@ -804,6 +833,18 @@ def create_connection_context(
             query_history=query_history,
             status=ConnectionStatus.CONNECTED.value,
             display_name=f"{database or 'mysql'}://{host}",
+        )
+    except ConnectionError as e:
+        # Check if connection was cancelled by user
+        error_msg = str(e)
+        if "cancelled by user" in error_msg.lower():
+            error_msg = "Connection cancelled by user"
+        return ConnectionContext(
+            db_service=db_service,
+            query_history=query_history,
+            status=ConnectionStatus.FAILED.value,
+            display_name=f"{database or 'mysql'}://{host}",
+            error=error_msg,
         )
     except Exception as e:
         return ConnectionContext(

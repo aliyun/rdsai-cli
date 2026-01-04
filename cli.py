@@ -128,17 +128,23 @@ def cli_main(
         if not db_user.strip():
             raise typer.BadParameter("Database username cannot be empty", param_hint="--user")
 
-        session = Session.create(
-            host=db_host,
-            user=db_user,
-            port=db_port,
-            password=db_password,
-            database=db_database,
-            ssl_ca=ssl_ca,
-            ssl_cert=ssl_cert,
-            ssl_key=ssl_key,
-            ssl_mode=ssl_mode,
-        )
+        try:
+            session = Session.create(
+                host=db_host,
+                user=db_user,
+                port=db_port,
+                password=db_password,
+                database=db_database,
+                ssl_ca=ssl_ca,
+                ssl_cert=ssl_cert,
+                ssl_key=ssl_key,
+                ssl_mode=ssl_mode,
+            )
+        except KeyboardInterrupt:
+            typer.secho("\nConnection cancelled by user.", fg=typer.colors.YELLOW, err=True)
+            typer.secho("Creating session without database connection.", fg=typer.colors.YELLOW, err=True)
+            typer.secho("Use /connect to connect to a database later.", fg=typer.colors.YELLOW, err=True)
+            session = Session.create_empty()
 
         # Show warning if connection failed (but continue to shell)
         if not session.is_connected:
