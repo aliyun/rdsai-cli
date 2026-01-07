@@ -31,6 +31,18 @@ RDSAI CLI is a next-generation, AI-powered RDS CLI that transforms how you inter
 - API access to at least one LLM provider (Qwen / OpenAI / DeepSeek / Anthropic / Gemini / OpenAI-compatible)
 - **sysbench** (optional, for `/benchmark` command) — Install from [sysbench GitHub](https://github.com/akopytov/sysbench)
 
+### One-Click Installation (Recommended)
+
+The easiest way to install rdsai-cli is using our automated installation script:
+
+```bash
+# Using curl (recommended)
+curl -LsSf https://raw.githubusercontent.com/aliyun/rdsai-cli/main/install.sh | sh
+
+# Or using wget
+wget -qO- https://raw.githubusercontent.com/aliyun/rdsai-cli/main/install.sh | sh
+```
+
 ### Install from PyPI
 
 We recommend using [uv](https://docs.astral.sh/uv/) as the Python package manager for faster installation and better dependency resolution.
