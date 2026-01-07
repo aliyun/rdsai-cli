@@ -26,6 +26,15 @@ def _version_callback(value: bool) -> None:
 
 @cli.command()
 def cli_main(
+    version: Annotated[
+        bool,
+        typer.Option(
+            "--version",
+            "-v",
+            callback=_version_callback,
+            help="Show version information and exit.",
+        ),
+    ] = False,
     debug: Annotated[
         bool,
         typer.Option(
