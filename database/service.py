@@ -863,3 +863,97 @@ def create_database_service() -> DatabaseService:
 
 # Alias for backward compatibility
 create_database_connection_context = create_connection_context
+
+
+def create_duckdb_connection_context(url: str) -> ConnectionContext:
+    """Create a DuckDB connection context from URL.
+
+    Args:
+        url: DuckDB connection URL (e.g., "file:///path/to/file.csv", "duckdb:///path/to/db.duckdb")
+
+    Returns:
+        ConnectionContext with connection status
+    """
+    from .duckdb_loader import DuckDBURLParser, FileLoadError, UnsupportedFileFormatError
+    from .duckdb_client import DuckDBClient
+
+    db_service = DatabaseService()
+    query_history = QueryHistory(max_entries=100)
+
+    try:
+        # Parse URL
+        parsed_url = DuckDBURLParser.parse(url)
+
+        # Create DuckDB client
+        client = DuckDBClient(parsed_url=parsed_url)
+
+        # Create connection config for display purposes
+        # DuckDB doesn't require user/password, but ConnectionConfig needs a user for non-duckdb engines
+        # We set a placeholder user for duckdb to satisfy the config structure
+        connection_config = ConnectionConfig(
+            engine="duckdb",
+            host="duckdb",
+            port=None,
+            user="duckdb",  # Placeholder user for DuckDB (not actually used)
+            password=None,
+            database=None,
+        )
+
+        with db_service._lock:
+            db_service._active_connection = client
+            db_service._connection_config = connection_config
+            db_service._connection_id = f"duckdb_{parsed_url.url}"
+
+        # Load file if it's a file/http/https protocol
+        load_info = None
+        if parsed_url.is_file_protocol or parsed_url.is_http_protocol:
+            try:
+                table_name, row_count, column_count = client.load_file()
+                load_info = (table_name, row_count, column_count)
+            except (FileLoadError, UnsupportedFileFormatError) as e:
+                # Close connection if file loading fails
+                client.close()
+                raise
+
+        # Set display name
+        if parsed_url.is_memory:
+            display_name = "DuckDB (:memory:)"
+        elif parsed_url.is_duckdb_protocol:
+            display_name = f"DuckDB ({parsed_url.path})"
+        else:
+            display_name = f"DuckDB ({parsed_url.original_url})"
+
+        set_service(db_service)
+
+        context = ConnectionContext(
+            db_service=db_service,
+            query_history=query_history,
+            status=ConnectionStatus.CONNECTED.value,
+            display_name=display_name,
+        )
+        # Store load info in db_service for later retrieval
+        if load_info:
+            db_service._duckdb_load_info = load_info
+        return context
+
+    except Exception as e:
+        error_msg = str(e)
+        # Determine display name from URL
+        try:
+            parsed_url = DuckDBURLParser.parse(url)
+            if parsed_url.is_memory:
+                display_name = "DuckDB (:memory:)"
+            elif parsed_url.is_duckdb_protocol:
+                display_name = f"DuckDB ({parsed_url.path})"
+            else:
+                display_name = f"DuckDB ({parsed_url.original_url})"
+        except Exception:
+            display_name = f"DuckDB ({url})"
+
+        return ConnectionContext(
+            db_service=db_service,
+            query_history=query_history,
+            status=ConnectionStatus.FAILED.value,
+            display_name=display_name,
+            error=error_msg,
+        )

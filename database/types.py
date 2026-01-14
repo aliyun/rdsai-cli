@@ -144,12 +144,14 @@ class ConnectionConfig:
 
     def __post_init__(self):
         """Validate configuration after initialization."""
+        if self.engine == 'duckdb':
+            pass
         if not self.user:
             raise ValueError("User is required for database connection")
 
         # Set default ports based on engine
         if self.port is None:
-            default_ports = {"mysql": 3306, "postgresql": 5432, "sqlite": None}
+            default_ports = {"mysql": 3306, "duckdb": None}
             self.port = default_ports.get(self.engine)
 
     def to_dict(self) -> dict[str, Any]:

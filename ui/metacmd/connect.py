@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from ui.console import console
@@ -11,11 +12,361 @@ from utils.logging import logger
 
 if TYPE_CHECKING:
     from ui.repl import ShellREPL
+    from database.types import ConnectionContext
+
+
+# ========== Base Connector ==========
+
+
+class BaseConnector(ABC):
+    """Base class for database connectors."""
+
+    @abstractmethod
+    def can_handle(self, args: list[str]) -> bool:
+        """Check if this connector can handle the connection request.
+        
+        Args:
+            args: Command line arguments
+            
+        Returns:
+            True if this connector can handle the request, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    async def connect(self, session, args: list[str]) -> ConnectionContext:
+        """Execute connection logic and return ConnectionContext.
+        
+        Args:
+            session: The session object to connect with
+            args: Command line arguments
+            
+        Returns:
+            ConnectionContext with connection status
+            
+        Raises:
+            Exception: If connection fails
+        """
+        pass
+
+    def get_display_name(self, connection: ConnectionContext) -> str:
+        """Get display name for the connection.
+        
+        Args:
+            connection: The connection context
+            
+        Returns:
+            Display name string
+        """
+        return connection.display_name
+
+    def get_extra_info(self, connection: ConnectionContext) -> list[str]:
+        """Get extra information to display after connection.
+        
+        Args:
+            connection: The connection context
+            
+        Returns:
+            List of formatted info strings to display
+        """
+        return []
+
+
+# ========== MySQL Connector ==========
+
+
+class MySQLConnector(BaseConnector):
+    """MySQL database connector."""
+
+    def can_handle(self, args: list[str]) -> bool:
+        """MySQL connector handles requests without URL arguments."""
+        if not args:
+            return True
+        # Check if args contain only empty strings
+        url = " ".join(args).strip()
+        return not url
+
+    async def connect(self, session, args: list[str]) -> ConnectionContext:
+        """Connect to MySQL via interactive form."""
+        # Define form fields
+        fields = [
+            _FormField(
+                name="host",
+                label="Host",
+                default_value="localhost",
+                placeholder="Database server hostname",
+            ),
+            _FormField(
+                name="port",
+                label="Port",
+                default_value="3306",
+                placeholder="Database server port",
+            ),
+            _FormField(
+                name="user",
+                label="Username",
+                placeholder="Database username",
+            ),
+            _FormField(
+                name="password",
+                label="Password",
+                is_password=True,
+                placeholder="Database password (optional)",
+            ),
+            _FormField(
+                name="database",
+                label="Database",
+                placeholder="Default database name (optional)",
+            ),
+        ]
+
+        # Run interactive form
+        result = await _run_form(title=" Connect to MySQL ", fields=fields)
+
+        if not result.submitted:
+            raise ValueError("Connection cancelled by user")
+
+        # Validate required fields
+        host = result.values.get("host", "").strip()
+        port_str = result.values.get("port", "").strip()
+        user = result.values.get("user", "").strip()
+        password = result.values.get("password", "").strip() or None
+        database = result.values.get("database", "").strip() or None
+
+        if not host:
+            raise ValueError("Host is required")
+        if not user:
+            raise ValueError("Username is required")
+
+        # Parse port
+        try:
+            port = int(port_str) if port_str else 3306
+        except ValueError:
+            raise ValueError("Invalid port number")
+
+        # Connect to database
+        console.print(f"[dim]Connecting to {user}@{host}:{port}...[/dim]")
+        connection = session.connect(
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
+        )
+
+        return connection
+
+    def get_extra_info(self, connection: ConnectionContext) -> list[str]:
+        """MySQL doesn't have extra info to display."""
+        return []
+
+
+# ========== DuckDB Connector ==========
+
+
+class DuckDBConnector(BaseConnector):
+    """DuckDB database connector."""
+
+    def can_handle(self, args: list[str]) -> bool:
+        """DuckDB connector handles URL arguments."""
+        if not args:
+            return False
+        url = " ".join(args).strip()
+        if not url:
+            return False
+        
+        from database.duckdb_loader import DuckDBURLParser
+        return DuckDBURLParser.has_protocol(url)
+
+    async def connect(self, session, args: list[str]) -> ConnectionContext:
+        """Connect to DuckDB via URL."""
+        from database.duckdb_loader import DuckDBURLParser
+        from database.service import create_duckdb_connection_context
+
+        # Parse URL from arguments
+        url = " ".join(args).strip()
+        if not url:
+            raise ValueError("URL is required for DuckDB connection")
+
+        # Check if URL has a protocol header
+        if not DuckDBURLParser.has_protocol(url):
+            console.print("[red]✗ Missing protocol header[/red]")
+            console.print("[dim]💡 DuckDB connections require a protocol header:[/dim]")
+            console.print("[dim]   • file:///path/to/file.csv (for local files)[/dim]")
+            console.print("[dim]   • http://example.com/file.csv (for HTTP files)[/dim]")
+            console.print("[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]")
+            console.print("[dim]   • duckdb:///path/to/db.duckdb (for DuckDB database files)[/dim]")
+            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
+            raise ValueError("Missing protocol header")
+
+        # Parse and validate URL
+        try:
+            parsed_url = DuckDBURLParser.parse(url)
+        except ValueError as e:
+            console.print(f"[red]✗ Invalid URL format[/red]")
+            console.print(f"[dim]{e}[/dim]")
+            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
+            raise
+
+        # Connect to DuckDB
+        console.print("[dim]Connecting to DuckDB...[/dim]")
+        
+        # Disconnect existing connection if any
+        session.disconnect()
+
+        # Create DuckDB connection context
+        connection = create_duckdb_connection_context(url)
+
+        if not connection.is_connected:
+            raise ValueError(f"Connection failed: {connection.error}")
+
+        # Set connection in session
+        session._db_connection = connection
+        
+        # Store parsed URL in connection for later retrieval
+        connection._parsed_url = parsed_url
+
+        return connection
+
+    def get_extra_info(self, connection: ConnectionContext) -> list[str]:
+        """Get file load information if available."""
+        extra_info = []
+        
+        if hasattr(connection.db_service, "_duckdb_load_info"):
+            load_info = connection.db_service._duckdb_load_info
+            if load_info:
+                table_name, row_count, column_count = load_info
+                
+                # Get original URL from parsed_url stored in connection
+                original_url = ""
+                if hasattr(connection, "_parsed_url"):
+                    original_url = connection._parsed_url.original_url
+                
+                if original_url:
+                    extra_info.append(
+                        f"[green]✓ Loaded {original_url} → table '{table_name}' "
+                        f"({row_count} rows, {column_count} columns)[/green]"
+                    )
+                else:
+                    extra_info.append(
+                        f"[green]✓ Loaded table '{table_name}' "
+                        f"({row_count} rows, {column_count} columns)[/green]"
+                    )
+        
+        return extra_info
+
+
+# ========== Connection Handler ==========
+
+
+class ConnectionHandler:
+    """Handler for managing database connections."""
+
+    _connectors: list[BaseConnector] = []
+
+    @classmethod
+    def register_connector(cls, connector: BaseConnector) -> None:
+        """Register a new connector.
+        
+        Args:
+            connector: The connector instance to register
+        """
+        cls._connectors.append(connector)
+
+    @classmethod
+    async def connect(cls, session, app, args: list[str]) -> None:
+        """Handle connection request by routing to appropriate connector.
+        
+        Args:
+            session: The session object
+            app: The ShellREPL application instance
+            args: Command line arguments
+        """
+        # Find a connector that can handle this request
+        connector = None
+        for c in cls._connectors:
+            if c.can_handle(args):
+                connector = c
+                break
+
+        if connector is None:
+            console.print("[red]✗ No connector available for this connection type[/red]")
+            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
+            console.print("[dim]💡 Use /connect <url> for DuckDB connection (e.g., file:///path/to/file.csv)[/dim]")
+            return
+
+        # Execute connection
+        try:
+            connection = await connector.connect(session, args)
+
+            if connection.is_connected:
+                # Update app references
+                cls._update_app_references(app, connection)
+
+                # Display connection success
+                display_name = connector.get_display_name(connection)
+                console.print(f"[green]✓ Connected to {display_name}[/green]")
+
+                # Display extra info if available
+                extra_info = connector.get_extra_info(connection)
+                for info in extra_info:
+                    console.print(info)
+
+                # Log connection
+                logger.info(
+                    "Connected to database via /connect: {display_name}",
+                    display_name=display_name,
+                )
+            else:
+                console.print(f"[red]✗ Connection failed: {connection.error}[/red]")
+                logger.warning(
+                    "Connection failed via /connect: {error}",
+                    error=connection.error,
+                )
+        except ValueError as e:
+            # User cancellation or validation errors
+            error_msg = str(e)
+            if "cancelled" not in error_msg.lower():
+                console.print(f"[red]✗ {error_msg}[/red]")
+            else:
+                console.print("[yellow]Connection cancelled[/yellow]")
+        except Exception as e:
+            console.print(f"[red]✗ Connection error: {e}[/red]")
+            logger.exception("Connection error via /connect")
+
+    @classmethod
+    def _update_app_references(cls, app, connection: ConnectionContext) -> None:
+        """Update ShellREPL references after connection.
+        
+        Args:
+            app: The ShellREPL application instance
+            connection: The connection context
+        """
+        app._db_service = connection.db_service
+        app._query_history = connection.query_history
+        # Update prompt session's db_service reference to refresh prompt display
+        if app.prompt_session:
+            app.prompt_session.refresh_db_service(connection.db_service)
+
+
+# ========== Initialize Connectors ==========
+
+
+def _initialize_connectors():
+    """Initialize and register all connectors."""
+    ConnectionHandler.register_connector(MySQLConnector())
+    ConnectionHandler.register_connector(DuckDBConnector())
+
+
+_initialize_connectors()
+
+
+# ========== Meta Commands ==========
 
 
 @meta_command(aliases=["conn"])
 async def connect(app: ShellREPL, args: list[str]):
-    """Connect to a MySQL database interactively."""
+    """Connect to a database (MySQL or DuckDB)."""
     from loop.neoloop import NeoLoop
 
     # Get session from runtime
@@ -32,98 +383,8 @@ async def connect(app: ShellREPL, args: list[str]):
         console.print(f"[yellow]Already connected to: {display_name}[/yellow]")
         console.print("[dim]Use /disconnect first to disconnect, or continue to connect to a new database.[/dim]")
 
-    # Define form fields
-    fields = [
-        _FormField(
-            name="host",
-            label="Host",
-            default_value="localhost",
-            placeholder="Database server hostname",
-        ),
-        _FormField(
-            name="port",
-            label="Port",
-            default_value="3306",
-            placeholder="Database server port",
-        ),
-        _FormField(
-            name="user",
-            label="Username",
-            placeholder="Database username",
-        ),
-        _FormField(
-            name="password",
-            label="Password",
-            is_password=True,
-            placeholder="Database password (optional)",
-        ),
-        _FormField(
-            name="database",
-            label="Database",
-            placeholder="Default database name (optional)",
-        ),
-    ]
-
-    # Run interactive form
-    result = await _run_form(title=" Connect to MySQL ", fields=fields)
-
-    if not result.submitted:
-        console.print("[yellow]Connection cancelled[/yellow]")
-        return
-
-    # Validate required fields
-    host = result.values.get("host", "").strip()
-    port_str = result.values.get("port", "").strip()
-    user = result.values.get("user", "").strip()
-    password = result.values.get("password", "").strip() or None
-    database = result.values.get("database", "").strip() or None
-
-    if not host:
-        console.print("[red]Host is required[/red]")
-        return
-    if not user:
-        console.print("[red]Username is required[/red]")
-        return
-
-    # Parse port
-    try:
-        port = int(port_str) if port_str else 3306
-    except ValueError:
-        console.print("[red]Invalid port number[/red]")
-        return
-
-    # Connect to database
-    console.print(f"[dim]Connecting to {user}@{host}:{port}...[/dim]")
-    try:
-        connection = session.connect(
-            host=host,
-            port=port,
-            user=user,
-            password=password,
-            database=database,
-        )
-
-        if connection.is_connected:
-            console.print(f"[green]✓ Connected to {connection.display_name}[/green]")
-            # Update ShellREPL's db_service and query_history references
-            app._db_service = connection.db_service
-            app._query_history = connection.query_history
-            # Update prompt session's db_service reference to refresh prompt display
-            if app.prompt_session:
-                app.prompt_session.refresh_db_service(connection.db_service)
-            logger.info(
-                "Connected to database via /connect: {display_name}",
-                display_name=connection.display_name,
-            )
-        else:
-            console.print(f"[red]Connection failed: {connection.error}[/red]")
-            logger.warning(
-                "Connection failed via /connect: {error}",
-                error=connection.error,
-            )
-    except Exception as e:
-        console.print(f"[red]Connection error: {e}[/red]")
-        logger.exception("Connection error via /connect")
+    # Delegate to ConnectionHandler
+    await ConnectionHandler.connect(session, app, args)
 
 
 @meta_command(aliases=["disconn"])
