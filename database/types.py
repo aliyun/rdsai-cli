@@ -145,7 +145,7 @@ class ConnectionConfig:
     def __post_init__(self):
         """Validate configuration after initialization."""
         if self.engine == 'duckdb':
-            pass
+            return
         if not self.user:
             raise ValueError("User is required for database connection")
 

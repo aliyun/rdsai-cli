@@ -378,16 +378,7 @@ class DuckDBFileLoader:
             result = conn.execute(f"PRAGMA table_info('{table_name}')").fetchall()
             column_count = len(result) if result else 0
 
-            logger.info(
-                "Loaded file into DuckDB table",
-                table_name=table_name,
-                row_count=row_count,
-                column_count=column_count,
-                url=parsed_url.original_url,
-            )
-
-            return (table_name, row_count, column_count)
-
+            return table_name, row_count, column_count
         except UnsupportedFileFormatError:
             raise
         except FileLoadError:

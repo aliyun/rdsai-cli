@@ -208,8 +208,21 @@ class DuckDBConnector(BaseConnector):
             console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
             raise
 
+        # Determine connection message based on URL type
+        if parsed_url.is_file_protocol:
+            message = "Connecting to local file..."
+        elif parsed_url.is_http_protocol:
+            message = "Connecting to remote file..."
+        elif parsed_url.is_duckdb_protocol:
+            if parsed_url.is_memory:
+                message = "Connecting to DuckDB (in-memory)..."
+            else:
+                message = "Connecting to DuckDB database..."
+        else:
+            message = "Connecting to DuckDB..."
+
         # Connect to DuckDB
-        console.print("[dim]Connecting to DuckDB...[/dim]")
+        console.print(f"[dim]{message}[/dim]")
         
         # Disconnect existing connection if any
         session.disconnect()

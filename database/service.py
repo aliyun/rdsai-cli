@@ -892,9 +892,7 @@ def create_duckdb_connection_context(url: str) -> ConnectionContext:
         # We set a placeholder user for duckdb to satisfy the config structure
         connection_config = ConnectionConfig(
             engine="duckdb",
-            host="duckdb",
             port=None,
-            user="duckdb",  # Placeholder user for DuckDB (not actually used)
             password=None,
             database=None,
         )

@@ -91,8 +91,6 @@ class DuckDBClient(DatabaseClient):
 
             return result
         except Exception as e:
-            # DuckDB doesn't have transactions, but we keep the state for compatibility
-            # Don't change transaction state on error
             raise
 
     def fetchall(self) -> list[Any]:
@@ -128,8 +126,6 @@ class DuckDBClient(DatabaseClient):
         Note: DuckDB doesn't have a USE DATABASE command like MySQL.
         This method is a no-op for DuckDB.
         """
-        # DuckDB doesn't support changing databases like MySQL
-        # Each connection is tied to a specific database file or memory
         pass
 
     @classmethod
@@ -149,7 +145,6 @@ class DuckDBClient(DatabaseClient):
         
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
-        # DuckDB doesn't support transactions, do nothing
         pass
 
     def commit_transaction(self) -> None:
@@ -157,7 +152,6 @@ class DuckDBClient(DatabaseClient):
         
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
-        # DuckDB doesn't support transactions, do nothing
         pass
 
     def rollback_transaction(self) -> None:
@@ -165,7 +159,6 @@ class DuckDBClient(DatabaseClient):
         
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
-        # DuckDB doesn't support transactions, do nothing
         pass
 
     def set_autocommit(self, enabled: bool) -> None:
@@ -173,8 +166,6 @@ class DuckDBClient(DatabaseClient):
         
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
-        # DuckDB doesn't support transactions/autocommit, do nothing
-        # But we track the state for compatibility
         self._autocommit = enabled
 
     def get_autocommit(self) -> bool:
