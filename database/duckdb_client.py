@@ -5,7 +5,7 @@ from __future__ import annotations
 import duckdb
 from typing import Any
 
-from .client import DatabaseClient, TransactionState, validate_identifier
+from .client import DatabaseClient, TransactionState
 from .duckdb_loader import DuckDBURLParser, ParsedDuckDBURL, DuckDBFileLoader, FileLoadError
 
 
@@ -135,42 +135,42 @@ class DuckDBClient(DatabaseClient):
 
     def get_transaction_state(self) -> TransactionState:
         """Get current transaction state.
-        
+
         Note: DuckDB doesn't have transaction support, always returns NOT_IN_TRANSACTION.
         """
         return TransactionState.NOT_IN_TRANSACTION
 
     def begin_transaction(self) -> None:
         """Begin a new transaction.
-        
+
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
         pass
 
     def commit_transaction(self) -> None:
         """Commit the current transaction.
-        
+
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
         pass
 
     def rollback_transaction(self) -> None:
         """Rollback the current transaction.
-        
+
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
         pass
 
     def set_autocommit(self, enabled: bool) -> None:
         """Set autocommit mode.
-        
+
         Note: DuckDB doesn't have transaction support, this is a no-op.
         """
         self._autocommit = enabled
 
     def get_autocommit(self) -> bool:
         """Get current autocommit mode.
-        
+
         Note: DuckDB doesn't have transaction support, always returns True.
         """
         return True
@@ -231,3 +231,26 @@ class DuckDBClient(DatabaseClient):
             )
 
         return DuckDBFileLoader.load_file(self.conn, self.parsed_url, table_name)
+
+    def load_files(self, parsed_urls: list) -> list[tuple[str, int, int]]:
+        """
+        Load multiple files into DuckDB tables (for file://, http://, https:// protocols).
+
+        Args:
+            parsed_urls: List of ParsedDuckDBURL objects
+
+        Returns:
+            List of tuples (table_name, row_count, column_count) for each successfully loaded file
+
+        Raises:
+            FileLoadError: If file loading fails
+        """
+        # Validate all URLs are file/http/https protocols
+        for parsed_url in parsed_urls:
+            if not (parsed_url.is_file_protocol or parsed_url.is_http_protocol):
+                raise FileLoadError(
+                    f"Cannot load file for protocol: {parsed_url.protocol}. "
+                    "File loading is only supported for file://, http://, and https:// protocols."
+                )
+
+        return DuckDBFileLoader.load_files(self.conn, parsed_urls)

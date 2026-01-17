@@ -1,7 +1,11 @@
 """Tests for database.service module."""
 
 import pytest
+import sys
 from unittest.mock import MagicMock, patch
+
+# Mock duckdb module before importing database modules
+sys.modules["duckdb"] = MagicMock()
 
 from database.service import (
     DatabaseService,
@@ -10,6 +14,7 @@ from database.service import (
     format_query_context_for_agent,
     create_connection_context,
     create_database_service,
+    create_duckdb_connection_context,
     get_service,
     set_service,
     clear_service,
@@ -763,3 +768,231 @@ class TestFactoryFunctions:
         service = create_database_service()
         assert isinstance(service, DatabaseService)
         assert not service.is_connected()
+
+
+class TestDuckDBConnectionContext:
+    """Tests for DuckDB connection context creation."""
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_single_file(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context with single file."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.FILE,
+            path="/path/to/file.csv",
+            original_url="file:///path/to/file.csv",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client.load_file.return_value = ("table1", 10, 3)
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("file:///path/to/file.csv")
+
+        assert context.status == ConnectionStatus.CONNECTED.value
+        assert context.db_service is not None
+        assert context.query_history is not None
+        mock_client.load_file.assert_called_once()
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_multiple_files(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context with multiple files."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_urls = [
+            ParsedDuckDBURL(
+                protocol=DuckDBProtocol.FILE,
+                path="/path/to/file1.csv",
+                original_url="file:///path/to/file1.csv",
+            ),
+            ParsedDuckDBURL(
+                protocol=DuckDBProtocol.FILE,
+                path="/path/to/file2.csv",
+                original_url="file:///path/to/file2.csv",
+            ),
+        ]
+        mock_parser.parse.side_effect = mock_parsed_urls
+
+        mock_client = MagicMock()
+        mock_client.load_files.return_value = [
+            ("table1", 10, 3),
+            ("table2", 20, 4),
+        ]
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context(
+            [
+                "file:///path/to/file1.csv",
+                "file:///path/to/file2.csv",
+            ]
+        )
+
+        assert context.status == ConnectionStatus.CONNECTED.value
+        assert context.db_service is not None
+        mock_client.load_files.assert_called_once()
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_duckdb_protocol(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context with duckdb:// protocol."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.DUCKDB,
+            path="/path/to/db.duckdb",
+            original_url="duckdb:///path/to/db.duckdb",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("duckdb:///path/to/db.duckdb")
+
+        assert context.status == ConnectionStatus.CONNECTED.value
+        assert context.db_service is not None
+        # Should not call load_file for duckdb:// protocol
+        mock_client.load_file.assert_not_called()
+        mock_client.load_files.assert_not_called()
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_memory(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context with in-memory mode."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.DUCKDB,
+            path=":memory:",
+            is_memory=True,
+            original_url="duckdb://:memory:",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("duckdb://:memory:")
+
+        assert context.status == ConnectionStatus.CONNECTED.value
+        assert context.db_service is not None
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_file_load_error(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context when file loading fails."""
+        from database.duckdb_loader import (
+            ParsedDuckDBURL,
+            DuckDBProtocol,
+            FileLoadError,
+        )
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.FILE,
+            path="/nonexistent/file.csv",
+            original_url="file:///nonexistent/file.csv",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client.load_file.side_effect = FileLoadError("File not found")
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("file:///nonexistent/file.csv")
+
+        assert context.status == ConnectionStatus.FAILED.value
+        assert context.error is not None
+        mock_client.close.assert_called_once()
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_parse_error(self, mock_parser, mock_client_class):
+        """Test creating DuckDB connection context when URL parsing fails."""
+        mock_parser.parse.side_effect = ValueError("Invalid URL format")
+
+        context = create_duckdb_connection_context("invalid://url")
+
+        assert context.status == ConnectionStatus.FAILED.value
+        assert context.error is not None
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_display_name_single_file(self, mock_parser, mock_client_class):
+        """Test display name generation for single file."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.FILE,
+            path="/path/to/data.csv",
+            original_url="file:///path/to/data.csv",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client.load_file.return_value = ("table1", 10, 3)
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("file:///path/to/data.csv")
+
+        assert context.display_name == "File: data.csv"
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_display_name_multiple_files(self, mock_parser, mock_client_class):
+        """Test display name generation for multiple files."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_urls = [
+            ParsedDuckDBURL(
+                protocol=DuckDBProtocol.FILE,
+                path="/path/to/file1.csv",
+                original_url="file:///path/to/file1.csv",
+            ),
+            ParsedDuckDBURL(
+                protocol=DuckDBProtocol.FILE,
+                path="/path/to/file2.csv",
+                original_url="file:///path/to/file2.csv",
+            ),
+        ]
+        mock_parser.parse.side_effect = mock_parsed_urls
+
+        mock_client = MagicMock()
+        mock_client.load_files.return_value = [
+            ("table1", 10, 3),
+            ("table2", 20, 4),
+        ]
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context(
+            [
+                "file:///path/to/file1.csv",
+                "file:///path/to/file2.csv",
+            ]
+        )
+
+        assert "file1.csv" in context.display_name or "file2.csv" in context.display_name
+        assert "Files:" in context.display_name or "2 files" in context.display_name
+
+    @patch("database.duckdb_client.DuckDBClient")
+    @patch("database.duckdb_loader.DuckDBURLParser")
+    def test_create_duckdb_connection_context_display_name_duckdb(self, mock_parser, mock_client_class):
+        """Test display name generation for DuckDB database file."""
+        from database.duckdb_loader import ParsedDuckDBURL, DuckDBProtocol
+
+        mock_parsed_url = ParsedDuckDBURL(
+            protocol=DuckDBProtocol.DUCKDB,
+            path="/path/to/database.duckdb",
+            original_url="duckdb:///path/to/database.duckdb",
+        )
+        mock_parser.parse.return_value = mock_parsed_url
+
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        context = create_duckdb_connection_context("duckdb:///path/to/database.duckdb")
+
+        assert "database.duckdb" in context.display_name or "Database:" in context.display_name

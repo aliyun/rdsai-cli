@@ -6,7 +6,7 @@ Supports:
   - http:// - HTTP file URLs
   - https:// - HTTPS file URLs
   - duckdb:// - DuckDB database files or in-memory mode
-- File loading into DuckDB tables (CSV, Parquet, JSON)
+- File loading into DuckDB tables (CSV, Parquet, JSON, Excel .xlsx)
 """
 
 from __future__ import annotations
@@ -15,7 +15,6 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
 from urllib.parse import urlparse, unquote
 
 import duckdb
@@ -209,6 +208,159 @@ class DuckDBURLParser:
         path_obj = Path(path)
         return path_obj
 
+    @classmethod
+    def is_local_file_path(cls, path: str) -> bool:
+        """
+        Check if a string is a valid local file path (without protocol).
+
+        Args:
+            path: The path to check
+
+        Returns:
+            True if it appears to be a local file path, False otherwise
+        """
+        path = path.strip()
+        if not path:
+            return False
+
+        # Check if it has a protocol header
+        if cls.has_protocol(path):
+            return False
+
+        # Check if it has a supported file extension
+        path_obj = Path(path)
+        ext = path_obj.suffix.lower()
+        return ext in DuckDBFileLoader.SUPPORTED_EXTENSIONS
+
+    @classmethod
+    def is_bare_filename(cls, path: str) -> bool:
+        """
+        Check if a string is a bare filename (no path separators).
+
+        Args:
+            path: The path to check
+
+        Returns:
+            True if it's a bare filename, False otherwise
+        """
+        path = path.strip()
+        if not path:
+            return False
+
+        # Check if it has a protocol header
+        if cls.has_protocol(path):
+            return False
+
+        # Check if it has a supported file extension
+        path_obj = Path(path)
+        ext = path_obj.suffix.lower()
+        if ext not in DuckDBFileLoader.SUPPORTED_EXTENSIONS:
+            return False
+
+        # Check if it contains path separators
+        # On Windows, also check for drive letter (e.g., C:)
+        normalized = path.replace("\\", "/")
+
+        # Not a bare filename if:
+        # - Contains path separator (/)
+        # - Starts with ./ or ../
+        # - Starts with / (absolute path)
+        # - Contains : (Windows drive letter, e.g., C:)
+        if "/" in normalized:
+            return False
+        if normalized.startswith("./") or normalized.startswith("../"):
+            return False
+        if normalized.startswith("/"):
+            return False
+        # Check for Windows drive letter (e.g., C:)
+        # Note: URL schemes are already filtered by has_protocol() above
+        if ":" in path:
+            # Check if it's a Windows drive letter pattern (single letter followed by :)
+            parts = path.split(":", 1)
+            if len(parts) == 2 and len(parts[0]) == 1 and parts[0].isalpha():
+                return False
+
+        return True
+
+    @classmethod
+    def resolve_file_path(cls, path: str) -> str:
+        """
+        Resolve file path, handling bare filenames by searching in current working directory.
+
+        Args:
+            path: File path or bare filename
+
+        Returns:
+            Resolved absolute path
+
+        Raises:
+            ValueError: If file not found
+        """
+        path = path.strip()
+        if not path:
+            raise ValueError("File path cannot be empty")
+
+        # Check if it's a bare filename
+        if cls.is_bare_filename(path):
+            # Search in current working directory
+            cwd = Path.cwd()
+            full_path = cwd / path
+
+            if not full_path.exists():
+                raise ValueError(
+                    f"File not found: {path}\nSearched in: {cwd}\nUse absolute path or relative path (e.g., ./{path})"
+                )
+
+            if not full_path.is_file():
+                raise ValueError(f"Path exists but is not a file: {path}\nFound at: {full_path}")
+
+            return str(full_path.resolve())
+
+        # For non-bare filenames, use existing path resolution
+        path_obj = Path(path).expanduser()
+
+        if not path_obj.exists():
+            raise ValueError(f"File not found: {path}")
+
+        if not path_obj.is_file():
+            raise ValueError(f"Path exists but is not a file: {path}")
+
+        return str(path_obj.resolve())
+
+    @classmethod
+    def normalize_local_path(cls, path: str) -> str:
+        """
+        Normalize a local file path to a file:// URL.
+
+        Args:
+            path: Local file path (without protocol)
+
+        Returns:
+            Normalized file:// URL
+
+        Raises:
+            ValueError: If the path is invalid
+        """
+        path = path.strip()
+        if not path:
+            raise ValueError("File path cannot be empty")
+
+        # Normalize path separators (convert backslashes to forward slashes on Windows)
+        normalized_path = path.replace("\\", "/")
+
+        # Construct file:// URL
+        # For absolute paths: file:///path/to/file
+        # For relative paths: file://./path/to/file or file://path/to/file
+        if normalized_path.startswith("/"):
+            # Absolute path
+            return f"file://{normalized_path}"
+        elif normalized_path.startswith("./") or normalized_path.startswith("../"):
+            # Relative path starting with ./ or ../
+            return f"file://{normalized_path}"
+        else:
+            # Relative path without ./ prefix
+            return f"file://./{normalized_path}"
+
 
 # ========== File Loader ==========
 
@@ -233,6 +385,8 @@ class DuckDBFileLoader:
         ".parquet": "parquet",
         ".json": "json",
         ".jsonl": "json",
+        ".xlsx": "excel",
+        ".xls": "excel_legacy",  # For detection only, not actually supported
     }
 
     @classmethod
@@ -278,7 +432,7 @@ class DuckDBFileLoader:
             url: File URL or path
 
         Returns:
-            File format (csv, parquet, or json)
+            File format (csv, parquet, json, or excel)
 
         Raises:
             UnsupportedFileFormatError: If file format is not supported
@@ -287,15 +441,32 @@ class DuckDBFileLoader:
         path = parsed.path
         ext = Path(path).suffix.lower()
 
+        # Special handling for legacy Excel format (.xls)
+        if ext == ".xls":
+            raise UnsupportedFileFormatError(
+                f"Unsupported file format: {ext}\n"
+                f"Excel 97-2003 format (.xls) is not supported.\n"
+                f"Please convert to .xlsx format (Excel 2007+) or use a different file format.\n"
+                f"Supported formats: csv, parquet, json, excel (.xlsx)"
+            )
+
         if ext not in cls.SUPPORTED_EXTENSIONS:
             supported = ", ".join(sorted(set(cls.SUPPORTED_EXTENSIONS.values())))
+            # Filter out excel_legacy from display
+            supported_display = [f for f in supported.split(", ") if f != "excel_legacy"]
+            supported = ", ".join(supported_display) if supported_display else supported
             raise UnsupportedFileFormatError(
                 f"Unsupported file format: {ext}\n"
                 f"Supported formats: {supported}\n"
-                f"Supported extensions: {', '.join(cls.SUPPORTED_EXTENSIONS.keys())}"
+                f"Supported extensions: {', '.join([k for k in cls.SUPPORTED_EXTENSIONS if k != '.xls'])}"
             )
 
-        return cls.SUPPORTED_EXTENSIONS[ext]
+        format_type = cls.SUPPORTED_EXTENSIONS[ext]
+        # Return "excel" for both .xlsx and .xls (though .xls is caught above)
+        if format_type == "excel_legacy":
+            format_type = "excel"
+
+        return format_type
 
     @classmethod
     def load_file(
@@ -338,35 +509,25 @@ class DuckDBFileLoader:
 
                 # Load file based on format
                 if file_format == "csv":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_path}')"
-                    )
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_path}')")
                 elif file_format == "parquet":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_path}')"
-                    )
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_path}')")
                 elif file_format == "json":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_path}')"
-                    )
-
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_path}')")
+                elif file_format == "excel":
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_path}')")
             elif parsed_url.is_http_protocol:
                 # HTTP/HTTPS URL
                 file_url = parsed_url.path
-
                 # Load file from URL based on format
                 if file_format == "csv":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_url}')"
-                    )
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_url}')")
                 elif file_format == "parquet":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_url}')"
-                    )
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_url}')")
                 elif file_format == "json":
-                    conn.execute(
-                        f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_url}')"
-                    )
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_url}')")
+                elif file_format == "excel":
+                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_url}')")
 
             else:
                 raise FileLoadError(f"Cannot load file for protocol: {parsed_url.protocol}")
@@ -384,4 +545,74 @@ class DuckDBFileLoader:
         except FileLoadError:
             raise
         except Exception as e:
+            error_msg = str(e).lower()
+            # Check for Excel extension related errors
+            if file_format == "excel" and (
+                "excel" in error_msg or "extension" in error_msg or "read_xlsx" in error_msg or "function" in error_msg
+            ):
+                raise FileLoadError(
+                    f"Failed to load Excel file: {e}\n"
+                    f"Make sure DuckDB excel extension is available. "
+                    f"DuckDB should auto-load the extension, but if this error persists, "
+                    f"you may need to install it manually or check your DuckDB installation."
+                ) from e
             raise FileLoadError(f"Failed to load file: {e}") from e
+
+    @classmethod
+    def load_files(
+        cls,
+        conn: duckdb.DuckDBPyConnection,
+        parsed_urls: list[ParsedDuckDBURL],
+    ) -> list[tuple[str, int, int]]:
+        """
+        Load multiple files into DuckDB tables.
+
+        Args:
+            conn: DuckDB connection
+            parsed_urls: List of parsed URL information
+
+        Returns:
+            List of tuples (table_name, row_count, column_count) for each successfully loaded file
+
+        Raises:
+            FileLoadError: If any file loading fails (after attempting all files)
+        """
+        load_results: list[tuple[str, int, int]] = []
+        errors: list[str] = []
+        used_table_names: set[str] = set()
+
+        for parsed_url in parsed_urls:
+            try:
+                # Infer table name
+                base_table_name = cls.infer_table_name(parsed_url.original_url)
+
+                # Handle table name conflicts
+                table_name = base_table_name
+                counter = 1
+                while table_name in used_table_names:
+                    table_name = f"{base_table_name}_{counter}"
+                    counter += 1
+
+                used_table_names.add(table_name)
+
+                # Load the file
+                result = cls.load_file(conn, parsed_url, table_name)
+                load_results.append(result)
+            except (UnsupportedFileFormatError, FileLoadError) as e:
+                errors.append(f"{parsed_url.original_url}: {e}")
+            except Exception as e:
+                errors.append(f"{parsed_url.original_url}: {e}")
+
+        # If all files failed, raise an error
+        if not load_results and errors:
+            error_msg = "Failed to load all files:\n" + "\n".join(f"  - {err}" for err in errors)
+            raise FileLoadError(error_msg)
+
+        # If some files failed, log warnings but return successful loads
+        if errors:
+            logger.warning(
+                "Some files failed to load:\n%s",
+                "\n".join(f"  - {err}" for err in errors),
+            )
+
+        return load_results

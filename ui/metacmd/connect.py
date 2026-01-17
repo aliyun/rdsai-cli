@@ -24,10 +24,10 @@ class BaseConnector(ABC):
     @abstractmethod
     def can_handle(self, args: list[str]) -> bool:
         """Check if this connector can handle the connection request.
-        
+
         Args:
             args: Command line arguments
-            
+
         Returns:
             True if this connector can handle the request, False otherwise
         """
@@ -36,14 +36,14 @@ class BaseConnector(ABC):
     @abstractmethod
     async def connect(self, session, args: list[str]) -> ConnectionContext:
         """Execute connection logic and return ConnectionContext.
-        
+
         Args:
             session: The session object to connect with
             args: Command line arguments
-            
+
         Returns:
             ConnectionContext with connection status
-            
+
         Raises:
             Exception: If connection fails
         """
@@ -51,10 +51,10 @@ class BaseConnector(ABC):
 
     def get_display_name(self, connection: ConnectionContext) -> str:
         """Get display name for the connection.
-        
+
         Args:
             connection: The connection context
-            
+
         Returns:
             Display name string
         """
@@ -62,10 +62,10 @@ class BaseConnector(ABC):
 
     def get_extra_info(self, connection: ConnectionContext) -> list[str]:
         """Get extra information to display after connection.
-        
+
         Args:
             connection: The connection context
-            
+
         Returns:
             List of formatted info strings to display
         """
@@ -161,111 +161,199 @@ class MySQLConnector(BaseConnector):
         return []
 
 
-# ========== DuckDB Connector ==========
+# ========== File/Data Source Connector ==========
 
 
 class DuckDBConnector(BaseConnector):
-    """DuckDB database connector."""
+    """File and data source connector (uses DuckDB as analysis engine)."""
+
+    # Help information constants
+    _SUPPORTED_FORMATS = [
+        "[dim]💡 Supported formats:[/dim]",
+        "[dim]   • Bare filename: file.csv (searches in current directory)[/dim]",
+        "[dim]   • Local file paths: /path/to/file.csv, ./file.csv[/dim]",
+        "[dim]   • file:///path/to/file.csv (for local files)[/dim]",
+        "[dim]   • http://example.com/file.csv (for HTTP files)[/dim]",
+        "[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]",
+        "[dim]   • Excel files: file.xlsx (Excel 2007+ format)[/dim]",
+        "[dim]   • duckdb:///path/to/db.duckdb (for database files)[/dim]",
+    ]
+
+    def _print_supported_formats(self) -> None:
+        """Print supported formats help information."""
+        for line in self._SUPPORTED_FORMATS:
+            console.print(line)
 
     def can_handle(self, args: list[str]) -> bool:
-        """DuckDB connector handles URL arguments."""
+        """File connector handles URL arguments, local file paths, or bare filenames."""
         if not args:
             return False
-        url = " ".join(args).strip()
-        if not url:
-            return False
-        
+
         from database.duckdb_loader import DuckDBURLParser
-        return DuckDBURLParser.has_protocol(url)
+
+        # Check each argument
+        for arg in args:
+            arg = arg.strip()
+            if not arg:
+                continue
+
+            # Check if it has a protocol header
+            if DuckDBURLParser.has_protocol(arg):
+                return True
+
+            # Check if it's a valid local file path (including bare filenames)
+            if DuckDBURLParser.is_local_file_path(arg):
+                return True
+
+        return False
 
     async def connect(self, session, args: list[str]) -> ConnectionContext:
-        """Connect to DuckDB via URL."""
+        """Connect to file(s) or data source(s) via URL(s) or local file path(s)."""
         from database.duckdb_loader import DuckDBURLParser
         from database.service import create_duckdb_connection_context
 
-        # Parse URL from arguments
-        url = " ".join(args).strip()
-        if not url:
-            raise ValueError("URL is required for DuckDB connection")
+        # Parse URLs from arguments (support multiple files)
+        urls: list[str] = []
+        for arg in args:
+            arg = arg.strip()
+            if not arg:
+                continue
 
-        # Check if URL has a protocol header
-        if not DuckDBURLParser.has_protocol(url):
-            console.print("[red]✗ Missing protocol header[/red]")
-            console.print("[dim]💡 DuckDB connections require a protocol header:[/dim]")
-            console.print("[dim]   • file:///path/to/file.csv (for local files)[/dim]")
-            console.print("[dim]   • http://example.com/file.csv (for HTTP files)[/dim]")
-            console.print("[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]")
-            console.print("[dim]   • duckdb:///path/to/db.duckdb (for DuckDB database files)[/dim]")
-            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
-            raise ValueError("Missing protocol header")
+            # Check if it has a protocol header (http://, https://, file://, duckdb://)
+            if DuckDBURLParser.has_protocol(arg):
+                urls.append(arg)
+            elif DuckDBURLParser.is_local_file_path(arg):
+                # Resolve file path (handles bare filenames by searching in current directory)
+                try:
+                    resolved_path = DuckDBURLParser.resolve_file_path(arg)
+                    # Normalize resolved path to file:// URL
+                    normalized_url = DuckDBURLParser.normalize_local_path(resolved_path)
+                    urls.append(normalized_url)
+                except ValueError as e:
+                    # File not found or other path resolution error
+                    error_msg = str(e)
+                    console.print(f"[red]✗ {error_msg}[/red]")
+                    self._print_supported_formats()
+                    raise
+            else:
+                # Invalid format
+                console.print(f"[red]✗ Invalid file path or URL: {arg}[/red]")
+                self._print_supported_formats()
+                raise ValueError(f"Invalid file path or URL: {arg}")
 
-        # Parse and validate URL
+        if not urls:
+            raise ValueError("At least one file path or URL is required")
+
+        # Validate all URLs can be parsed
+        parsed_urls = []
         try:
-            parsed_url = DuckDBURLParser.parse(url)
+            for url in urls:
+                parsed_url = DuckDBURLParser.parse(url)
+                parsed_urls.append(parsed_url)
         except ValueError as e:
             console.print(f"[red]✗ Invalid URL format[/red]")
             console.print(f"[dim]{e}[/dim]")
-            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
             raise
 
-        # Determine connection message based on URL type
-        if parsed_url.is_file_protocol:
-            message = "Connecting to local file..."
-        elif parsed_url.is_http_protocol:
-            message = "Connecting to remote file..."
-        elif parsed_url.is_duckdb_protocol:
-            if parsed_url.is_memory:
-                message = "Connecting to DuckDB (in-memory)..."
+        # Determine connection message based on URL type and count
+        primary_parsed_url = parsed_urls[0]
+        if len(urls) == 1:
+            if primary_parsed_url.is_file_protocol:
+                message = "Loading data from file..."
+            elif primary_parsed_url.is_http_protocol:
+                message = "Loading data from remote file..."
+            elif primary_parsed_url.is_duckdb_protocol:
+                if primary_parsed_url.is_memory:
+                    message = "Connecting to in-memory data source..."
+                else:
+                    message = "Connecting to database file..."
             else:
-                message = "Connecting to DuckDB database..."
+                message = "Connecting to data source..."
         else:
-            message = "Connecting to DuckDB..."
+            # Multiple files
+            file_count = len([p for p in parsed_urls if p.is_file_protocol or p.is_http_protocol])
+            if file_count == len(urls):
+                message = f"Loading data from {len(urls)} files..."
+            else:
+                message = f"Connecting to {len(urls)} data sources..."
 
-        # Connect to DuckDB
+        # Connect to data source
         console.print(f"[dim]{message}[/dim]")
-        
+
         # Disconnect existing connection if any
         session.disconnect()
 
-        # Create DuckDB connection context
-        connection = create_duckdb_connection_context(url)
+        # Create connection context (supports single URL string or list of URLs)
+        if len(urls) == 1:
+            connection = create_duckdb_connection_context(urls[0])
+        else:
+            connection = create_duckdb_connection_context(urls)
 
         if not connection.is_connected:
             raise ValueError(f"Connection failed: {connection.error}")
 
         # Set connection in session
         session._db_connection = connection
-        
-        # Store parsed URL in connection for later retrieval
-        connection._parsed_url = parsed_url
+
+        # Store parsed URLs in connection for later retrieval
+        connection._parsed_urls = parsed_urls
+        # For backward compatibility, also store primary URL
+        connection._parsed_url = primary_parsed_url
 
         return connection
+
+    def _format_file_load_info(
+        self,
+        table_name: str,
+        row_count: int,
+        column_count: int,
+        original_url: str = "",
+    ) -> str:
+        """Format file load information."""
+        if original_url:
+            return (
+                f"[green]✓ Loaded {original_url} → table '{table_name}' "
+                f"({row_count} rows, {column_count} columns)[/green]"
+            )
+        else:
+            return f"[green]✓ Loaded table '{table_name}' ({row_count} rows, {column_count} columns)[/green]"
 
     def get_extra_info(self, connection: ConnectionContext) -> list[str]:
         """Get file load information if available."""
         extra_info = []
-        
+
         if hasattr(connection.db_service, "_duckdb_load_info"):
             load_info = connection.db_service._duckdb_load_info
             if load_info:
-                table_name, row_count, column_count = load_info
-                
-                # Get original URL from parsed_url stored in connection
-                original_url = ""
-                if hasattr(connection, "_parsed_url"):
-                    original_url = connection._parsed_url.original_url
-                
-                if original_url:
-                    extra_info.append(
-                        f"[green]✓ Loaded {original_url} → table '{table_name}' "
-                        f"({row_count} rows, {column_count} columns)[/green]"
-                    )
-                else:
-                    extra_info.append(
-                        f"[green]✓ Loaded table '{table_name}' "
-                        f"({row_count} rows, {column_count} columns)[/green]"
-                    )
-        
+                # Handle both single file (tuple) and multiple files (list)
+                if isinstance(load_info, tuple):
+                    # Single file - backward compatibility
+                    table_name, row_count, column_count = load_info
+
+                    # Get original URL from parsed_url stored in connection
+                    original_url = ""
+                    if hasattr(connection, "_parsed_url"):
+                        original_url = connection._parsed_url.original_url
+
+                    extra_info.append(self._format_file_load_info(table_name, row_count, column_count, original_url))
+                elif isinstance(load_info, list):
+                    # Multiple files
+                    parsed_urls = []
+                    if hasattr(connection, "_parsed_urls"):
+                        parsed_urls = connection._parsed_urls
+                    elif hasattr(connection, "_parsed_url"):
+                        parsed_urls = [connection._parsed_url]
+
+                    for i, (table_name, row_count, column_count) in enumerate(load_info):
+                        # Get original URL if available
+                        original_url = ""
+                        if i < len(parsed_urls):
+                            original_url = parsed_urls[i].original_url
+
+                        extra_info.append(
+                            self._format_file_load_info(table_name, row_count, column_count, original_url)
+                        )
+
         return extra_info
 
 
@@ -280,7 +368,7 @@ class ConnectionHandler:
     @classmethod
     def register_connector(cls, connector: BaseConnector) -> None:
         """Register a new connector.
-        
+
         Args:
             connector: The connector instance to register
         """
@@ -289,7 +377,7 @@ class ConnectionHandler:
     @classmethod
     async def connect(cls, session, app, args: list[str]) -> None:
         """Handle connection request by routing to appropriate connector.
-        
+
         Args:
             session: The session object
             app: The ShellREPL application instance
@@ -304,8 +392,15 @@ class ConnectionHandler:
 
         if connector is None:
             console.print("[red]✗ No connector available for this connection type[/red]")
-            console.print("[dim]💡 Use /connect without arguments for MySQL interactive connection[/dim]")
-            console.print("[dim]💡 Use /connect <url> for DuckDB connection (e.g., file:///path/to/file.csv)[/dim]")
+            console.print("[dim]  Use /connect without arguments for MySQL interactive connection[/dim]")
+            console.print(
+                "[dim]  Use /connect <filename> to connect to a file in current directory (e.g., flights.csv)[/dim]"
+            )
+            console.print(
+                "[dim]  Use /connect <file> to connect to a local file (e.g., /path/to/file.csv, ./file.csv)[/dim]"
+            )
+            console.print("[dim]  Use /connect <url> to connect to a remote file or data source[/dim]")
+            console.print("[dim]  Use /connect file1.csv file2.csv to connect to multiple files[/dim]")
             return
 
         # Execute connection
@@ -350,7 +445,7 @@ class ConnectionHandler:
     @classmethod
     def _update_app_references(cls, app, connection: ConnectionContext) -> None:
         """Update ShellREPL references after connection.
-        
+
         Args:
             app: The ShellREPL application instance
             connection: The connection context
@@ -379,7 +474,7 @@ _initialize_connectors()
 
 @meta_command(aliases=["conn"])
 async def connect(app: ShellREPL, args: list[str]):
-    """Connect to a database (MySQL or DuckDB)."""
+    """Connect to a database (MySQL) or data source (files, URLs)."""
     from loop.neoloop import NeoLoop
 
     # Get session from runtime
