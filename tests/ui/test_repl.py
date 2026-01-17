@@ -1,12 +1,8 @@
 """Tests for ui.repl module - core REPL functionality."""
 
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# Mock duckdb module before importing database modules
-sys.modules["duckdb"] = MagicMock()
 
 from database import DatabaseError, QueryResult, QueryType, TransactionState
 from loop import Loop, NeoLoop

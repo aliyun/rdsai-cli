@@ -2,10 +2,6 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-import sys
-
-# Mock duckdb module before importing duckdb_client
-sys.modules["duckdb"] = MagicMock()
 
 from database.duckdb_client import DuckDBClient
 from database.duckdb_loader import (

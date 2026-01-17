@@ -1,11 +1,7 @@
 """Tests for database.service module."""
 
 import pytest
-import sys
 from unittest.mock import MagicMock, patch
-
-# Mock duckdb module before importing database modules
-sys.modules["duckdb"] = MagicMock()
 
 from database.service import (
     DatabaseService,

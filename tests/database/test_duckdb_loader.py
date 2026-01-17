@@ -4,11 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 import tempfile
 import os
-import sys
 from pathlib import Path
-
-# Mock duckdb module before importing duckdb_loader
-sys.modules["duckdb"] = MagicMock()
 
 from database.duckdb_loader import (
     DuckDBURLParser,

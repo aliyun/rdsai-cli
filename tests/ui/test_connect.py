@@ -1,13 +1,9 @@
 """Tests for ui.metacmd.connect module - database connection functionality."""
 
-import sys
 from unittest.mock import AsyncMock, MagicMock
 from unittest.mock import patch as mock_patch
 
 import pytest
-
-# Mock duckdb module before importing database modules
-sys.modules["duckdb"] = MagicMock()
 
 from database.types import ConnectionContext, ConnectionStatus
 from ui.metacmd.connect import (
