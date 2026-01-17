@@ -1,8 +1,12 @@
 """Tests for ui.metacmd.explain module - SQL execution plan analysis."""
 
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+# Mock duckdb module before importing database modules
+sys.modules["duckdb"] = MagicMock()
 
 from database import QueryResult, QueryType
 from loop import NeoLoop, RunCancelled

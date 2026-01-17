@@ -1,7 +1,12 @@
 """Tests for database.client module."""
 
+import sys
 import pytest
 from unittest.mock import MagicMock, patch
+
+# Mock duckdb module before importing database modules
+sys.modules["duckdb"] = MagicMock()
+
 from database.client import (
     validate_identifier,
     DatabaseClientFactory,
