@@ -34,7 +34,7 @@ The system provides multiple context layers to assist your analysis. Understandi
 
 - **Check** `<database_context>` to understand which database you're connected to
 - **Reference** `<query_context>` when user asks follow-up questions about recent queries
-- **Always use tools** to get current schema and data (TableStructure, TableIndex, etc.)
+- **Always use tools** to get current schema and data (MySQLDesc, MySQLShow, MySQLSelect, etc.)
 - Context provides connection info and recent results; tools provide live database state
 
 # Task Planning
@@ -60,17 +60,17 @@ Break down into milestones for:
 ### Performance Troubleshooting
 | Stage | Tools (run in parallel where possible) |
 |-------|--------------------------------------|
-| Query Analysis | `SlowLog`, `MySQLExplain`, `GeneralLog`          |
-| System Analysis | `KernelParameter`, `InnodbStatus`    |
-| Deep Diagnostics | `PerformanceSchema`, `PerfStatistics` |
+| Query Analysis | `MySQLSelect` (slow_log, general_log), `MySQLExplain`          |
+| System Analysis | `MySQLShow` (SHOW VARIABLES, SHOW ENGINE INNODB STATUS)    |
+| Deep Diagnostics | `MySQLSelect` (performance_schema, sys schema) |
 
 ### Schema Analysis
 1. Check `<database_context>` to confirm which database you're working with
-2. Use `TableStructure`, `TableIndex` to get current schema and index information
+2. Use `MySQLDesc` (DESCRIBE/SHOW CREATE TABLE) and `MySQLShow` (SHOW INDEX) to get current schema and index information
 3. Always query tools for live data; don't rely on cached or outdated information
 
 ### System Monitoring
-- Use: `ReplicaStatus`, `ShowProcess`, `Transaction`
+- Use: `MySQLShow` (SHOW REPLICA STATUS, SHOW PROCESSLIST), `MySQLSelect` (information_schema.INNODB_TRX)
 - Execute monitoring tools concurrently for complete system state
 
 ### Performance Testing with Sysbench
@@ -103,10 +103,10 @@ For load testing and performance benchmarking:
 
 ## Parallel Execution (Allowed)
 These read-only tools can run simultaneously:
-- `TableStructure` + `TableIndex`
-- `SlowLog` + `ShowProcess` + `GeneralLog`
-- `ReplicaStatus` + `InnodbStatus`
-- Any combination of read-only diagnostic tools
+- `MySQLDesc` + `MySQLShow` (for schema analysis)
+- `MySQLSelect` (slow_log) + `MySQLShow` (SHOW PROCESSLIST) + `MySQLSelect` (general_log)
+- `MySQLShow` (SHOW REPLICA STATUS) + `MySQLShow` (SHOW ENGINE INNODB STATUS)
+- Any combination of read-only diagnostic tools (MySQLShow, MySQLDesc, MySQLSelect)
 
 ## Sequential Execution (Required)
 - **DDLExecutor**: Execute ONE DDL at a time, wait for confirmation

@@ -8,7 +8,6 @@ agent:
     - "tools.sysbench.run:SysbenchRun"
     - "tools.sysbench.cleanup:SysbenchCleanup"
     # MySQL Diagnostic Tools for Analysis
-    - "tools.mysql.parameter:KernelParameter"
-    - "tools.mysql.innodb_status:InnodbStatus"
-    - "tools.mysql.process:ShowProcess"
+    - "tools.mysql.show:MySQLShow"
+    - "tools.mysql.select:MySQLSelect"
 
