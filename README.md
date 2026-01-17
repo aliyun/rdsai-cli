@@ -11,16 +11,14 @@ RDSAI CLI is a next-generation, AI-powered RDS CLI that transforms how you inter
 
 ## ✨ Features
 
-- **AI Assistant for MySQL** — Ask in natural language (English / 中文均可), get optimized SQL, diagnostics, and explanations
-- **Smart SQL Handling** — Auto-detects SQL vs natural language, supports SQL completer, query history, etc. 
-- **Instant SQL Result Explanation** — Press `Ctrl+E` after any SQL query to get AI-powered explanations of results or errors, helping you understand query outcomes and troubleshoot issues quickly
-- **Multi-Model LLM Support** — Work with multiple providers and models (Qwen, OpenAI, DeepSeek, Anthropic, Gemini, OpenAI-compatible) and switch via `/model`, with thinking mode support for transparent reasoning and decision-making processes
-- **Database Schema Analysis** — Generate comprehensive database analysis reports with AI-powered schema review, index optimization suggestions, compliance checking against Alibaba Database Development Standards, and actionable recommendations
-- **Sysbench Performance Benchmarking** — AI-powered performance testing with automated workflow (prepare → run → cleanup), comprehensive analysis reports including MySQL configuration analysis, InnoDB status analysis, bottleneck identification, and optimization recommendations
-- **MCP (Model Context Protocol) Integration** — Extend capabilities by connecting to external MCP servers, including Alibaba Cloud RDS OpenAPI for cloud RDS instance management, monitoring, and operations
-- **Safety First** — Read-only by default; DDL/DML requires confirmation (unless YOLO mode)
-- **YOLO Mode** — One toggle to auto-approve all actions when you know what you're doing
-- **SSL/TLS Support** — Full SSL configuration (CA, client cert, key, mode)
+- **Multi-Source Connection** — Connect to MySQL databases, local files (CSV, JSON, Excel), and remote data sources (HTTP/HTTPS URLs), with support for multiple files simultaneously
+- **AI Assistant** — Natural language queries (English/中文), optimized SQL, diagnostics, and explanations
+- **Smart SQL** — Auto-detects SQL vs natural language, query history, `Ctrl+E` for instant result explanations
+- **Multi-Model LLM** — Support for Qwen, OpenAI, DeepSeek, Anthropic, Gemini, and OpenAI-compatible APIs
+- **Schema Analysis** — AI-powered database analysis with compliance checking and optimization suggestions
+- **Performance Benchmarking** — Automated sysbench testing with comprehensive analysis reports
+- **MCP Integration** — Extend capabilities via Model Context Protocol servers
+- **Safety First** — Read-only by default, DDL/DML requires confirmation (YOLO mode available)
 
 ## 📦 Installation
 
@@ -96,11 +94,34 @@ rdsai --host localhost -P 3307 -u root -p secret
 
 You can start the CLI **without any connection parameters** and connect later using the interactive `/connect` command:
 
+**Connect to MySQL database:**
 ```text
 $ rdsai
 > /connect
 # Interactive form will prompt for Host, Port, Username, Password, Database
 ```
+
+**Connect to files or data sources:**
+```text
+# Connect to a CSV file in current directory
+> /connect flights.csv
+
+# Connect to a local file
+> /connect /path/to/data.csv
+> /connect ./data.xlsx
+
+# Connect to a remote file via HTTP/HTTPS
+> /connect https://example.com/data.csv
+
+# Connect to multiple files
+> /connect file1.csv file2.csv
+```
+
+**Supported file formats:**
+- CSV files (`.csv`)
+- Parquet files (`.parquet`)
+- JSON files (`.json`)
+- Excel files (`.xlsx`, Excel 2007+ format)
 
 **Connection options:**
 
@@ -184,7 +205,7 @@ Meta commands start with `/` and never hit MySQL directly.
 
 | Command       | Alias          | Description                                      |
 | ------------- | -------------- | ------------------------------------------------ |
-| `/connect`    | `/conn`        | Connect to MySQL database interactively          |
+| `/connect`    | `/conn`        | Connect to MySQL, local files, or remote data sources |
 | `/disconnect` | `/disconn`     | Disconnect from current database                 |
 | `/help`       | `/h`, `/?`     | Show help and current status                     |
 | `/exit`       | `/quit`        | Exit CLI                                         |
@@ -219,6 +240,7 @@ You can still run shell commands via the built-in shell mode when prefixed appro
 ### Usage Scenarios
 
 - **[SQL Result Explanation with Ctrl+E](docs/scenarios/sql-result-explanation.md)** — Get instant AI-powered explanations of query results and errors using the `Ctrl+E` shortcut
+- **[Local File Connection & Analysis](docs/scenarios/local-file-analysis.md)** — Connect to local files (CSV, Parquet, JSON, Excel) and perform AI-powered data analysis
 - **[Slow Query Analysis & Optimization](docs/scenarios/slow-query-analysis.md)** — Identify and optimize slow queries using AI-powered analysis
 - **[Lock Wait & Deadlock Troubleshooting](docs/scenarios/lock-troubleshooting.md)** — Diagnose and resolve lock contention issues
 - **[Database Schema Analysis & Compliance Review](docs/scenarios/schema-analysis.md)** — Comprehensive schema review with compliance checking

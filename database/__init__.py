@@ -43,6 +43,17 @@ from .client import (
     validate_identifier,
 )
 
+# DuckDB
+from .duckdb_client import DuckDBClient
+from .duckdb_loader import (
+    DuckDBFileLoader,
+    DuckDBProtocol,
+    DuckDBURLParser,
+    FileLoadError,
+    ParsedDuckDBURL,
+    UnsupportedFileFormatError,
+)
+
 # Service (main entry point)
 from .service import (
     # Service class
@@ -112,6 +123,14 @@ __all__ = [
     "MySQLClient",
     "TransactionState",
     "validate_identifier",
+    # DuckDB
+    "DuckDBClient",
+    "DuckDBProtocol",
+    "DuckDBURLParser",
+    "ParsedDuckDBURL",
+    "DuckDBFileLoader",
+    "FileLoadError",
+    "UnsupportedFileFormatError",
     # Service
     "DatabaseService",
     "clear_service",

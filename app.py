@@ -275,7 +275,7 @@ class Application:
             welcome_info.append(
                 WelcomeInfoItem(
                     name="Database",
-                    value="Not connected. Use /connect to connect.",
+                    value="Not connected. Use /connect to connect to a database, file, or URL.",
                     level=WelcomeInfoItem.Level.WARN,
                 )
             )

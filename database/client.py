@@ -299,3 +299,8 @@ class MySQLClient(DatabaseClient):
 
 # Register MySQL client
 DatabaseClientFactory.register("mysql", MySQLClient)
+
+#  Register DuckDB client
+from .duckdb_client import DuckDBClient
+
+DatabaseClientFactory.register("duckdb", DuckDBClient)

@@ -20,5 +20,7 @@ agent:
 #    - "tools.mysql.perf_statistics:PerfStatistics"
     - "tools.mysql.replica_status:ReplicaStatus"
     - "tools.mysql.sql_ddl:DDLExecutor"
+    # Database Analysis Tool (MySQL & DuckDB)
+    - "tools.database.query_analyzer:QueryAnalyzer"
     # Subagent Tool
     - "tools.subagent.subagent:Subagent"

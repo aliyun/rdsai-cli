@@ -863,3 +863,215 @@ def create_database_service() -> DatabaseService:
 
 # Alias for backward compatibility
 create_database_connection_context = create_connection_context
+
+
+def _generate_file_display_name(parsed_urls: list, urls: list[str]) -> str:
+    """
+    Generate user-friendly display name for file connections.
+
+    Args:
+        parsed_urls: List of parsed URL objects
+        urls: List of original URL strings
+
+    Returns:
+        User-friendly display name
+    """
+    import os
+
+    if not parsed_urls:
+        return "Data source"
+
+    primary_parsed_url = parsed_urls[0]
+
+    # Handle in-memory mode
+    if primary_parsed_url.is_memory:
+        if len(urls) == 1:
+            return "In-memory data source"
+        else:
+            return f"In-memory data source ({len(urls)} files)"
+
+    # Handle DuckDB database file protocol
+    if primary_parsed_url.is_duckdb_protocol:
+        db_path = primary_parsed_url.path
+        if db_path == ":memory:":
+            return "In-memory data source"
+        # Extract filename from path
+        filename = os.path.basename(db_path)
+        if filename:
+            return f"Database: {filename}"
+        return f"Database: {db_path}"
+
+    # Handle file/http/https protocols
+    if len(urls) == 1:
+        # Single file
+        if primary_parsed_url.is_file_protocol:
+            # Extract filename from path
+            file_path = primary_parsed_url.path
+            filename = os.path.basename(file_path)
+            if filename:
+                return f"File: {filename}"
+            return f"File: {file_path}"
+        elif primary_parsed_url.is_http_protocol:
+            # HTTP/HTTPS URL - show domain or full URL
+            url_str = primary_parsed_url.original_url
+            try:
+                from urllib.parse import urlparse
+
+                parsed = urlparse(url_str)
+                domain = parsed.netloc
+                if domain:
+                    return f"Remote: {domain}"
+            except Exception:
+                pass
+            return f"Remote: {url_str}"
+        else:
+            # Fallback
+            return f"Data source: {primary_parsed_url.original_url}"
+    else:
+        # Multiple files
+        file_count = len([p for p in parsed_urls if p.is_file_protocol or p.is_http_protocol])
+        if file_count == len(urls):
+            # All are files
+            if file_count <= 3:
+                # Show file names
+                filenames = []
+                for parsed_url in parsed_urls:
+                    if parsed_url.is_file_protocol:
+                        filename = os.path.basename(parsed_url.path)
+                        filenames.append(filename)
+                    elif parsed_url.is_http_protocol:
+                        try:
+                            from urllib.parse import urlparse
+
+                            parsed = urlparse(parsed_url.original_url)
+                            filename = os.path.basename(parsed.path) or parsed.netloc
+                            filenames.append(filename)
+                        except Exception:
+                            filenames.append("file")
+                if filenames:
+                    return f"Files: {', '.join(filenames)}"
+            return f"{file_count} files"
+        else:
+            return f"{len(urls)} data sources"
+
+
+def create_duckdb_connection_context(url: str | list[str]) -> ConnectionContext:
+    """Create a DuckDB connection context from URL(s).
+
+    Args:
+        url: DuckDB connection URL(s) - can be a single URL string or a list of URLs
+            (e.g., "file:///path/to/file.csv", ["file1.csv", "file2.csv"])
+
+    Returns:
+        ConnectionContext with connection status
+    """
+    from .duckdb_loader import DuckDBURLParser, FileLoadError, UnsupportedFileFormatError, ParsedDuckDBURL
+    from .duckdb_client import DuckDBClient
+
+    db_service = DatabaseService()
+    query_history = QueryHistory(max_entries=100)
+
+    # Normalize input to list
+    urls: list[str] = [url] if isinstance(url, str) else url
+
+    try:
+        # Parse all URLs
+        parsed_urls: list[ParsedDuckDBURL] = []
+        for url_str in urls:
+            parsed_url = DuckDBURLParser.parse(url_str)
+            parsed_urls.append(parsed_url)
+
+        # Use first URL for connection setup (all should use same DuckDB instance)
+        primary_parsed_url = parsed_urls[0]
+
+        # Create DuckDB client (use in-memory mode for file/http/https protocols)
+        client = DuckDBClient(parsed_url=primary_parsed_url)
+
+        # Create connection config for display purposes
+        # DuckDB doesn't require user/password, but ConnectionConfig needs a user for non-duckdb engines
+        # We set a placeholder user for duckdb to satisfy the config structure
+        connection_config = ConnectionConfig(
+            engine="duckdb",
+            port=None,
+            password=None,
+            database=None,
+        )
+
+        with db_service._lock:
+            db_service._active_connection = client
+            db_service._connection_config = connection_config
+            # Use first URL for connection ID
+            db_service._connection_id = f"duckdb_{primary_parsed_url.url}"
+
+        # Load files if they are file/http/https protocols
+        load_info = None
+        file_urls = [p for p in parsed_urls if p.is_file_protocol or p.is_http_protocol]
+
+        if file_urls:
+            try:
+                if len(file_urls) == 1:
+                    # Single file - use existing method for backward compatibility
+                    table_name, row_count, column_count = client.load_file()
+                    load_info = [(table_name, row_count, column_count)]
+                else:
+                    # Multiple files
+                    load_info = client.load_files(file_urls)
+            except (FileLoadError, UnsupportedFileFormatError) as e:
+                # Close connection if file loading fails
+                client.close()
+                raise
+
+        # Set display name using user-friendly format
+        display_name = _generate_file_display_name(parsed_urls, urls)
+
+        set_service(db_service)
+
+        context = ConnectionContext(
+            db_service=db_service,
+            query_history=query_history,
+            status=ConnectionStatus.CONNECTED.value,
+            display_name=display_name,
+        )
+        # Store load info in db_service for later retrieval
+        # For backward compatibility, single file stores as tuple, multiple files as list
+        if load_info:
+            if len(load_info) == 1:
+                db_service._duckdb_load_info = load_info[0]
+            else:
+                db_service._duckdb_load_info = load_info
+        return context
+
+    except Exception as e:
+        error_msg = str(e)
+        # Determine display name from URL(s) using user-friendly format
+        try:
+            primary_url = urls[0] if urls else ""
+            parsed_urls_for_error = []
+            for url_str in urls:
+                parsed_url = DuckDBURLParser.parse(url_str)
+                parsed_urls_for_error.append(parsed_url)
+            display_name = _generate_file_display_name(parsed_urls_for_error, urls)
+        except Exception:
+            # Fallback display name
+            if len(urls) == 1:
+                # Try to extract filename
+                try:
+                    import os
+
+                    filename = os.path.basename(urls[0])
+                    if filename:
+                        display_name = f"File: {filename}"
+                    else:
+                        display_name = f"Data source: {urls[0]}"
+                except Exception:
+                    display_name = f"Data source: {urls[0]}"
+            else:
+                display_name = f"{len(urls)} data sources"
+
+        return ConnectionContext(
+            db_service=db_service,
+            query_history=query_history,
+            status=ConnectionStatus.FAILED.value,
+            display_name=display_name,
+            error=error_msg,
+        )

@@ -2,6 +2,7 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
+
 from database.client import (
     validate_identifier,
     DatabaseClientFactory,
