@@ -60,31 +60,42 @@ class QueryAnalyzer(BaseTool[Params]):
             Tuple of (is_valid, error_message)
         """
         sql_upper = sql.strip().upper()
-        
+
         # Allow WITH (CTE) and SELECT
         if sql_upper.startswith("SELECT") or sql_upper.startswith("WITH"):
             return True, ""
-        
+
         # Check for common non-SELECT statements
         forbidden_prefixes = [
-            "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER", "DROP",
-            "TRUNCATE", "REPLACE", "EXPLAIN", "SHOW", "DESCRIBE", "DESC",
-            "USE", "SET", "BEGIN", "COMMIT", "ROLLBACK", "GRANT", "REVOKE"
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "CREATE",
+            "ALTER",
+            "DROP",
+            "TRUNCATE",
+            "REPLACE",
+            "EXPLAIN",
+            "SHOW",
+            "DESCRIBE",
+            "DESC",
+            "USE",
+            "SET",
+            "BEGIN",
+            "COMMIT",
+            "ROLLBACK",
+            "GRANT",
+            "REVOKE",
         ]
-        
+
         for prefix in forbidden_prefixes:
             if sql_upper.startswith(prefix):
                 return False, f"This tool only supports SELECT queries. Found {prefix} statement."
-        
+
         return False, "This tool only supports SELECT queries (including WITH/CTE)."
 
     @staticmethod
-    def _error_result(
-            error: str,
-        brief: str,
-        sql: str = "",
-        engine: str | None = None
-    ) -> dict[str, Any]:
+    def _error_result(error: str, brief: str, sql: str = "", engine: str | None = None) -> dict[str, Any]:
         """Create a standardized error result dictionary."""
         result: dict[str, Any] = {"error": error, "brief": brief}
         if sql:
@@ -94,9 +105,7 @@ class QueryAnalyzer(BaseTool[Params]):
         return result
 
     @staticmethod
-    def _format_error_message(
-            error_msg: str, engine: str | None, sql: str, is_engine_mismatch: bool
-    ) -> str:
+    def _format_error_message(error_msg: str, engine: str | None, sql: str, is_engine_mismatch: bool) -> str:
         """Format enhanced error message with context."""
         builder = ToolResultBuilder()
         builder.write(f"Query execution failed: {error_msg}\n\n")
