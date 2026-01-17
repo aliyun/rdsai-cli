@@ -121,7 +121,7 @@ class MySQLConnector(BaseConnector):
         ]
 
         # Run interactive form
-        result = await _run_form(title=" Connect to MySQL ", fields=fields)
+        result = await _run_form(title=" Connect to Database (MySQL)", fields=fields)
 
         if not result.submitted:
             raise ValueError("Connection cancelled by user")
