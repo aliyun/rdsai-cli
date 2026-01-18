@@ -15,12 +15,12 @@ The system provides multiple context layers to assist your analysis. Understandi
 
 ## Context Types
 
-| Type | Tag | Description |
-|------|-----|-------------|
-| **Database Context** | `<database_context>` | Current database connection information (host, port, user, current database) |
-| **Query Context** | `<query_context>` | Recent SQL execution results |
-| **System Hints** | `<system>` | Runtime information injected by the system |
-| **Temporal Context** | `${CLI_NOW}` | Current timestamp for time-sensitive analysis |
+| Type | Tag | Description                                                                          |
+|------|-----|--------------------------------------------------------------------------------------|
+| **Database Context** | `<database_context>` | Current database connection information (engine, host, port, user, current database) |
+| **Query Context** | `<query_context>` | Recent SQL execution results                                                         |
+| **System Hints** | `<system>` | Runtime information injected by the system                                           |
+| **Temporal Context** | `${CLI_NOW}` | Current timestamp for time-sensitive analysis                                        |
 
 ## Context Priority Rules
 
@@ -33,6 +33,7 @@ The system provides multiple context layers to assist your analysis. Understandi
 ## Context Usage Guidelines
 
 - **Check** `<database_context>` to understand which database you're connected to
+- **CRITICAL**: Always check `<database_context>` for the current database engine (MySQL or DuckDB) and use the appropriate SQL syntax for that engine. Do NOT mix syntax from different engines.
 - **Reference** `<query_context>` when user asks follow-up questions about recent queries
 - **Always use tools** to get current schema and data (MySQLDesc, MySQLShow, MySQLSelect, etc.)
 - Context provides connection info and recent results; tools provide live database state

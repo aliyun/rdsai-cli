@@ -7,7 +7,7 @@ This tool is designed for data analysis queries that explore patterns, calculate
 - SELECT queries (including WITH/CTE, JOINs, aggregations, window functions, GROUP BY, ORDER BY)
 - Statistical analysis: COUNT, SUM, AVG, MIN, MAX, STDDEV, etc.
 - Data exploration: filtering, sorting, grouping, pivoting
-- Both MySQL and DuckDB engines (automatically detects engine)
+- Both MySQL and DuckDB engines (check `<database_context>` for current engine and use appropriate SQL syntax)
 
 **When to use:**
 - Data analysis and exploration queries
@@ -25,7 +25,7 @@ This tool is designed for data analysis queries that explore patterns, calculate
 - System table queries for diagnostics - Use MySQLSelect tool instead
 
 **Parameters:**
-- **sql**: SQL SELECT query to execute for data analysis. Generate SQL appropriate for the connected database engine (check <database_context> for current engine). Focus on analytical queries that provide insights, statistics, or data exploration.
+- **sql**: SQL SELECT query to execute for data analysis. **CRITICAL**: MUST check `<database_context>` for the current database engine (MySQL or DuckDB) and generate SQL using the correct syntax for that engine. Do NOT mix syntax from different engines. Focus on analytical queries that provide insights, statistics, or data exploration.
 
 **Examples:**
 - `SELECT COUNT(*) as total, AVG(price) as avg_price FROM products WHERE category='electronics'`
