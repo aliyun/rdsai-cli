@@ -2,7 +2,7 @@
 # installation script for rdsai-cli
 # Installs via uv (https://docs.astral.sh/uv/)
 
-set -u
+set -e
 
 # Colors for output
 RED='\033[0;31m'
