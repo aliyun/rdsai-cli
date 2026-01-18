@@ -128,8 +128,6 @@ LIMIT 5
 ## Supported File Formats
 
 - **CSV files** (`.csv`) — Comma-separated values
-- **Parquet files** (`.parquet`) — Columnar storage format
-- **JSON files** (`.json`) — JSON data files
 - **Excel files** (`.xlsx`) — Excel 2007+ format
 
 ## Connection Methods

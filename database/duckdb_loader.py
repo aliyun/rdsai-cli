@@ -6,7 +6,7 @@ Supports:
   - http:// - HTTP file URLs
   - https:// - HTTPS file URLs
   - duckdb:// - DuckDB database files or in-memory mode
-- File loading into DuckDB tables (CSV, Parquet, JSON, Excel .xlsx)
+- File loading into DuckDB tables (CSV, Excel .xlsx)
 """
 
 from __future__ import annotations
@@ -382,9 +382,6 @@ class DuckDBFileLoader:
 
     SUPPORTED_EXTENSIONS = {
         ".csv": "csv",
-        ".parquet": "parquet",
-        ".json": "json",
-        ".jsonl": "json",
         ".xlsx": "excel",
         ".xls": "excel_legacy",  # For detection only, not actually supported
     }
@@ -432,7 +429,7 @@ class DuckDBFileLoader:
             url: File URL or path
 
         Returns:
-            File format (csv, parquet, json, or excel)
+            File format (csv or excel)
 
         Raises:
             UnsupportedFileFormatError: If file format is not supported
@@ -447,7 +444,7 @@ class DuckDBFileLoader:
                 f"Unsupported file format: {ext}\n"
                 f"Excel 97-2003 format (.xls) is not supported.\n"
                 f"Please convert to .xlsx format (Excel 2007+) or use a different file format.\n"
-                f"Supported formats: csv, parquet, json, excel (.xlsx)"
+                f"Supported formats: csv, excel (.xlsx)"
             )
 
         if ext not in cls.SUPPORTED_EXTENSIONS:
@@ -510,10 +507,6 @@ class DuckDBFileLoader:
                 # Load file based on format
                 if file_format == "csv":
                     conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_path}')")
-                elif file_format == "parquet":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_path}')")
-                elif file_format == "json":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_path}')")
                 elif file_format == "excel":
                     conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_path}')")
             elif parsed_url.is_http_protocol:
@@ -522,10 +515,6 @@ class DuckDBFileLoader:
                 # Load file from URL based on format
                 if file_format == "csv":
                     conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_url}')")
-                elif file_format == "parquet":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_url}')")
-                elif file_format == "json":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_url}')")
                 elif file_format == "excel":
                     conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_url}')")
 

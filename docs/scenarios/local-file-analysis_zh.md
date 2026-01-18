@@ -128,8 +128,6 @@ LIMIT 5
 ## 支持的文件格式
 
 - **CSV 文件** (`.csv`) — 逗号分隔值文件
-- **Parquet 文件** (`.parquet`) — 列式存储格式
-- **JSON 文件** (`.json`) — JSON 数据文件
 - **Excel 文件** (`.xlsx`) — Excel 2007+ 格式
 
 ## 连接方式

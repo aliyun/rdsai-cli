@@ -175,6 +175,7 @@ class DuckDBConnector(BaseConnector):
         "[dim]   • file:///path/to/file.csv (for local files)[/dim]",
         "[dim]   • http://example.com/file.csv (for HTTP files)[/dim]",
         "[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]",
+        "[dim]   • CSV files: file.csv[/dim]",
         "[dim]   • Excel files: file.xlsx (Excel 2007+ format)[/dim]",
         "[dim]   • duckdb:///path/to/db.duckdb (for database files)[/dim]",
     ]
