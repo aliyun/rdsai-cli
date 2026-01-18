@@ -11,6 +11,6 @@ agent:
     - "tools.mysql.desc:MySQLDesc"
     - "tools.mysql.select:MySQLSelect"
     # Database Analysis Tool (MySQL & DuckDB)
-    - "tools.database.query_analyzer:QueryAnalyzer"
+    - "tools.database.data_analyzer:DataAnalyzer"
     # Subagent Tool
     - "tools.subagent.subagent:Subagent"

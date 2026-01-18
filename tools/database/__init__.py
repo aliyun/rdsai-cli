@@ -3,8 +3,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .query_analyzer import QueryAnalyzer
+    from .data_analyzer import DataAnalyzer
 
 __all__ = [
-    "QueryAnalyzer",
+    "DataAnalyzer",
 ]

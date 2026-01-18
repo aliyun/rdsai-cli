@@ -81,28 +81,10 @@ class MySQLDesc(MySQLToolBase):
         if not is_valid:
             return {"error": f"Invalid DESCRIBE statement: {reason}", "brief": "Invalid DESCRIBE statement"}
 
-        sql_upper = params.desc_statement.strip().upper()
-
         # Execute the statement
         columns, rows = self._execute_query(params.desc_statement)
 
-        # Special handling for SHOW CREATE TABLE (returns CREATE statement in second column)
-        if "SHOW CREATE TABLE" in sql_upper:
-            if rows and len(rows[0]) > 1:
-                return {
-                    "table_name": rows[0][0] if rows[0] else "",
-                    "data": rows[0][1],  # The CREATE TABLE statement
-                    "message": f"Table structure retrieved successfully",
-                }
-            else:
-                return {
-                    "error": f"Table not found or unable to retrieve structure",
-                    "brief": "Table not found",
-                }
-
-        # For DESCRIBE/DESC/SHOW COLUMNS, return table format
         return {
-            "type": "MySQL Table Structure",
             "columns": columns,
             "rows": rows,
             "message": f"Table structure retrieved successfully, found {len(rows)} column(s)",
