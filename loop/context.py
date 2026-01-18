@@ -416,13 +416,13 @@ def _load_database_connection_info() -> Optional[str]:
 
     # Format connection information
     parts = []
-    
+
     engine = conn_info.get("engine", "mysql")
-    
+
     # Handle DuckDB differently
     if engine == "duckdb":
         parts.append(f"Engine: {engine}")
-        
+
         # Check if single table file connection
         if hasattr(db_service, "_duckdb_load_info") and db_service._duckdb_load_info:
             load_info = db_service._duckdb_load_info
@@ -442,13 +442,13 @@ def _load_database_connection_info() -> Optional[str]:
         parts.append(f"Host: {conn_info.get('host', 'N/A')}")
         parts.append(f"Port: {conn_info.get('port', 'N/A')}")
         parts.append(f"User: {conn_info.get('user', 'N/A')}")
-        
+
         database = conn_info.get("database")
         if database:
             parts.append(f"Current Database: {database}")
         else:
             parts.append("Current Database: (none selected)")
-        
+
         parts.append(f"Engine: {engine}")
         parts.append(f"Note: Use {engine.upper()} SQL syntax for queries.")
 
