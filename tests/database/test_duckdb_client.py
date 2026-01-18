@@ -410,7 +410,7 @@ class TestDuckDBClient:
             mock_conn.cursor.return_value = mock_cursor
             mock_connect.return_value = mock_conn
 
-            mock_loader.load_file.return_value = ("table1", 10, 3)
+            mock_loader.load_file.return_value = ("table1", 10, 3, None)
 
             parsed_url = ParsedDuckDBURL(
                 protocol=DuckDBProtocol.FILE,
@@ -420,7 +420,7 @@ class TestDuckDBClient:
             client = DuckDBClient(parsed_url=parsed_url)
             result = client.load_file()
 
-            assert result == ("table1", 10, 3)
+            assert result == ("table1", 10, 3, None)
             mock_loader.load_file.assert_called_once_with(mock_conn, parsed_url, None)
 
     @patch("database.duckdb_client.DuckDBFileLoader")
@@ -432,7 +432,7 @@ class TestDuckDBClient:
             mock_conn.cursor.return_value = mock_cursor
             mock_connect.return_value = mock_conn
 
-            mock_loader.load_file.return_value = ("custom_table", 5, 2)
+            mock_loader.load_file.return_value = ("custom_table", 5, 2, None)
 
             parsed_url = ParsedDuckDBURL(
                 protocol=DuckDBProtocol.FILE,
@@ -442,6 +442,7 @@ class TestDuckDBClient:
             client = DuckDBClient(parsed_url=parsed_url)
             result = client.load_file(table_name="custom_table")
 
+            assert result == ("custom_table", 5, 2, None)
             mock_loader.load_file.assert_called_once_with(mock_conn, parsed_url, "custom_table")
 
     def test_load_file_invalid_protocol(self):
@@ -472,8 +473,8 @@ class TestDuckDBClient:
             mock_connect.return_value = mock_conn
 
             mock_loader.load_files.return_value = [
-                ("table1", 10, 3),
-                ("table2", 20, 4),
+                ("table1", 10, 3, None),
+                ("table2", 20, 4, None),
             ]
 
             parsed_urls = [
@@ -491,7 +492,7 @@ class TestDuckDBClient:
             client = DuckDBClient()
             result = client.load_files(parsed_urls)
 
-            assert result == [("table1", 10, 3), ("table2", 20, 4)]
+            assert result == [("table1", 10, 3, None), ("table2", 20, 4, None)]
             mock_loader.load_files.assert_called_once_with(mock_conn, parsed_urls)
 
     def test_load_files_invalid_protocol(self):

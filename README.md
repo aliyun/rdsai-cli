@@ -11,7 +11,7 @@ RDSAI CLI is a next-generation, AI-powered RDS CLI that transforms how you inter
 
 ## ✨ Features
 
-- **Multi-Source Connection** — Connect to MySQL databases, local files (CSV, JSON, Excel), and remote data sources (HTTP/HTTPS URLs), with support for multiple files simultaneously
+- **Multi-Source Connection** — Connect to MySQL databases, local files (CSV, Excel), and remote data sources (HTTP/HTTPS URLs), with support for multiple files simultaneously
 - **AI Assistant** — Natural language queries (English/中文), optimized SQL, diagnostics, and explanations
 - **Smart SQL** — Auto-detects SQL vs natural language, query history, `Ctrl+E` for instant result explanations
 - **Multi-Model LLM** — Support for Qwen, OpenAI, DeepSeek, Anthropic, Gemini, and OpenAI-compatible APIs
@@ -119,8 +119,6 @@ $ rdsai
 
 **Supported file formats:**
 - CSV files (`.csv`)
-- Parquet files (`.parquet`)
-- JSON files (`.json`)
 - Excel files (`.xlsx`, Excel 2007+ format)
 
 **Connection options:**
@@ -240,7 +238,7 @@ You can still run shell commands via the built-in shell mode when prefixed appro
 ### Usage Scenarios
 
 - **[SQL Result Explanation with Ctrl+E](docs/scenarios/sql-result-explanation.md)** — Get instant AI-powered explanations of query results and errors using the `Ctrl+E` shortcut
-- **[Local File Connection & Analysis](docs/scenarios/local-file-analysis.md)** — Connect to local files (CSV, Parquet, JSON, Excel) and perform AI-powered data analysis
+- **[Local File Connection & Analysis](docs/scenarios/local-file-analysis.md)** — Connect to local files (CSV, Excel) and perform AI-powered data analysis
 - **[Slow Query Analysis & Optimization](docs/scenarios/slow-query-analysis.md)** — Identify and optimize slow queries using AI-powered analysis
 - **[Lock Wait & Deadlock Troubleshooting](docs/scenarios/lock-troubleshooting.md)** — Diagnose and resolve lock contention issues
 - **[Database Schema Analysis & Compliance Review](docs/scenarios/schema-analysis.md)** — Comprehensive schema review with compliance checking

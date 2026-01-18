@@ -13,6 +13,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security enhancements
 - Diagnostic report export
 
+## [v0.1.8] - 2026-01-18
+
+### Added
+- **Multi-Source Connection**: DuckDB support for local files and remote data sources
+  - Connect to local files: CSV, Parquet, JSON, Excel (.xlsx) formats
+  - Connect to remote files via HTTP/HTTPS URLs
+  - Support for multiple files simultaneously in a single connection
+  - Automatic file format detection and table creation
+  - DuckDB database file support (`duckdb://` protocol)
+- **Data Analysis Tool**: New `DataAnalyzer` tool for analytical SQL queries
+  - Execute analytical SELECT queries on MySQL and DuckDB databases
+  - Support for complex queries: CTEs, JOINs, aggregations, window functions
+  - Statistical analysis capabilities (COUNT, SUM, AVG, MIN, MAX, STDDEV, etc.)
+  - Automatic engine detection (MySQL vs DuckDB)
+- **Installation**: One-click installation script
+  - Automated installation script (`install.sh`) for easy setup
+  - Version option (`--version`, `-v`) to display CLI version
+  - Improved installation experience for new users
+- **MySQL Tools**: Simplified MySQL utility module
+  - Consolidated MySQL tools for better maintainability
+  - Enhanced `MySQLSelect` tool for system table queries
+  - Enhanced `MySQLShow` tool for SHOW statements
+  - New `MySQLDesc` tool for DESCRIBE statements
+  - Removed redundant tools in favor of unified approach
+
+### Fixed
+- **Connection Handling**: Improved connection interruption handling
+  - Fixed issues with handling connection interruptions during database connection
+  - Better error messages and recovery mechanisms
+  - Improved user experience when connection fails
+
+### Changed
+- **Tool Architecture**: Refactored database tool structure
+  - Renamed `QueryAnalyzer` to `DataAnalyzer` for clarity
+  - Simplified tool registration and configuration
+  - Improved tool organization and maintainability
+- **UI**: Enhanced connection command prompt messages
+  - More informative connection status messages
+  - Better feedback for file loading progress
+  - Improved error messages for connection failures
+
+### Documentation
+- **Scenarios**: Added local file analysis scenario documentation
+  - Comprehensive guide for connecting to and analyzing local files
+  - Examples for CSV, Parquet, JSON, and Excel file analysis
+  - SQL query examples for data exploration
+  - Available in both English and Chinese
+
+### Testing
+- **Test Coverage**: Enhanced test suite for new features
+  - Added comprehensive tests for DuckDB client
+  - Added tests for DuckDB file loader
+  - Added tests for database service with DuckDB
+  - Added tests for connection command with file connectors
+  - Improved test infrastructure and mock support
+
 ## [v0.1.6] - 2025-12-30
 
 ### Added

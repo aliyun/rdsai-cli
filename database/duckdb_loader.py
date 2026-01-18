@@ -6,12 +6,13 @@ Supports:
   - http:// - HTTP file URLs
   - https:// - HTTPS file URLs
   - duckdb:// - DuckDB database files or in-memory mode
-- File loading into DuckDB tables (CSV, Parquet, JSON, Excel .xlsx)
+- File loading into DuckDB tables (CSV, Excel .xlsx)
 """
 
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -20,6 +21,9 @@ from urllib.parse import urlparse, unquote
 import duckdb
 
 from utils.logging import logger
+
+# Large file threshold: 1GB
+LARGE_FILE_THRESHOLD = 1024 * 1024 * 1024  # 1GB
 
 
 # ========== URL Parser ==========
@@ -382,12 +386,106 @@ class DuckDBFileLoader:
 
     SUPPORTED_EXTENSIONS = {
         ".csv": "csv",
-        ".parquet": "parquet",
-        ".json": "json",
-        ".jsonl": "json",
         ".xlsx": "excel",
         ".xls": "excel_legacy",  # For detection only, not actually supported
     }
+
+    @classmethod
+    def _get_file_size(cls, parsed_url: ParsedDuckDBURL) -> int:
+        """
+        Get file size in bytes.
+
+        Args:
+            parsed_url: Parsed URL information
+
+        Returns:
+            File size in bytes
+
+        Raises:
+            FileLoadError: If file size cannot be determined
+        """
+        if parsed_url.is_file_protocol:
+            file_path = parsed_url.path
+            if not os.path.exists(file_path):
+                raise FileLoadError(f"File not found: {file_path}")
+            return os.path.getsize(file_path)
+        elif parsed_url.is_http_protocol:
+            # For HTTP/HTTPS URLs, try to get Content-Length header
+            import urllib.request
+            import urllib.error
+
+            # Use HEAD request to get Content-Length
+            req = urllib.request.Request(parsed_url.path, method="HEAD")
+            try:
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    content_length = response.headers.get("Content-Length")
+                    if content_length:
+                        return int(content_length)
+                    # If Content-Length not available, raise error
+                    raise FileLoadError(
+                        f"Cannot determine file size for HTTP URL: {parsed_url.path}\n"
+                        f"Content-Length header is not available. "
+                        f"Please ensure the server provides Content-Length header or use a local file."
+                    )
+            except urllib.error.URLError as e:
+                raise FileLoadError(
+                    f"Failed to get file size from HTTP URL: {parsed_url.path}\n"
+                    f"Error: {e}\n"
+                    f"Please check the URL is accessible and try again."
+                ) from e
+            except Exception as e:
+                raise FileLoadError(f"Failed to determine file size for HTTP URL: {parsed_url.path}\nError: {e}") from e
+        else:
+            raise FileLoadError(f"Cannot determine file size for protocol: {parsed_url.protocol}")
+
+    @classmethod
+    def _create_temp_db_file(cls, filename: str) -> str:
+        """
+        Create a temporary DuckDB database file.
+
+        Args:
+            filename: Filename to use as base name (without extension).
+
+        Returns:
+            Path to the temporary database file
+
+        Raises:
+            ValueError: If filename is empty or invalid
+        """
+        if not filename:
+            raise ValueError("Filename is required for creating temporary database file")
+
+        from config.base import get_share_dir
+
+        temp_dir = get_share_dir() / "tmp"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate unique filename based on source file name
+        timestamp = int(time.time())
+
+        # Extract base name from filename (remove extension and path)
+        base_name = Path(filename).stem
+        # Sanitize filename (replace invalid characters with underscore)
+        base_name = "".join(c if c.isalnum() or c == "_" else "_" for c in base_name)
+        # Ensure it starts with a letter or underscore
+        if base_name and not (base_name[0].isalpha() or base_name[0] == "_"):
+            base_name = f"_{base_name}"
+
+        if not base_name:
+            raise ValueError(f"Invalid filename: {filename} (cannot extract valid base name)")
+
+        db_file = temp_dir / f"{base_name}_{timestamp}.duckdb"
+
+        return str(db_file)
+
+    @classmethod
+    def _format_file_size(cls, size_bytes: int) -> str:
+        """Format file size in human-readable format."""
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.1f} PB"
 
     @classmethod
     def infer_table_name(cls, url: str) -> str:
@@ -432,7 +530,7 @@ class DuckDBFileLoader:
             url: File URL or path
 
         Returns:
-            File format (csv, parquet, json, or excel)
+            File format (csv or excel)
 
         Raises:
             UnsupportedFileFormatError: If file format is not supported
@@ -447,7 +545,7 @@ class DuckDBFileLoader:
                 f"Unsupported file format: {ext}\n"
                 f"Excel 97-2003 format (.xls) is not supported.\n"
                 f"Please convert to .xlsx format (Excel 2007+) or use a different file format.\n"
-                f"Supported formats: csv, parquet, json, excel (.xlsx)"
+                f"Supported formats: csv, excel (.xlsx)"
             )
 
         if ext not in cls.SUPPORTED_EXTENSIONS:
@@ -474,17 +572,18 @@ class DuckDBFileLoader:
         conn: duckdb.DuckDBPyConnection,
         parsed_url: ParsedDuckDBURL,
         table_name: str | None = None,
-    ) -> tuple[str, int, int]:
+    ) -> tuple[str, int, int, str | None]:
         """
         Load a file into a DuckDB table.
 
         Args:
-            conn: DuckDB connection
+            conn: DuckDB connection (may be replaced for large files)
             parsed_url: Parsed URL information
             table_name: Optional table name (if None, inferred from URL)
 
         Returns:
-            Tuple of (table_name, row_count, column_count)
+            Tuple of (table_name, row_count, column_count, persistent_db_path)
+            persistent_db_path is None for small files, path string for large files
 
         Raises:
             FileLoadError: If file loading fails
@@ -500,46 +599,39 @@ class DuckDBFileLoader:
             # Detect file format
             file_format = cls.detect_file_format(parsed_url.original_url)
 
-            # Get file path/URL
-            if parsed_url.is_file_protocol:
-                file_path = parsed_url.path
-                # Validate file exists
-                if not os.path.exists(file_path):
-                    raise FileLoadError(f"File not found: {file_path}")
+            # Get file size and determine strategy
+            file_size = cls._get_file_size(parsed_url)
+            is_large_file = file_size >= LARGE_FILE_THRESHOLD
 
-                # Load file based on format
-                if file_format == "csv":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_path}')")
-                elif file_format == "parquet":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_path}')")
-                elif file_format == "json":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_path}')")
-                elif file_format == "excel":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_path}')")
-            elif parsed_url.is_http_protocol:
-                # HTTP/HTTPS URL
-                file_url = parsed_url.path
-                # Load file from URL based on format
-                if file_format == "csv":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_url}')")
-                elif file_format == "parquet":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_parquet('{file_url}')")
-                elif file_format == "json":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_json_auto('{file_url}')")
-                elif file_format == "excel":
-                    conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_url}')")
+            # Get file source (path or URL)
+            file_source = cls._get_file_source(parsed_url)
 
+            if is_large_file:
+                # Large file: use persistent database
+                if not parsed_url.original_url:
+                    raise FileLoadError("Cannot create temporary database: original URL is missing")
+                filename = os.path.basename(parsed_url.original_url)
+                persistent_db_path = cls._create_temp_db_file(filename)
+                persistent_conn = duckdb.connect(persistent_db_path)
+
+                try:
+                    # Load with progress bar
+                    cls._load_large_file_with_progress(persistent_conn, file_source, table_name, file_format, file_size)
+
+                    # Get row and column count
+                    row_count, column_count = cls._get_table_stats(persistent_conn, table_name)
+                    return table_name, row_count, column_count, persistent_db_path
+                finally:
+                    # Close the persistent connection (will be reopened by caller)
+                    persistent_conn.close()
             else:
-                raise FileLoadError(f"Cannot load file for protocol: {parsed_url.protocol}")
+                # Small file: use existing memory connection
+                cls._create_table_from_file(conn, table_name, file_source, file_format)
 
-            # Get row and column count
-            result = conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()
-            row_count = result[0] if result else 0
+                # Get row and column count
+                row_count, column_count = cls._get_table_stats(conn, table_name)
+                return table_name, row_count, column_count, None
 
-            result = conn.execute(f"PRAGMA table_info('{table_name}')").fetchall()
-            column_count = len(result) if result else 0
-
-            return table_name, row_count, column_count
         except UnsupportedFileFormatError:
             raise
         except FileLoadError:
@@ -559,11 +651,159 @@ class DuckDBFileLoader:
             raise FileLoadError(f"Failed to load file: {e}") from e
 
     @classmethod
+    def _get_file_source(cls, parsed_url: ParsedDuckDBURL) -> str:
+        """Get file source path or URL from parsed URL."""
+        if parsed_url.is_file_protocol:
+            file_path = parsed_url.path
+            if not os.path.exists(file_path):
+                raise FileLoadError(f"File not found: {file_path}")
+            return file_path
+        elif parsed_url.is_http_protocol:
+            return parsed_url.path
+        else:
+            raise FileLoadError(f"Cannot load file for protocol: {parsed_url.protocol}")
+
+    @classmethod
+    def _create_table_from_file(
+        cls, conn: duckdb.DuckDBPyConnection, table_name: str, file_source: str, file_format: str
+    ) -> None:
+        """Create a table from a file source."""
+        if file_format == "csv":
+            conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{file_source}')")
+        elif file_format == "excel":
+            conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_xlsx('{file_source}')")
+
+    @classmethod
+    def _get_table_stats(cls, conn: duckdb.DuckDBPyConnection, table_name: str) -> tuple[int, int]:
+        """Get row count and column count for a table."""
+        result = conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()
+        row_count = result[0] if result else 0
+
+        result = conn.execute(f"PRAGMA table_info('{table_name}')").fetchall()
+        column_count = len(result) if result else 0
+
+        return row_count, column_count
+
+    @classmethod
+    def _load_large_file_with_progress(
+        cls,
+        conn: duckdb.DuckDBPyConnection,
+        file_source: str,
+        table_name: str,
+        file_format: str,
+        file_size: int,
+    ) -> None:
+        """
+        Load a large file into DuckDB with progress indication.
+
+        Args:
+            conn: DuckDB connection (persistent database)
+            file_source: File path or URL
+            table_name: Table name
+            file_format: File format (csv or excel)
+            file_size: File size in bytes
+        """
+        from rich.progress import (
+            Progress,
+            SpinnerColumn,
+            TextColumn,
+            TransferSpeedColumn,
+            TimeElapsedColumn,
+        )
+        from ui.console import console
+        import threading
+
+        file_size_str = cls._format_file_size(file_size)
+        filename = os.path.basename(file_source) if os.path.exists(file_source) else file_source
+
+        # Use enhanced spinner-based progress with speed
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            TransferSpeedColumn(),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task(
+                f"Loading large file {filename} ({file_size_str})...",
+                total=file_size,  # Set total to file size for FileSizeColumn and TransferSpeedColumn
+            )
+
+            # Track progress in a separate thread
+            loading_complete = threading.Event()
+            loading_error = [None]
+            start_time = time.time()
+
+            def monitor_progress():
+                """Monitor file reading progress by estimating based on elapsed time."""
+                last_processed = 0
+                while not loading_complete.is_set():
+                    try:
+                        # Estimate progress based on time elapsed
+                        # This is a rough estimate since we can't get real progress from DuckDB
+                        elapsed = time.time() - start_time
+
+                        if elapsed > 0:
+                            # Use a logarithmic curve to simulate realistic progress
+                            # This gives a more realistic feel than linear progress
+                            # Formula: progress = total * (1 - 1/(1 + elapsed * factor))
+                            # Adjust factor based on file size (larger files process faster relatively)
+                            factor = max(0.05, min(0.2, file_size / (10 * 1024 * 1024 * 1024)))  # Scale factor
+                            estimated_progress = min(
+                                file_size * (1 - (1 / (1 + elapsed * factor))),
+                                file_size * 0.98,  # Cap at 98% until complete
+                            )
+
+                            if estimated_progress > last_processed:
+                                advance = int(estimated_progress - last_processed)
+                                progress.update(task, advance=advance)
+                                last_processed = estimated_progress
+                    except Exception:
+                        pass
+                    time.sleep(0.1)  # Update every 100ms
+
+            def load_file():
+                """Load file in background thread."""
+                try:
+                    cls._create_table_from_file(conn, table_name, file_source, file_format)
+                    loading_complete.set()
+                except Exception as e:
+                    loading_error[0] = e
+                    loading_complete.set()
+
+            # Start monitoring thread
+            monitor_thread = threading.Thread(target=monitor_progress, daemon=True)
+            monitor_thread.start()
+
+            # Start loading thread
+            load_thread = threading.Thread(target=load_file, daemon=True)
+            load_thread.start()
+
+            # Wait for completion (with timeout)
+            load_thread.join(timeout=3600)  # 1 hour timeout
+
+            # Stop monitoring
+            loading_complete.set()
+            monitor_thread.join(timeout=1)
+
+            # Check for errors
+            if loading_error[0]:
+                progress.update(task, description=f"[red]Failed to load {filename}[/red]")
+                raise loading_error[0]
+
+            if not load_thread.is_alive():
+                # Loading completed successfully
+                progress.update(task, completed=file_size)
+            else:
+                # Timeout
+                raise FileLoadError(f"File loading timed out after 1 hour: {filename}")
+
+    @classmethod
     def load_files(
         cls,
         conn: duckdb.DuckDBPyConnection,
         parsed_urls: list[ParsedDuckDBURL],
-    ) -> list[tuple[str, int, int]]:
+    ) -> list[tuple[str, int, int, str | None]]:
         """
         Load multiple files into DuckDB tables.
 
@@ -572,32 +812,50 @@ class DuckDBFileLoader:
             parsed_urls: List of parsed URL information
 
         Returns:
-            List of tuples (table_name, row_count, column_count) for each successfully loaded file
+            List of tuples (table_name, row_count, column_count, persistent_db_path)
+            for each successfully loaded file
 
         Raises:
             FileLoadError: If any file loading fails (after attempting all files)
         """
-        load_results: list[tuple[str, int, int]] = []
+        load_results: list[tuple[str, int, int, str | None]] = []
         errors: list[str] = []
         used_table_names: set[str] = set()
+        persistent_db_path: str | None = None
 
         for parsed_url in parsed_urls:
             try:
-                # Infer table name
+                # Infer table name and resolve conflicts
                 base_table_name = cls.infer_table_name(parsed_url.original_url)
-
-                # Handle table name conflicts
-                table_name = base_table_name
-                counter = 1
-                while table_name in used_table_names:
-                    table_name = f"{base_table_name}_{counter}"
-                    counter += 1
-
+                table_name = cls._resolve_table_name(base_table_name, used_table_names)
                 used_table_names.add(table_name)
+
+                # Check if we need persistent database for this file
+                file_size = cls._get_file_size(parsed_url)
+                is_large_file = file_size >= LARGE_FILE_THRESHOLD
+
+                # For large files, use persistent database (create once, reuse)
+                if is_large_file and persistent_db_path is None:
+                    if not parsed_url.original_url:
+                        raise FileLoadError(
+                            f"Cannot create temporary database for {parsed_url.path}: original URL is missing"
+                        )
+                    filename = os.path.basename(parsed_url.original_url)
+                    persistent_db_path = cls._create_temp_db_file(filename)
+                    conn = duckdb.connect(persistent_db_path)
+                elif is_large_file and persistent_db_path:
+                    # Reuse existing persistent connection
+                    conn = duckdb.connect(persistent_db_path)
 
                 # Load the file
                 result = cls.load_file(conn, parsed_url, table_name)
-                load_results.append(result)
+                table_name_result, row_count, column_count, file_persistent_db = result
+
+                # Use the persistent_db_path from first large file for all files
+                if file_persistent_db:
+                    persistent_db_path = file_persistent_db
+
+                load_results.append((table_name_result, row_count, column_count, persistent_db_path))
             except (UnsupportedFileFormatError, FileLoadError) as e:
                 errors.append(f"{parsed_url.original_url}: {e}")
             except Exception as e:
@@ -616,3 +874,13 @@ class DuckDBFileLoader:
             )
 
         return load_results
+
+    @classmethod
+    def _resolve_table_name(cls, base_table_name: str, used_table_names: set[str]) -> str:
+        """Resolve table name conflicts by appending counter if needed."""
+        table_name = base_table_name
+        counter = 1
+        while table_name in used_table_names:
+            table_name = f"{base_table_name}_{counter}"
+            counter += 1
+        return table_name

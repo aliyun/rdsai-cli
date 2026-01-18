@@ -11,7 +11,7 @@ RDSAI CLI 是一款新一代的 AI 驱动 RDS CLI，它用来改变了您与数�
 
 ## ✨ 功能特性
 
-- **多数据源连接** — 连接 MySQL 数据库、本地文件（CSV、JSON、Excel）和远程数据源（HTTP/HTTPS URL），支持同时连接多个文件
+- **多数据源连接** — 连接 MySQL 数据库、本地文件（CSV、Excel）和远程数据源（HTTP/HTTPS URL），支持同时连接多个文件
 - **AI 助手** — 自然语言查询（支持英文/中文），优化的 SQL、诊断和解释
 - **智能 SQL** — 自动检测 SQL 与自然语言，查询历史，`Ctrl+E` 即时结果解释
 - **多模型 LLM** — 支持 Qwen、OpenAI、DeepSeek、Anthropic、Gemini 和 OpenAI 兼容 API
@@ -119,8 +119,6 @@ $ rdsai
 
 **支持的文件格式：**
 - CSV 文件 (`.csv`)
-- Parquet 文件 (`.parquet`)
-- JSON 文件 (`.json`)
 - Excel 文件 (`.xlsx`，Excel 2007+ 格式)
 
 **连接选项：**
@@ -238,7 +236,7 @@ Shell 会自动：
 ### 使用场景
 
 - **[使用 Ctrl+E 进行 SQL 结果解释](docs/scenarios/sql-result-explanation_zh.md)** — 使用 `Ctrl+E` 快捷键获得即时的 AI 驱动查询结果和错误解释
-- **[本地文件连接与分析](docs/scenarios/local-file-analysis_zh.md)** — 连接本地文件（CSV、Parquet、JSON、Excel）并进行 AI 驱动的数据分析
+- **[本地文件连接与分析](docs/scenarios/local-file-analysis_zh.md)** — 连接本地文件（CSV、Excel）并进行 AI 驱动的数据分析
 - **[慢查询分析与优化](docs/scenarios/slow-query-analysis_zh.md)** — 使用 AI 驱动的分析识别和优化慢查询
 - **[锁等待与死锁故障排除](docs/scenarios/lock-troubleshooting_zh.md)** — 诊断和解决锁竞争问题
 - **[数据库模式分析与合规性审查](docs/scenarios/schema-analysis_zh.md)** — 全面的模式审查和合规性检查
