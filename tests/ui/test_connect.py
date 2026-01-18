@@ -463,7 +463,7 @@ class TestDuckDBConnector:
     def test_get_extra_info_single_file(self, connector):
         """Test get_extra_info with single file load info."""
         mock_db_service = MagicMock()
-        mock_db_service._duckdb_load_info = ("test_table", 100, 5)
+        mock_db_service._duckdb_load_info = [("test_table", 100, 5)]
         connection = ConnectionContext(db_service=mock_db_service)
         connection._parsed_url = MagicMock()
         connection._parsed_url.original_url = "file.csv"
@@ -506,7 +506,7 @@ class TestDuckDBConnector:
     def test_get_extra_info_backward_compatibility(self, connector):
         """Test get_extra_info with backward compatibility (single parsed_url)."""
         mock_db_service = MagicMock()
-        mock_db_service._duckdb_load_info = ("test_table", 100, 5)
+        mock_db_service._duckdb_load_info = [("test_table", 100, 5)]
         connection = ConnectionContext(db_service=mock_db_service)
         connection._parsed_url = MagicMock()
         connection._parsed_url.original_url = "file.csv"

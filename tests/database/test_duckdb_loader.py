@@ -282,7 +282,6 @@ class TestDuckDBFileLoader:
         table_name = DuckDBFileLoader.infer_table_name("file:///path/to/data.csv")
         assert table_name == "data"
 
-
     def test_infer_table_name_excel(self):
         """Test infer_table_name for Excel file."""
         table_name = DuckDBFileLoader.infer_table_name("file:///path/to/data.xlsx")
@@ -307,7 +306,6 @@ class TestDuckDBFileLoader:
         """Test detect_file_format for CSV."""
         format_type = DuckDBFileLoader.detect_file_format("file:///path/to/file.csv")
         assert format_type == "csv"
-
 
     def test_detect_file_format_excel(self):
         """Test detect_file_format for Excel."""
@@ -347,11 +345,14 @@ class TestDuckDBFileLoader:
             f.flush()
             parsed_url.path = f.name
 
-            table_name, row_count, column_count = DuckDBFileLoader.load_file(mock_conn, parsed_url, "test_table")
+            table_name, row_count, column_count, persistent_db_path = DuckDBFileLoader.load_file(
+                mock_conn, parsed_url, "test_table"
+            )
 
             assert table_name == "test_table"
             assert row_count == 10
             assert column_count == 3
+            assert persistent_db_path is None
 
         os.unlink(f.name)
 
@@ -374,7 +375,7 @@ class TestDuckDBFileLoader:
             f.flush()
             parsed_url.path = f.name
 
-            table_name, _, _ = DuckDBFileLoader.load_file(mock_conn, parsed_url)
+            table_name, _, _, _ = DuckDBFileLoader.load_file(mock_conn, parsed_url)
 
             assert table_name == "data"
 

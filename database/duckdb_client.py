@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import duckdb
 from typing import Any
 
 from .client import DatabaseClient, TransactionState
 from .duckdb_loader import DuckDBURLParser, ParsedDuckDBURL, DuckDBFileLoader, FileLoadError
+from utils.logging import logger
 
 
 class DuckDBClient(DatabaseClient):
@@ -43,24 +45,15 @@ class DuckDBClient(DatabaseClient):
 
         # Determine database path
         if database is not None:
-            # Explicit database parameter takes precedence
-            if database == ":memory:":
-                db_path = ":memory:"
-            else:
-                db_path = database
+            db_path = ":memory:" if database == ":memory:" else database
         elif self.parsed_url.is_duckdb_protocol:
-            # Use path from parsed URL
             db_path = self.parsed_url.path
         else:
             # For file/http/https protocols, use in-memory mode
             db_path = ":memory:"
 
         # Create DuckDB connection
-        if db_path == ":memory:":
-            self.conn = duckdb.connect(":memory:")
-        else:
-            self.conn = duckdb.connect(db_path)
-
+        self.conn = duckdb.connect(db_path)
         self.cursor = self.conn.cursor()
         # DuckDB doesn't support transactions, always in NOT_IN_TRANSACTION state
         self._transaction_state = TransactionState.NOT_IN_TRANSACTION
@@ -68,30 +61,25 @@ class DuckDBClient(DatabaseClient):
         self._last_result: Any = None
         self._last_columns: list[str] | None = None
         self._last_rowcount: int = 0
+        self._persistent_db_path: str | None = None
 
     def execute(self, sql: str) -> Any:
         """Execute a SQL statement."""
+        result = self.cursor.execute(sql)
+        self._last_result = result
+
+        # Try to get column names
         try:
-            result = self.cursor.execute(sql)
-            self._last_result = result
+            description = result.description
+            self._last_columns = [col[0] for col in description] if description else None
+        except Exception:
+            self._last_columns = None
 
-            # Try to get column names
-            try:
-                description = result.description
-                if description:
-                    self._last_columns = [col[0] for col in description]
-                else:
-                    self._last_columns = None
-            except Exception:
-                self._last_columns = None
+        # Reset row count (will be set when fetchall/fetchone is called)
+        # For non-SELECT queries, DuckDB doesn't provide rowcount until after execution
+        self._last_rowcount = 0
 
-            # Reset row count (will be set when fetchall/fetchone is called)
-            # For non-SELECT queries, DuckDB doesn't provide rowcount until after execution
-            self._last_rowcount = 0
-
-            return result
-        except Exception as e:
-            raise
+        return result
 
     def fetchall(self) -> list[Any]:
         """Fetch all rows from the last query."""
@@ -119,6 +107,14 @@ class DuckDBClient(DatabaseClient):
             self.cursor.close()
         if self.conn:
             self.conn.close()
+
+        # Clean up temporary database file if it was created for large files
+        if self._persistent_db_path and os.path.exists(self._persistent_db_path):
+            try:
+                os.remove(self._persistent_db_path)
+                logger.debug(f"Cleaned up temporary database file: {self._persistent_db_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete temporary database file {self._persistent_db_path}: {e}")
 
     def change_database(self, database: str) -> None:
         """Change to the specified database.
@@ -182,16 +178,19 @@ class DuckDBClient(DatabaseClient):
             return True
         except Exception:
             if reconnect:
-                # Try to reconnect (for DuckDB, this means creating a new connection)
-                try:
-                    if self.parsed_url.is_memory:
-                        self.conn = duckdb.connect(":memory:")
-                    else:
-                        self.conn = duckdb.connect(self.parsed_url.path)
-                    self.cursor = self.conn.cursor()
-                    return True
-                except Exception:
-                    return False
+                return self._reconnect()
+            return False
+
+    def _reconnect(self) -> bool:
+        """Reconnect to the database."""
+        try:
+            if self.parsed_url.is_memory:
+                self.conn = duckdb.connect(":memory:")
+            else:
+                self.conn = duckdb.connect(self.parsed_url.path)
+            self.cursor = self.conn.cursor()
+            return True
+        except Exception:
             return False
 
     def get_columns(self) -> list[str] | None:
@@ -211,7 +210,7 @@ class DuckDBClient(DatabaseClient):
                 pass
         return self._last_rowcount
 
-    def load_file(self, table_name: str | None = None) -> tuple[str, int, int]:
+    def load_file(self, table_name: str | None = None) -> tuple[str, int, int, str | None]:
         """
         Load file into DuckDB table (for file://, http://, https:// protocols).
 
@@ -219,7 +218,8 @@ class DuckDBClient(DatabaseClient):
             table_name: Optional table name (if None, inferred from URL)
 
         Returns:
-            Tuple of (table_name, row_count, column_count)
+            Tuple of (table_name, row_count, column_count, persistent_db_path)
+            persistent_db_path is None for small files, path string for large files
 
         Raises:
             FileLoadError: If file loading fails
@@ -230,9 +230,16 @@ class DuckDBClient(DatabaseClient):
                 "File loading is only supported for file://, http://, and https:// protocols."
             )
 
-        return DuckDBFileLoader.load_file(self.conn, self.parsed_url, table_name)
+        result = DuckDBFileLoader.load_file(self.conn, self.parsed_url, table_name)
+        table_name_result, row_count, column_count, persistent_db_path = result
 
-    def load_files(self, parsed_urls: list) -> list[tuple[str, int, int]]:
+        # If persistent database was created, switch connection
+        if persistent_db_path:
+            self._switch_to_persistent_db(persistent_db_path)
+
+        return result
+
+    def load_files(self, parsed_urls: list) -> list[tuple[str, int, int, str | None]]:
         """
         Load multiple files into DuckDB tables (for file://, http://, https:// protocols).
 
@@ -240,7 +247,8 @@ class DuckDBClient(DatabaseClient):
             parsed_urls: List of ParsedDuckDBURL objects
 
         Returns:
-            List of tuples (table_name, row_count, column_count) for each successfully loaded file
+            List of tuples (table_name, row_count, column_count, persistent_db_path)
+            for each successfully loaded file
 
         Raises:
             FileLoadError: If file loading fails
@@ -253,4 +261,26 @@ class DuckDBClient(DatabaseClient):
                     "File loading is only supported for file://, http://, and https:// protocols."
                 )
 
-        return DuckDBFileLoader.load_files(self.conn, parsed_urls)
+        results = DuckDBFileLoader.load_files(self.conn, parsed_urls)
+
+        # Check if any file used persistent database
+        persistent_db_path = None
+        for result in results:
+            if result[3] is not None:
+                persistent_db_path = result[3]
+                break
+
+        # If persistent database was created, switch connection
+        if persistent_db_path:
+            self._switch_to_persistent_db(persistent_db_path)
+
+        return results
+
+    def _switch_to_persistent_db(self, persistent_db_path: str) -> None:
+        """Switch connection to a persistent database file."""
+        if self.conn:
+            self.conn.close()
+        self.conn = duckdb.connect(persistent_db_path)
+        self.cursor = self.conn.cursor()
+        self.parsed_url.path = persistent_db_path
+        self._persistent_db_path = persistent_db_path

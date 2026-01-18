@@ -326,34 +326,20 @@ class DuckDBConnector(BaseConnector):
         if hasattr(connection.db_service, "_duckdb_load_info"):
             load_info = connection.db_service._duckdb_load_info
             if load_info:
-                # Handle both single file (tuple) and multiple files (list)
-                if isinstance(load_info, tuple):
-                    # Single file - backward compatibility
-                    table_name, row_count, column_count = load_info
+                # Load info is always a list now
+                parsed_urls = []
+                if hasattr(connection, "_parsed_urls"):
+                    parsed_urls = connection._parsed_urls
+                elif hasattr(connection, "_parsed_url"):
+                    parsed_urls = [connection._parsed_url]
 
-                    # Get original URL from parsed_url stored in connection
+                for i, (table_name, row_count, column_count) in enumerate(load_info):
+                    # Get original URL if available
                     original_url = ""
-                    if hasattr(connection, "_parsed_url"):
-                        original_url = connection._parsed_url.original_url
+                    if i < len(parsed_urls):
+                        original_url = parsed_urls[i].original_url
 
                     extra_info.append(self._format_file_load_info(table_name, row_count, column_count, original_url))
-                elif isinstance(load_info, list):
-                    # Multiple files
-                    parsed_urls = []
-                    if hasattr(connection, "_parsed_urls"):
-                        parsed_urls = connection._parsed_urls
-                    elif hasattr(connection, "_parsed_url"):
-                        parsed_urls = [connection._parsed_url]
-
-                    for i, (table_name, row_count, column_count) in enumerate(load_info):
-                        # Get original URL if available
-                        original_url = ""
-                        if i < len(parsed_urls):
-                            original_url = parsed_urls[i].original_url
-
-                        extra_info.append(
-                            self._format_file_load_info(table_name, row_count, column_count, original_url)
-                        )
 
         return extra_info
 

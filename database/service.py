@@ -1010,12 +1010,13 @@ def create_duckdb_connection_context(url: str | list[str]) -> ConnectionContext:
         if file_urls:
             try:
                 if len(file_urls) == 1:
-                    # Single file - use existing method for backward compatibility
-                    table_name, row_count, column_count = client.load_file()
+                    # Single file
+                    table_name, row_count, column_count, _ = client.load_file()
                     load_info = [(table_name, row_count, column_count)]
                 else:
                     # Multiple files
-                    load_info = client.load_files(file_urls)
+                    results = client.load_files(file_urls)
+                    load_info = [(r[0], r[1], r[2]) for r in results]
             except (FileLoadError, UnsupportedFileFormatError) as e:
                 # Close connection if file loading fails
                 client.close()
@@ -1033,19 +1034,13 @@ def create_duckdb_connection_context(url: str | list[str]) -> ConnectionContext:
             display_name=display_name,
         )
         # Store load info in db_service for later retrieval
-        # For backward compatibility, single file stores as tuple, multiple files as list
         if load_info:
-            if len(load_info) == 1:
-                db_service._duckdb_load_info = load_info[0]
-            else:
-                db_service._duckdb_load_info = load_info
+            db_service._duckdb_load_info = load_info
         return context
 
     except Exception as e:
         error_msg = str(e)
-        # Determine display name from URL(s) using user-friendly format
         try:
-            primary_url = urls[0] if urls else ""
             parsed_urls_for_error = []
             for url_str in urls:
                 parsed_url = DuckDBURLParser.parse(url_str)

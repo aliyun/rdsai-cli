@@ -783,7 +783,7 @@ class TestDuckDBConnectionContext:
         mock_parser.parse.return_value = mock_parsed_url
 
         mock_client = MagicMock()
-        mock_client.load_file.return_value = ("table1", 10, 3)
+        mock_client.load_file.return_value = ("table1", 10, 3, None)
         mock_client_class.return_value = mock_client
 
         context = create_duckdb_connection_context("file:///path/to/file.csv")
@@ -815,8 +815,8 @@ class TestDuckDBConnectionContext:
 
         mock_client = MagicMock()
         mock_client.load_files.return_value = [
-            ("table1", 10, 3),
-            ("table2", 20, 4),
+            ("table1", 10, 3, None),
+            ("table2", 20, 4, None),
         ]
         mock_client_class.return_value = mock_client
 
@@ -929,7 +929,7 @@ class TestDuckDBConnectionContext:
         mock_parser.parse.return_value = mock_parsed_url
 
         mock_client = MagicMock()
-        mock_client.load_file.return_value = ("table1", 10, 3)
+        mock_client.load_file.return_value = ("table1", 10, 3, None)
         mock_client_class.return_value = mock_client
 
         context = create_duckdb_connection_context("file:///path/to/data.csv")
@@ -958,8 +958,8 @@ class TestDuckDBConnectionContext:
 
         mock_client = MagicMock()
         mock_client.load_files.return_value = [
-            ("table1", 10, 3),
-            ("table2", 20, 4),
+            ("table1", 10, 3, None),
+            ("table2", 20, 4, None),
         ]
         mock_client_class.return_value = mock_client
 
