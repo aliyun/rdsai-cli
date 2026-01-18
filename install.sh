@@ -400,8 +400,8 @@ ensure_uv() {
 
 # Install rdsai-cli via uv
 install_rdsai() {
-    info "Installing $PACKAGE_NAME via uv..."
-    
+    info "Installing $PACKAGE_NAME via uv"
+
     if [ "$DEV_MODE" = true ]; then
         error "Development mode installation from source requires manual setup."
         error "Please see README.md for development installation instructions."
@@ -414,7 +414,9 @@ install_rdsai() {
         error "Please check your internet connection and try again."
         return 1
     fi
-    
+
+    info "Please wait, installation is in progress..."
+
     local python_arg=""
     if [ -n "$PYTHON_VERSION" ]; then
         python_arg="--python $PYTHON_VERSION"
