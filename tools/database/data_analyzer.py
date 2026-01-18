@@ -1,4 +1,4 @@
-"""Query Analyzer tool for executing analytical SQL queries on MySQL and DuckDB."""
+"""Data Analyzer tool for executing analytical SQL queries on MySQL and DuckDB."""
 
 from pathlib import Path
 from typing import Any, override
@@ -21,7 +21,7 @@ class Params(BaseModel):
     sql: str = Field(
         description=(
             "The SQL SELECT query to execute for data analysis. "
-            "This tool is designed for analytical queries that return result sets. "
+            "This tool is designed for analytical queries that analyze data patterns, statistics, aggregations, and insights. "
             "Supports both MySQL and DuckDB engines. "
             "The model should generate appropriate SQL based on the connected database engine. "
             "Only SELECT queries (including WITH/CTE) are supported. "
@@ -30,11 +30,11 @@ class Params(BaseModel):
     )
 
 
-class QueryAnalyzer(BaseTool[Params]):
-    """Tool for executing analytical SQL queries on MySQL and DuckDB databases."""
+class DataAnalyzer(BaseTool[Params]):
+    """Tool for executing analytical SQL queries for data analysis on MySQL and DuckDB databases."""
 
-    name: str = "QueryAnalyzer"
-    description: str = load_desc(Path(__file__).parent / "query_analyzer.md")
+    name: str = "DataAnalyzer"
+    description: str = load_desc(Path(__file__).parent / "data_analyzer.md")
     params: type[Params] = Params
 
     # Maximum rows to display in output

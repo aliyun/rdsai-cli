@@ -40,7 +40,6 @@ class MySQLExplain(MySQLToolBase):
         columns, rows = self._execute_query(explain_sql)
 
         return {
-            "type": "MySQL EXPLAIN Result",
             "columns": columns,
             "rows": rows,
             "message": f"Execution plan generated for SQL: {params.sql[:100]}{'...' if len(params.sql) > 100 else ''}",

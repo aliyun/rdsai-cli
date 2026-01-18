@@ -52,9 +52,9 @@ Execute complete sysbench benchmark workflows and provide detailed performance a
 
 3. **Analysis Phase**: After benchmark completes, collect system information
    - **Parallel execution** of diagnostic tools:
-     - `KernelParameter` - Get key MySQL parameters (innodb_buffer_pool_size, max_connections, thread_cache_size, etc.)
-     - `InnodbStatus` - Get InnoDB engine status (buffer pool hit rate, lock waits, etc.)
-     - `ShowProcess` - Check current process state
+     - `MySQLShow` - Get key MySQL parameters (SHOW VARIABLES LIKE 'innodb_buffer_pool_size', SHOW VARIABLES LIKE 'max_connections', etc.)
+     - `MySQLShow` - Get InnoDB engine status (SHOW ENGINE INNODB STATUS)
+     - `MySQLShow` - Check current process state (SHOW PROCESSLIST)
    - Analyze collected data against benchmark results
    - **Error Check**: If Analysis tools fail, you may skip analysis but still provide conclusion based on available benchmark results
 
@@ -80,7 +80,7 @@ After completing the benchmark workflow, you MUST generate a comprehensive analy
 
 **IMPORTANT**: Analyze parameters in relation to benchmark results. If TPS/QPS is low or latency is high, identify which parameters may be causing the issue and provide optimization recommendations.
 
-Based on `KernelParameter` results, analyze key parameters:
+Based on `MySQLShow` (SHOW VARIABLES) results, analyze key parameters:
 
 ### Critical Parameters to Check:
 
@@ -126,7 +126,7 @@ For each parameter that may be impacting performance:
 
 **IMPORTANT**: Correlate InnoDB status metrics with benchmark performance. If TPS is low or latency is high, identify which InnoDB metrics indicate the root cause and provide specific optimization recommendations.
 
-Based on `InnodbStatus` results, analyze:
+Based on `MySQLShow` (SHOW ENGINE INNODB STATUS) results, analyze:
 
 ### Buffer Pool Metrics:
 - Buffer pool hit rate (should be > 99%)
@@ -267,7 +267,7 @@ If multiple test runs or different configurations:
 - **Analysis tools**: Can run AFTER benchmark completes
 
 ## Parallel Execution (Allowed)
-- Diagnostic tools after benchmark: `KernelParameter`, `InnodbStatus`, `ShowProcess` can run in parallel
+- Diagnostic tools after benchmark: `MySQLShow` (SHOW VARIABLES, SHOW ENGINE INNODB STATUS, SHOW PROCESSLIST) can run in parallel
 - These are read-only operations, safe to execute concurrently
 
 ## Error Handling (CRITICAL)
