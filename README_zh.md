@@ -11,7 +11,7 @@ RDSAI CLI 是一款新一代的 AI 驱动 RDS CLI，它用来改变了您与数�
 
 ## ✨ 功能特性
 
-- **多数据源连接** — 连接 MySQL 数据库、本地文件（CSV、Excel）和远程数据源（HTTP/HTTPS URL），支持同时连接多个文件
+- **多数据源连接** — 连接 MySQL 数据库或文件（CSV、Excel），支持本地文件和远程 HTTP/HTTPS URL，可在单个会话中同时连接多个文件
 - **AI 助手** — 自然语言查询（支持英文/中文），优化的 SQL、诊断和解释
 - **智能 SQL** — 自动检测 SQL 与自然语言，查询历史，`Ctrl+E` 即时结果解释
 - **多模型 LLM** — 支持 Qwen、OpenAI、DeepSeek、Anthropic、Gemini 和 OpenAI 兼容 API
