@@ -400,6 +400,9 @@ class ContextManager:
 def _load_database_connection_info() -> Optional[str]:
     """Load current database connection information.
 
+    For DuckDB with single table file, injects table name.
+    For all engines, specifies which SQL syntax to use.
+
     Returns:
         Formatted connection info string if connected, None otherwise.
     """
@@ -413,17 +416,40 @@ def _load_database_connection_info() -> Optional[str]:
 
     # Format connection information
     parts = []
-    parts.append(f"Host: {conn_info.get('host', 'N/A')}")
-    parts.append(f"Port: {conn_info.get('port', 'N/A')}")
-    parts.append(f"User: {conn_info.get('user', 'N/A')}")
-
-    database = conn_info.get("database")
-    if database:
-        parts.append(f"Current Database: {database}")
-    else:
-        parts.append("Current Database: (none selected)")
-
+    
     engine = conn_info.get("engine", "mysql")
-    parts.append(f"Engine: {engine}")
+    
+    # Handle DuckDB differently
+    if engine == "duckdb":
+        parts.append(f"Engine: {engine}")
+        
+        # Check if single table file connection
+        if hasattr(db_service, "_duckdb_load_info") and db_service._duckdb_load_info:
+            load_info = db_service._duckdb_load_info
+            if len(load_info) == 1:
+                # Single table - inject table name
+                table_name, row_count, column_count = load_info[0]
+                parts.append(f"Table: {table_name}")
+                parts.append(f"Note: Use {engine.upper()} SQL syntax for queries.")
+            else:
+                # Multiple tables
+                parts.append(f"Note: Use {engine.upper()} SQL syntax for queries.")
+        else:
+            # DuckDB connection but no file loaded (e.g., duckdb:// protocol)
+            parts.append(f"Note: Use {engine.upper()} SQL syntax for queries.")
+    else:
+        # MySQL connection - keep existing format
+        parts.append(f"Host: {conn_info.get('host', 'N/A')}")
+        parts.append(f"Port: {conn_info.get('port', 'N/A')}")
+        parts.append(f"User: {conn_info.get('user', 'N/A')}")
+        
+        database = conn_info.get("database")
+        if database:
+            parts.append(f"Current Database: {database}")
+        else:
+            parts.append("Current Database: (none selected)")
+        
+        parts.append(f"Engine: {engine}")
+        parts.append(f"Note: Use {engine.upper()} SQL syntax for queries.")
 
     return "\n".join(parts)
