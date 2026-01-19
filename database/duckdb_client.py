@@ -186,6 +186,8 @@ class DuckDBClient(DatabaseClient):
         try:
             if self.parsed_url.is_memory:
                 self.conn = duckdb.connect(":memory:")
+            elif self._persistent_db_path:
+                self.conn = duckdb.connect(self._persistent_db_path)
             else:
                 self.conn = duckdb.connect(self.parsed_url.path)
             self.cursor = self.conn.cursor()
@@ -282,5 +284,4 @@ class DuckDBClient(DatabaseClient):
             self.conn.close()
         self.conn = duckdb.connect(persistent_db_path)
         self.cursor = self.conn.cursor()
-        self.parsed_url.path = persistent_db_path
         self._persistent_db_path = persistent_db_path
