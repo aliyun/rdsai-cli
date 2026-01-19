@@ -39,7 +39,7 @@ def help(app: ShellREPL, args: list[str]):
     for cmd in get_meta_commands():
         if cmd.name in ("setup", "exit", "help", "version", "reload", "upgrade"):
             general_cmds.append(cmd)
-        elif cmd.name in ("model", "compact", "clear", "yolo"):
+        elif cmd.name in ("model", "clear", "yolo"):
             ai_cmds.append(cmd)
         else:
             db_cmds.append(cmd)
@@ -281,7 +281,8 @@ async def clear(app: ShellREPL, args: list[str]):
     console.print("[green]✓[/green] Context cleared.")
 
 
-@meta_command(loop_only=True)
+# Compact command is disabled but code is kept for future use
+# @meta_command(loop_only=True)
 async def compact(app: ShellREPL, args: list[str]):
     """Compact the context to save tokens"""
     assert isinstance(app.loop, NeoLoop)
