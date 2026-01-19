@@ -170,13 +170,11 @@ class DuckDBConnector(BaseConnector):
     # Help information constants
     _SUPPORTED_FORMATS = [
         "[dim]💡 Supported formats:[/dim]",
-        "[dim]   • Bare filename: file.csv (searches in current directory)[/dim]",
-        "[dim]   • Local file paths: /path/to/file.csv, ./file.csv[/dim]",
-        "[dim]   • file:///path/to/file.csv (for local files)[/dim]",
-        "[dim]   • http://example.com/file.csv (for HTTP files)[/dim]",
-        "[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]",
-        "[dim]   • CSV files: file.csv[/dim]",
-        "[dim]   • Excel files: file.xlsx (Excel 2007+ format)[/dim]",
+        "[dim]   • file.csv (current directory)[/dim]",
+        "[dim]   • ./file.csv or /path/to/file.csv[/dim]",
+        "[dim]   • http://example.com/file.csv[/dim]",
+        "[dim]   • https://example.com/file.csv[/dim]",
+        "[dim]   • CSV (.csv) or Excel (.xlsx)[/dim]",
     ]
 
     def _print_supported_formats(self) -> None:
