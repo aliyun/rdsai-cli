@@ -177,7 +177,6 @@ class DuckDBConnector(BaseConnector):
         "[dim]   • https://example.com/file.csv (for HTTPS files)[/dim]",
         "[dim]   • CSV files: file.csv[/dim]",
         "[dim]   • Excel files: file.xlsx (Excel 2007+ format)[/dim]",
-        "[dim]   • duckdb:///path/to/db.duckdb (for database files)[/dim]",
     ]
 
     def _print_supported_formats(self) -> None:
@@ -232,15 +231,12 @@ class DuckDBConnector(BaseConnector):
                     urls.append(normalized_url)
                 except ValueError as e:
                     # File not found or other path resolution error
-                    error_msg = str(e)
-                    console.print(f"[red]✗ {error_msg}[/red]")
-                    self._print_supported_formats()
-                    raise
+                    # Raise exception with format help flag, don't print here
+                    raise FileConnectionError(str(e)) from e
             else:
                 # Invalid format
-                console.print(f"[red]✗ Invalid file path or URL: {arg}[/red]")
-                self._print_supported_formats()
-                raise ValueError(f"Invalid file path or URL: {arg}")
+                # Raise exception with format help flag, don't print here
+                raise FileConnectionError(f"Invalid file path or URL: {arg}")
 
         if not urls:
             raise ValueError("At least one file path or URL is required")
@@ -252,9 +248,9 @@ class DuckDBConnector(BaseConnector):
                 parsed_url = DuckDBURLParser.parse(url)
                 parsed_urls.append(parsed_url)
         except ValueError as e:
-            console.print(f"[red]✗ Invalid URL format[/red]")
-            console.print(f"[dim]{e}[/dim]")
-            raise
+            # Invalid URL format - raise exception, don't print here
+            # Handler will print the error
+            raise FileConnectionError(f"Invalid URL format: {e}") from e
 
         # Determine connection message based on URL type and count
         primary_parsed_url = parsed_urls[0]
@@ -418,6 +414,11 @@ class ConnectionHandler:
                     "Connection failed via /connect: {error}",
                     error=connection.error,
                 )
+        except FileConnectionError as e:
+            # File connection errors that need format help
+            console.print(f"[red]✗ {e.message}[/red]")
+            if isinstance(connector, DuckDBConnector):
+                connector._print_supported_formats()
         except ValueError as e:
             # User cancellation or validation errors
             error_msg = str(e)
@@ -512,3 +513,16 @@ def disconnect(app: ShellREPL, args: list[str]):
 
     console.print(f"[green]✓ Disconnected from {display_name}[/green]")
     logger.info("Disconnected from database via /disconnect")
+
+
+class FileConnectionError(ValueError):
+    """Exception raised for file connection errors that require format help.
+
+    This exception includes the error message and indicates that supported
+    format information should be displayed to the user.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+        self.show_format_help = True
