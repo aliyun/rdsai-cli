@@ -1,4 +1,4 @@
-"""MySQL SELECT query tool for executing SELECT statements."""
+"""SELECT query tool for executing SELECT statements."""
 
 from pathlib import Path
 from typing import Any, override
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from loop.runtime import BuiltinSystemPromptArgs
 from tools.utils import load_desc
 
-from .base import MySQLToolBase
+from .database_base import DatabaseToolBase
 
 
 class Params(BaseModel):
@@ -18,21 +18,21 @@ class Params(BaseModel):
             "'SELECT * FROM mysql.slow_log WHERE start_time > \"2024-01-01\"', "
             "'SELECT * FROM performance_schema.events_statements_summary_by_digest', etc. "
             "The statement MUST start with 'SELECT' (case-insensitive). "
-            "DO NOT use for SHOW statements (use MySQLShow instead), DESCRIBE statements (use MySQLDesc instead), "
+            "DO NOT use for SHOW statements (use Show tool instead), DESCRIBE statements (use Desc tool instead), "
             "or DDL statements (use DDLExecutor instead). "
             "ONLY SELECT queries are allowed - DML operations (INSERT/UPDATE/DELETE) are NOT permitted."
         )
     )
 
 
-class MySQLSelect(MySQLToolBase):
-    """Tool for executing MySQL SELECT queries.
+class Select(DatabaseToolBase):
+    """Tool for executing SELECT queries.
 
     This tool provides flexible execution of SELECT statements, allowing the model
     to construct complete queries including FROM, WHERE, JOIN, GROUP BY, ORDER BY, LIMIT, etc.
     """
 
-    name: str = "MySQLSelect"
+    name: str = "Select"
     description: str = load_desc(Path(__file__).parent / "select.md")
     params: type[Params] = Params
 

@@ -1,4 +1,4 @@
-Execute MySQL SELECT queries for database diagnostics and system table analysis.
+Execute SELECT queries for database diagnostics and system table analysis.
 
 **IMPORTANT: This tool ONLY allows queries on system tables. User table queries are NOT permitted to prevent slow queries and performance issues.**
 
@@ -26,4 +26,4 @@ Execute MySQL SELECT queries for database diagnostics and system table analysis.
 - `SELECT * FROM information_schema.TABLES WHERE table_schema='mydb'` - Table metadata (NOT table data)
 - `SELECT * FROM sys.schema_table_statistics WHERE table_schema='mydb'` - Statistics (NOT table data)
 
-**Note:** Only SELECT queries on system tables allowed. User table queries are blocked to prevent slow queries. Use MySQLShow for SHOW statements, MySQLDesc for DESCRIBE statements, and DDLExecutor for DDL operations.
+**Note:** Only SELECT queries on system tables allowed. User table queries are blocked to prevent slow queries. Use Show for SHOW statements, Desc for DESCRIBE statements, and DDLExecutor for DDL operations.

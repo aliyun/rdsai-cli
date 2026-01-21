@@ -13,7 +13,7 @@ Analyze SQL query execution plan using MySQL EXPLAIN. **ONLY supports DML statem
 - ✅ **DELETE** - Delete operation plans
 
 **NOT Supported - DO NOT USE THIS TOOL FOR:**
-- ❌ **SHOW statements** - These are MySQL administrative commands, NOT DML. Use `MySQLShow` tool instead
+- ❌ **SHOW statements** - These are MySQL administrative commands, NOT DML. Use `Show` tool instead
 - ❌ **DDL statements** (CREATE, ALTER, DROP, etc.) - Use **DDLExecutor** tool instead
 - ❌ **SET commands** - Execute directly in REPL
 - ❌ **USE database** - Execute directly in REPL

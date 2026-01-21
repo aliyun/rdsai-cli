@@ -14,4 +14,4 @@ Execute MySQL DESCRIBE/DESC statements for viewing table structure and column in
 - `SHOW CREATE TABLE products`
 - `SHOW COLUMNS FROM customers`
 
-**Note:** This tool only accepts DESCRIBE/DESC/SHOW CREATE TABLE/SHOW COLUMNS statements. Use MySQLSelect for SELECT queries and DDLExecutor for DDL operations.
+**Note:** This tool only accepts DESCRIBE/DESC/SHOW CREATE TABLE/SHOW COLUMNS statements. Use Select for SELECT queries and DDLExecutor for DDL operations.

@@ -4,12 +4,12 @@ agent:
   system_prompt_path: ./system.md
   tools:
     - "tools.todo:TodoList"
-    # MySQL Database Analysis Tools
-    - "tools.mysql.sql_ddl:DDLExecutor"
-    - "tools.mysql.explain:MySQLExplain"
-    - "tools.mysql.show:MySQLShow"
-    - "tools.mysql.desc:MySQLDesc"
-    - "tools.mysql.select:MySQLSelect"
+    # Database Analysis Tools
+    - "tools.database.sql_ddl:DDLExecutor"
+    - "tools.database.explain:MySQLExplain"
+    - "tools.database.show:Show"
+    - "tools.database.desc:Desc"
+    - "tools.database.select:Select"
     # Database Analysis Tool (MySQL & DuckDB)
     - "tools.database.data_analyzer:DataAnalyzer"
     # Subagent Tool

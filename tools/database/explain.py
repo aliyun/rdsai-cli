@@ -1,4 +1,4 @@
-"""MySQL EXPLAIN tool for analyzing SQL execution plans."""
+"""EXPLAIN tool for analyzing SQL execution plans."""
 
 from pathlib import Path
 from typing import Any, override
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from loop.runtime import BuiltinSystemPromptArgs
 from tools.utils import load_desc
-from .base import MySQLToolBase
+from .database_base import DatabaseToolBase
 
 
 class Params(BaseModel):
@@ -15,14 +15,14 @@ class Params(BaseModel):
         description=(
             "The SQL DML statement to analyze with EXPLAIN. "
             "MUST be SELECT, INSERT, UPDATE, or DELETE only. "
-            "DO NOT use for SHOW statements (use TableStatus, TableStructure, etc. instead) "
+            "DO NOT use for SHOW statements (use Show tool instead) "
             "or DDL statements (use DDLExecutor instead). "
             "SHOW statements are NOT DML and will cause syntax errors."
         )
     )
 
 
-class MySQLExplain(MySQLToolBase):
+class MySQLExplain(DatabaseToolBase):
     name: str = "MySQLExplain"
     description: str = load_desc(Path(__file__).parent / "explain.md")
     params: type[Params] = Params

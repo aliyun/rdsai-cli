@@ -1,4 +1,4 @@
-"""MySQL DDL modification tool for executing SQL changes like CREATE INDEX, etc."""
+"""DDL modification tool for executing SQL changes like CREATE INDEX, etc."""
 
 from pathlib import Path
 from typing import Any, override
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from loop.runtime import BuiltinSystemPromptArgs
 from tools.utils import load_desc
 
-from .base import MySQLToolBase
+from .database_base import DatabaseToolBase
 
 
 class Params(BaseModel):
@@ -21,8 +21,8 @@ class Params(BaseModel):
     description: str = Field(description="A brief description of what this SQL modification will do")
 
 
-class DDLExecutor(MySQLToolBase):
-    """Tool for executing MySQL DDL modifications.
+class DDLExecutor(DatabaseToolBase):
+    """Tool for executing DDL modifications.
 
     Note: This tool requires user approval, which is handled by
     LangGraph's interrupt mechanism in loop/nodes.py.
@@ -125,7 +125,7 @@ class DDLExecutor(MySQLToolBase):
         result = db_service.execute_query(params.sql_statement)
 
         if not result.success:
-            from .base import ToolQueryError
+            from .database_base import ToolQueryError
 
             raise ToolQueryError(result.error or "DDL execution failed")
 

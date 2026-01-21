@@ -1,4 +1,4 @@
-"""Base class for MySQL tools."""
+"""Base class for database tools."""
 
 import re
 from abc import abstractmethod
@@ -26,8 +26,8 @@ class ToolQueryError(Exception):
     pass
 
 
-class MySQLToolBase(BaseTool):
-    """Base class for all MySQL database analysis tools."""
+class DatabaseToolBase(BaseTool):
+    """Base class for all database analysis tools."""
 
     def __init__(self, builtin_args: BuiltinSystemPromptArgs, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -157,7 +157,7 @@ class MySQLToolBase(BaseTool):
             else:
                 output = self._format_simple_output(result)
 
-            message = result.get("message", "MySQL tool executed successfully")
+            message = result.get("message", "Database tool executed successfully")
             return ToolOk(output=output, message=message)
 
         except ToolQueryError as e:

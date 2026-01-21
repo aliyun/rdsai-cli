@@ -1,4 +1,4 @@
-"""MySQL DESCRIBE/DESC tool for describing table structure."""
+"""DESCRIBE/DESC tool for describing table structure."""
 
 from pathlib import Path
 from typing import Any, override
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from loop.runtime import BuiltinSystemPromptArgs
 from tools.utils import load_desc
 
-from .base import MySQLToolBase
+from .database_base import DatabaseToolBase
 
 
 class Params(BaseModel):
@@ -17,19 +17,19 @@ class Params(BaseModel):
             "Examples: 'DESCRIBE table_name', 'DESC table_name', "
             "'SHOW CREATE TABLE table_name', 'SHOW COLUMNS FROM table_name', etc. "
             "The statement MUST start with 'DESCRIBE', 'DESC', or 'SHOW CREATE TABLE' or 'SHOW COLUMNS' (case-insensitive). "
-            "DO NOT use for SELECT queries (use MySQLSelect instead) or DDL statements (use DDLExecutor instead)."
+            "DO NOT use for SELECT queries (use Select tool instead) or DDL statements (use DDLExecutor instead)."
         )
     )
 
 
-class MySQLDesc(MySQLToolBase):
-    """Tool for executing MySQL DESCRIBE/DESC statements.
+class Desc(DatabaseToolBase):
+    """Tool for executing DESCRIBE/DESC statements.
 
     This tool provides flexible execution of table structure description commands,
     allowing the model to construct the complete statement with table names.
     """
 
-    name: str = "MySQLDesc"
+    name: str = "Desc"
     description: str = load_desc(Path(__file__).parent / "desc.md")
     params: type[Params] = Params
 
