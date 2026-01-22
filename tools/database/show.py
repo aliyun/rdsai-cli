@@ -1,4 +1,4 @@
-"""MySQL SHOW statement tool for executing various SHOW commands."""
+"""SHOW statement tool for executing various SHOW commands."""
 
 from pathlib import Path
 from typing import Any, override
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from loop.runtime import BuiltinSystemPromptArgs
 from tools.utils import load_desc
 
-from .base import MySQLToolBase
+from .database_base import DatabaseToolBase
 
 
 class Params(BaseModel):
@@ -18,19 +18,19 @@ class Params(BaseModel):
             "'SHOW PROCESSLIST', 'SHOW TABLE STATUS', 'SHOW INDEX FROM table_name', "
             "'SHOW ENGINE INNODB STATUS', 'SHOW REPLICA STATUS', 'SHOW SLAVE STATUS', etc. "
             "The statement MUST start with 'SHOW' (case-insensitive). "
-            "DO NOT use for SELECT queries (use MySQLSelect instead) or DDL statements (use DDLExecutor instead)."
+            "DO NOT use for SELECT queries (use Select tool instead) or DDL statements (use DDLExecutor instead)."
         )
     )
 
 
-class MySQLShow(MySQLToolBase):
-    """Tool for executing MySQL SHOW statements.
+class Show(DatabaseToolBase):
+    """Tool for executing SHOW statements.
 
     This tool provides flexible execution of various SHOW commands, allowing the model
     to construct the complete SHOW statement with all necessary parameters.
     """
 
-    name: str = "MySQLShow"
+    name: str = "Show"
     description: str = load_desc(Path(__file__).parent / "show.md")
     params: type[Params] = Params
 

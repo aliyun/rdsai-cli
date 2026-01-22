@@ -8,6 +8,6 @@ agent:
     - "tools.sysbench.run:SysbenchRun"
     - "tools.sysbench.cleanup:SysbenchCleanup"
     # MySQL Diagnostic Tools for Analysis
-    - "tools.mysql.show:MySQLShow"
-    - "tools.mysql.select:MySQLSelect"
+    - "tools.database.show:Show"
+    - "tools.database.select:Select"
 

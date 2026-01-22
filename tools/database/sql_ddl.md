@@ -17,10 +17,10 @@ Execute DDL (Data Definition Language) operations on MySQL databases with user a
 - CREATE TRIGGER / DROP TRIGGER
 
 **NOT Supported - DO NOT USE THIS TOOL FOR:**
-- ❌ **SELECT queries** - Use `MySQLSelect` tool instead
+- ❌ **SELECT queries** - Use `Select` tool instead
 - ❌ **INSERT, UPDATE, DELETE** - These are DML operations, not DDL
-- ❌ **SHOW statements** - Use `MySQLShow` tool instead
-- ❌ **DESCRIBE statements** - Use `MySQLDesc` tool instead
+- ❌ **SHOW statements** - Use `Show` tool instead
+- ❌ **DESCRIBE statements** - Use `Desc` tool instead
 - ❌ **DROP DATABASE, CREATE DATABASE** - Blocked for safety
 - ❌ **Any query that reads data** - This tool is ONLY for schema modifications
 
@@ -29,7 +29,7 @@ Execute DDL (Data Definition Language) operations on MySQL databases with user a
 - When creating or dropping database objects (tables, views, procedures, etc.)
 
 **When NOT to Use:**
-- For reading data - use `MySQLSelect`, `MySQLShow`, or `MySQLDesc` tools instead
+- For reading data - use `Select`, `Show`, or `Desc` tools instead
 - For DML operations (INSERT/UPDATE/DELETE) - not supported by this tool
 
 **Safety Features:**

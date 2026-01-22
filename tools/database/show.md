@@ -1,4 +1,4 @@
-Execute MySQL SHOW statements for various database information queries.
+Execute SHOW statements for various database information queries.
 
 **When to use:**
 - Querying system variables: `SHOW VARIABLES`, `SHOW VARIABLES LIKE 'pattern'`, `SHOW GLOBAL VARIABLES`
@@ -23,4 +23,4 @@ Execute MySQL SHOW statements for various database information queries.
 - `SHOW ENGINE INNODB STATUS`
 - `SHOW REPLICA STATUS`
 
-**Note:** This tool only accepts SHOW statements. Use MySQLSelect for SELECT queries and DDLExecutor for DDL operations.
+**Note:** This tool only accepts SHOW statements. Use Select for SELECT queries and DDLExecutor for DDL operations.
