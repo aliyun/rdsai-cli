@@ -11,6 +11,7 @@ from __future__ import annotations
 import getpass
 import re
 from datetime import datetime
+from pathlib import Path
 from threading import Lock
 from typing import Any, Literal, TYPE_CHECKING
 from collections.abc import Callable
@@ -190,6 +191,7 @@ class DatabaseService:
         ("REVOKE", QueryType.REVOKE),
         ("TRUNCATE", QueryType.TRUNCATE),
         ("REPLACE", QueryType.REPLACE),
+        ("SOURCE", QueryType.SOURCE),
     )
 
     # Optional modifiers that can appear before SHOW target keywords
@@ -237,6 +239,8 @@ class DatabaseService:
         # Vector capability state
         self._vector_capability_status: Literal["UNKNOWN", "ENABLED", "DISABLED"] = "UNKNOWN"
         self._vector_capability_error: str | None = None
+        # SOURCE command display callback
+        self._source_display_callback: Callable[[QueryResult, str, bool], None] | None = None
 
     # ========== Properties ==========
 
@@ -345,8 +349,24 @@ class DatabaseService:
 
     def register_schema_change_callback(self, callback: SchemaChangeCallback) -> None:
         """Register a callback to be notified when schema changes."""
-        if callback not in self._schema_change_callbacks:
-            self._schema_change_callbacks.append(callback)
+
+    # ========== SOURCE Command Display Callback ==========
+
+    def set_source_display_callback(self, callback: Callable[[QueryResult, str, bool], None] | None) -> None:
+        """Set display callback for SOURCE command statements.
+
+        This callback will be called for each statement executed within a SOURCE command,
+        allowing the UI layer to format and display results immediately.
+
+        Args:
+            callback: Callback function that takes (result, sql, use_vertical) parameters.
+                     If None, clears the callback.
+        """
+        self._source_display_callback = callback
+
+    def clear_source_display_callback(self) -> None:
+        """Clear the SOURCE command display callback."""
+        self._source_display_callback = None
 
     def unregister_schema_change_callback(self, callback: SchemaChangeCallback) -> None:
         """Unregister a schema change callback."""
@@ -515,10 +535,14 @@ class DatabaseService:
 
     def execute_query(self, sql: str) -> QueryResult:
         """Execute SQL query and return structured result."""
-        client = self._get_client_or_raise()
-
         sql = self._clean_display_directives(sql)
         query_type = self._classify_query(sql)
+
+        # Special handling for SOURCE command
+        if query_type == QueryType.SOURCE:
+            return self._execute_source_command(sql)
+
+        client = self._get_client_or_raise()
         start_time = datetime.now()
 
         try:
@@ -607,6 +631,317 @@ class DatabaseService:
         if match:
             return match.group(1)
         return None
+
+    def _parse_source_path(self, sql: str) -> str:
+        """Parse file path from SOURCE command.
+
+        Supports:
+        - SOURCE file.sql;
+        - SOURCE /path/to/file.sql;
+        - SOURCE 'file with spaces.sql';
+        - SOURCE "file with spaces.sql";
+        - SOURCE ~/scripts/init.sql;
+        - SOURCE ./relative/path.sql;
+
+        Args:
+            sql: SOURCE command SQL string
+
+        Returns:
+            Parsed and normalized file path
+
+        Raises:
+            ValueError: If path is empty or invalid
+        """
+        if not sql or not sql.strip():
+            raise ValueError("SOURCE command is empty")
+
+        sql = sql.strip()
+        # Remove trailing semicolon if present
+        if sql.endswith(";"):
+            sql = sql[:-1].rstrip()
+
+        # Extract content after SOURCE keyword (case-insensitive)
+        pattern = r"SOURCE\s+(.+)$"
+        match = re.search(pattern, sql, re.IGNORECASE)
+        if not match:
+            raise ValueError("\nUsage: \\. <filename> | source <filename>")
+
+        path_str = match.group(1).strip()
+        if not path_str:
+            raise ValueError("\nUsage: \\. <filename> | source <filename>")
+
+        # Handle quoted paths
+        if (path_str.startswith('"') and path_str.endswith('"')) or (
+            path_str.startswith("'") and path_str.endswith("'")
+        ):
+            quote_char = path_str[0]
+            path_str = path_str[1:-1]
+            # Handle escaped quotes
+            path_str = path_str.replace(f"\\{quote_char}", quote_char)
+            path_str = path_str.replace("\\\\", "\\")
+
+        return path_str
+
+    def _read_script_file(self, file_path: str) -> tuple[str, Path]:
+        """Read SQL script file content.
+
+        Args:
+            file_path: Path to the script file (can be relative or absolute)
+
+        Returns:
+            Tuple of (file_content, resolved_path)
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            PermissionError: If file is not readable
+            ValueError: If path is invalid or file is a directory
+        """
+        # Expand user directory (~)
+        expanded_path = Path(file_path).expanduser()
+
+        # Resolve to absolute path
+        try:
+            if expanded_path.is_absolute():
+                resolved_path = expanded_path.resolve()
+            else:
+                # For relative paths, resolve against current working directory
+                resolved_path = Path.cwd() / expanded_path
+                resolved_path = resolved_path.resolve()
+        except (OSError, RuntimeError) as e:
+            # Handle errors from resolve() or cwd()
+            raise FileNotFoundError(f"Failed to open file '{file_path}', error: {e}") from e
+
+        # Validate file exists
+        if not resolved_path.exists():
+            raise FileNotFoundError(f"Failed to open file '{file_path}', error: No such file")
+
+        # Validate it's a file, not a directory
+        if not resolved_path.is_file():
+            raise ValueError(f"Failed to open file '{file_path}', error: Is a directory")
+
+        # Read file content with encoding fallback
+        try:
+            content = resolved_path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            try:
+                content = resolved_path.read_text(encoding="latin-1")
+            except Exception as e:
+                raise ValueError(f"Failed to read file '{file_path}': {e}") from e
+        except PermissionError as e:
+            raise PermissionError(f"Failed to open file '{file_path}', error: Permission denied") from e
+        except Exception as e:
+            raise ValueError(f"Failed to read file '{file_path}': {e}") from e
+
+        return content, resolved_path
+
+    def _split_sql_statements(self, content: str, delimiter: str = ";") -> list[str]:
+        """Split SQL content into individual statements.
+
+        Handles:
+        - Standard delimiter (;)
+        - Custom delimiters (for stored procedures)
+        - DELIMITER commands within the script
+        - Comments (-- and #)
+        - Multi-line statements
+
+        Args:
+            content: SQL script content
+            delimiter: Statement delimiter (default: ;)
+
+        Returns:
+            List of SQL statements
+        """
+        statements: list[str] = []
+        current: list[str] = []
+        current_delimiter = delimiter
+        in_string: str | None = None
+
+        lines = content.split("\n")
+
+        for line in lines:
+            stripped = line.strip()
+
+            # Skip empty lines and comments at line level
+            if not stripped:
+                if current:
+                    current.append(line)
+                continue
+
+            if stripped.startswith("--") or stripped.startswith("#"):
+                continue
+
+            # Handle DELIMITER command
+            if stripped.upper().startswith("DELIMITER"):
+                # Flush current statement if any
+                if current:
+                    stmt = "\n".join(current).strip()
+                    if stmt and not stmt.upper().startswith("DELIMITER"):
+                        statements.append(stmt)
+                    current = []
+
+                # Extract new delimiter
+                parts = stripped.split(maxsplit=1)
+                if len(parts) > 1:
+                    current_delimiter = parts[1].strip()
+                continue
+
+            # Add line to current statement
+            current.append(line)
+
+            # Check if line ends with delimiter (simple check)
+            # Note: This is simplified and doesn't handle delimiters inside strings
+            if stripped.endswith(current_delimiter):
+                stmt = "\n".join(current)
+                # Remove the delimiter
+                if stmt.rstrip().endswith(current_delimiter):
+                    stmt = stmt.rstrip()[: -len(current_delimiter)].strip()
+                if stmt:
+                    statements.append(stmt)
+                current = []
+
+        # Handle last statement without delimiter
+        if current:
+            stmt = "\n".join(current).strip()
+            if stmt:
+                statements.append(stmt)
+
+        return statements
+
+    def _execute_script(
+        self, content: str, filename: str, display_callback: Callable[[QueryResult, str, bool], None] | None = None
+    ) -> QueryResult:
+        """Execute SQL script content.
+
+        Args:
+            content: SQL script content
+            filename: Script filename (for display purposes)
+            display_callback: Optional callback function to display each statement result.
+                            Called as display_callback(result, sql, use_vertical)
+
+        Returns:
+            QueryResult with execution summary
+        """
+        start_time = datetime.now()
+
+        # Split into statements
+        statements = self._split_sql_statements(content)
+
+        if not statements:
+            logger.debug(f"No statements found in {filename}")
+            execution_time = (datetime.now() - start_time).total_seconds()
+            return QueryResult(
+                query_type=QueryType.SOURCE,
+                success=True,
+                rows=[],
+                execution_time=execution_time,
+                error="No statements found in script",
+            )
+
+        logger.info(f"Executing {len(statements)} statement(s) from {filename}")
+
+        success_count = 0
+        error_count = 0
+        total_affected_rows = 0
+        errors: list[str] = []
+
+        for i, stmt in enumerate(statements, 1):
+            stmt = stmt.strip()
+            if not stmt:
+                continue
+
+            try:
+                result = self.execute_query(stmt)
+
+                # Display result immediately if callback is provided
+                # This matches MySQL behavior: each statement shows its result immediately
+                if display_callback:
+                    use_vertical = self.has_vertical_format_directive(stmt)
+                    display_callback(result, stmt, use_vertical)
+
+                if result.success:
+                    success_count += 1
+                    if result.affected_rows is not None and result.affected_rows >= 0:
+                        total_affected_rows += result.affected_rows
+                    logger.debug(f"Statement {i}/{len(statements)} executed successfully")
+                else:
+                    error_count += 1
+                    error_msg = f"Statement {i}/{len(statements)}: {result.error}"
+                    errors.append(error_msg)
+                    logger.warning(f"Statement {i}/{len(statements)} failed: {result.error}")
+            except Exception as e:
+                error_count += 1
+                error_msg = f"Statement {i}/{len(statements)}: {str(e)}"
+                errors.append(error_msg)
+                logger.exception(f"Script execution error at statement {i}")
+
+        execution_time = (datetime.now() - start_time).total_seconds()
+
+        # Build error message only if there are errors (no summary for successful execution)
+        error_message = None
+        if error_count > 0:
+            error_details = "\n".join(errors)
+            if len(errors) > 10:
+                error_details = "\n".join(errors[:10]) + f"\n... and {len(errors) - 10} more error(s)"
+            error_message = error_details
+
+        logger.info(
+            f"Script execution completed: {success_count} succeeded, {error_count} failed in {execution_time:.2f}s"
+        )
+
+        return QueryResult(
+            query_type=QueryType.SOURCE,
+            success=error_count == 0,
+            rows=[],
+            affected_rows=total_affected_rows if total_affected_rows > 0 else None,
+            execution_time=execution_time,
+            error=error_message,
+        )
+
+    def _execute_source_command(self, sql: str) -> QueryResult:
+        """Execute SOURCE command.
+
+        Args:
+            sql: SOURCE command SQL string
+
+        Returns:
+            QueryResult with execution summary
+        """
+        try:
+            # Parse file path
+            file_path = self._parse_source_path(sql)
+
+            # Read file content
+            content, resolved_path = self._read_script_file(file_path)
+
+            # Use registered display callback if available
+            # Execute script
+            return self._execute_script(content, resolved_path.name, display_callback=self._source_display_callback)
+
+        except FileNotFoundError as e:
+            return QueryResult(
+                query_type=QueryType.SOURCE,
+                success=False,
+                rows=[],
+                execution_time=0.0,
+                error=str(e),
+            )
+        except (ValueError, PermissionError) as e:
+            return QueryResult(
+                query_type=QueryType.SOURCE,
+                success=False,
+                rows=[],
+                execution_time=0.0,
+                error=str(e),
+            )
+        except Exception as e:
+            logger.exception("Unexpected error executing SOURCE command")
+            return QueryResult(
+                query_type=QueryType.SOURCE,
+                success=False,
+                rows=[],
+                execution_time=0.0,
+                error=f"Unexpected error: {str(e)}",
+            )
 
     def is_sql_statement(self, command: str) -> bool:
         """Check if command is a SQL statement using enhanced validation.

@@ -14,7 +14,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from database import DatabaseService, QueryHistory
+from database import DatabaseService, QueryHistory, DatabaseError, QueryStatus, QueryResult, QueryType
 from loop import LLMNotSet, LLMNotSupported, MaxStepsReached, RunCancelled, Loop, run_loop, NeoLoop
 from loop.agent import load_agent
 from loop.types import ContentPart
@@ -23,6 +23,11 @@ from ui.metacmd import get_meta_command
 from ui.backslash import execute_backslash_command
 from ui.prompt import CustomPromptSession
 from ui.visualize import visualize
+from ui.formatters.database_formatter import (
+    format_and_display_result,
+    display_database_error,
+    DatabaseResultFormatter,
+)
 from utils.exceptions import APIStatusError, ChatProviderError, LLMInvocationError
 from utils.logging import logger
 from utils.term import ensure_new_line
@@ -48,6 +53,9 @@ class ShellREPL:
         self._exit_warned: bool = False  # Track if user was warned about uncommitted transaction
         self._explain_agent: NeoLoop | None = None  # Cached explain agent instance
         self._prompt_session: CustomPromptSession | None = None  # Reference to prompt session
+
+        # Register SOURCE command display callback
+        self._setup_source_callback()
 
     @classmethod
     def is_llm_configured(cls) -> bool:
@@ -91,6 +99,16 @@ class ShellREPL:
     def db_connected(self) -> bool:
         """Check if database is connected."""
         return self._db_service is not None and self._db_service.is_connected()
+
+    def _setup_source_callback(self) -> None:
+        """Setup SOURCE command display callback."""
+        if self._db_service:
+
+            def callback(result: QueryResult, stmt: str, use_vertical_stmt: bool) -> None:
+                """Display callback for SOURCE command statements."""
+                DatabaseResultFormatter.format_source_statement_result(result)
+
+            self._db_service.set_source_display_callback(callback)
 
     def refresh_welcome_info(self, new_info_items: list[WelcomeInfoItem]) -> None:
         """Refresh the welcome information display by printing upgrade notice.
@@ -424,10 +442,6 @@ class ShellREPL:
             console.print("[red]No database connection. Use /connect to connect.[/red]")
             return
 
-        from database import DatabaseError, QueryStatus
-        from database.service import get_service
-        from ui.formatters.database_formatter import format_and_display_result
-
         # Check if this is a transaction control statement
         is_tx_control, tx_type = self._db_service.is_transaction_control_statement(sql)
         if is_tx_control:
@@ -438,72 +452,105 @@ class ShellREPL:
             # Check if vertical format is requested
             use_vertical = self._db_service.has_vertical_format_directive(sql)
 
-            # Execute query
+            # Execute query (SOURCE callback is already registered in __init__)
             result = self._db_service.execute_query(sql)
 
-            # Format and display result
-            format_and_display_result(result, sql, use_vertical)
+            # SOURCE command statements are already displayed via callback
+            if result.query_type == QueryType.SOURCE:
+                if not result.success and result.error:
+                    if self._is_file_level_error(result.error):
+                        format_and_display_result(result, sql, use_vertical)
+            else:
+                # Normal query formatting
+                format_and_display_result(result, sql, use_vertical)
 
-            # Save query result for agent context injection (success or error from result)
-            db_svc = get_service()
-            if db_svc:
-                if result.success:
-                    db_svc.set_last_query_context(
-                        sql=sql,
-                        status=QueryStatus.SUCCESS,
-                        columns=result.columns,
-                        rows=result.rows,
-                        affected_rows=result.affected_rows,
-                        execution_time=result.execution_time,
-                    )
-                else:
-                    db_svc.set_last_query_context(
-                        sql=sql,
-                        status=QueryStatus.ERROR,
-                        error_message=result.error,
-                    )
+            # Save query result for agent context injection and record history
+            self._save_query_context_and_history(sql, result=result)
 
-            # Record execution in history
-            if self._query_history:
+        except DatabaseError as e:
+            # Save failed query for agent context injection and record history
+            self._save_query_context_and_history(sql, error=e)
+            display_database_error(e)
+        except Exception as e:
+            # Save failed query for agent context injection and record history
+            self._save_query_context_and_history(sql, error=e)
+            logger.exception("Unexpected error executing SQL")
+            console.print(f"[red]Unexpected error: {e}[/red]")
+
+    def _is_file_level_error(self, error: str) -> bool:
+        """Check if error is a file-level error (not statement-level).
+
+        Args:
+            error: Error message to check
+
+        Returns:
+            True if it's a file-level error (file not found, permission, usage)
+        """
+        if not error:
+            return False
+        error_lower = error.lower()
+        return (
+            "not found" in error_lower
+            or "no such file" in error_lower
+            or "Usage:" in error
+            or "permission" in error_lower
+            or "is a directory" in error_lower
+        )
+
+    def _save_query_context_and_history(
+        self,
+        sql: str,
+        result: QueryResult | None = None,
+        error: Exception | str | None = None,
+    ) -> None:
+        """Save query context and record in history.
+
+        Args:
+            sql: The SQL statement
+            result: QueryResult if execution succeeded
+            error: Exception or error message if execution failed
+        """
+        from database.service import get_service
+
+        db_svc = get_service()
+
+        # Save context
+        if db_svc:
+            if result and result.success:
+                db_svc.set_last_query_context(
+                    sql=sql,
+                    status=QueryStatus.SUCCESS,
+                    columns=result.columns,
+                    rows=result.rows,
+                    affected_rows=result.affected_rows,
+                    execution_time=result.execution_time,
+                )
+            else:
+                error_msg = str(error) if error else (result.error if result else "Unknown error")
+                db_svc.set_last_query_context(
+                    sql=sql,
+                    status=QueryStatus.ERROR,
+                    error_message=error_msg,
+                )
+
+        # Record history
+        if self._query_history:
+            if result:
+                status = "success" if result.success else "error"
                 self._query_history.record_query(
                     sql=sql,
-                    status="success" if result.success else "error",
+                    status=status,
                     execution_time=result.execution_time,
                     affected_rows=result.affected_rows,
                     error_message=result.error,
                 )
-
-        except DatabaseError as e:
-            # Save failed query for agent context injection
-            db_svc = get_service()
-            if db_svc:
-                db_svc.set_last_query_context(
-                    sql=sql,
-                    status=QueryStatus.ERROR,
-                    error_message=str(e),
-                )
-            # Record failed execution and display error
-            if self._query_history:
-                self._query_history.record_query(sql, "error", error_message=str(e))
-            from ui.formatters.database_formatter import display_database_error
-
-            display_database_error(e)
-        except Exception as e:
-            # Save failed query for agent context injection
-            db_svc = get_service()
-            if db_svc:
-                db_svc.set_last_query_context(
-                    sql=sql,
-                    status=QueryStatus.ERROR,
-                    error_message=str(e),
-                )
-            # Handle unexpected errors
-            if self._query_history:
-                self._query_history.record_query(sql, "error", error_message=str(e))
+            else:
+                error_msg = str(error) if error else "Unknown error"
+                self._query_history.record_query(sql, "error", error_message=error_msg)
 
     def _handle_transaction_control(self, tx_type: Any) -> None:
         """Handle transaction control statements (BEGIN/COMMIT/ROLLBACK)."""
-        from database import QueryType, TransactionState
+        from database import TransactionState
 
         if not self._db_service:
             return

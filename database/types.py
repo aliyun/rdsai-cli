@@ -55,6 +55,7 @@ class QueryType(Enum):
     REVOKE = "REVOKE"
     TRUNCATE = "TRUNCATE"
     REPLACE = "REPLACE"
+    SOURCE = "SOURCE"
     OTHER = "OTHER"
 
 
