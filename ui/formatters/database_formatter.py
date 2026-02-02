@@ -160,11 +160,127 @@ class DatabaseResultFormatter:
                 console.print(timing_text)
 
     @staticmethod
+    def format_source_statement_result(result: QueryResult) -> None:
+        """Format and display result for a single statement within SOURCE command.
+
+        This matches MySQL's output format: "Query OK, X row(s) affected (time)"
+        with a blank line after each statement.
+
+        Args:
+            result: Query execution result for a single statement
+        """
+        if not result.success:
+            # Display error for failed statement
+            error_text = f"ERROR: {result.error}" if result.error else "ERROR: Statement execution failed"
+            console.print(error_text)
+            console.print()  # Blank line after error
+            return
+
+        # Handle SELECT/SHOW/DESCRIBE queries - show data normally
+        if result.query_type in [
+            QueryType.SELECT,
+            QueryType.SHOW,
+            QueryType.DESCRIBE,
+            QueryType.DESC,
+            QueryType.EXPLAIN,
+        ]:
+            # Display query data without EXPLAIN_HINT (MySQL style)
+            DatabaseResultFormatter._display_query_data_for_source(result, False)
+            console.print()  # Blank line after query result
+            return
+
+        # Handle non-SELECT commands - format as "Query OK, X row(s) affected (time)"
+        if result.affected_rows is not None:
+            if result.query_type in [
+                QueryType.CREATE,
+                QueryType.INSERT,
+                QueryType.UPDATE,
+                QueryType.DELETE,
+                QueryType.REPLACE,
+            ]:
+                row_text = f"Query OK, {result.affected_rows} row{'s' if result.affected_rows != 1 else ''} affected"
+            else:
+                row_text = "Query OK"
+        else:
+            row_text = "Query OK"
+
+        # Add execution time
+        if result.execution_time is not None:
+            row_text += f" ({result.execution_time:.3f} sec)"
+
+        # Print without green checkmark (matching MySQL style)
+        console.print(row_text)
+        console.print()  # Blank line after each statement
+
+    @staticmethod
+    def _display_query_data_for_source(result: QueryResult, use_vertical: bool) -> None:
+        """Display results from SELECT-type queries within SOURCE command (without EXPLAIN_HINT)."""
+        if not result.has_data:
+            empty_text = f"Empty set ({result.execution_time:.3f} sec)" if result.execution_time else "Empty set"
+            console.print(empty_text)
+            return
+
+        if use_vertical:
+            # Use existing vertical table formatter
+            if result.columns:
+                description = [(col,) for col in result.columns]
+                print_vertical_table_from_rows(description, result.rows)
+            else:
+                # Fallback for results without column info
+                for i, row in enumerate(result.rows, 1):
+                    console.print(f"[cyan]Row {i}:[/cyan]")
+                    if isinstance(row, (list, tuple)):
+                        for j, value in enumerate(row):
+                            console.print(f"  Field {j + 1}: {value}")
+                    else:
+                        console.print(f"  {row}")
+                    console.print()
+        else:
+            # Use existing horizontal table formatter
+            if result.columns:
+                description = [(col,) for col in result.columns]
+                print_table_from_rows(description, result.rows)
+            else:
+                # Simple table for results without column names
+                table = Table()
+
+                # Add columns based on first row
+                if result.rows:
+                    first_row = result.rows[0]
+                    if isinstance(first_row, (list, tuple)):
+                        for i in range(len(first_row)):
+                            table.add_column(f"Column{i + 1}", style="cyan")
+                    else:
+                        table.add_column("Value", style="cyan")
+
+                # Add rows
+                for row in result.rows:
+                    if isinstance(row, (list, tuple)):
+                        table.add_row(*[str(cell) for cell in row])
+                    else:
+                        table.add_row(str(row))
+
+                console.print(table)
+
+        # Show query stats if available (without EXPLAIN_HINT)
+        if result.execution_time:
+            timing_text = (
+                f"({len(result.rows)} row{'s' if len(result.rows) != 1 else ''} in {result.execution_time:.3f} sec)"
+            )
+            console.print(timing_text)
+
+    @staticmethod
     def _display_command_result(result: QueryResult) -> None:
         """Display results from non-SELECT commands."""
         if result.query_type == QueryType.USE:
             row_text = "Database changed"
             console.print(f"[green]✓[/green] {row_text}")
+            return
+        elif result.query_type == QueryType.SOURCE:
+            # SOURCE command results are already displayed per-statement via display_callback
+            # Only show errors if execution failed
+            if not result.success and result.error:
+                DatabaseResultFormatter._display_source_result(result)
             return
         elif result.affected_rows is not None:
             if result.query_type in [
@@ -187,6 +303,45 @@ class DatabaseResultFormatter:
             console.print(f"[green]✓[/green] {row_text} {EXPLAIN_HINT_RESULT}")
         else:
             console.print(f"[green]✓[/green] {row_text}")
+
+    @staticmethod
+    def _display_source_result(result: QueryResult) -> None:
+        """Display results from SOURCE command."""
+        if not result.success:
+            # Display error message
+            if result.error:
+                # Parse error message - it may contain summary and details
+                error_lines = result.error.split("\n")
+                if len(error_lines) > 1:
+                    # First line is summary
+                    console.print(f"[yellow]{error_lines[0]}[/yellow]")
+                    # Remaining lines are error details
+                    for line in error_lines[1:]:
+                        console.print(f"[red]{line}[/red]")
+                else:
+                    console.print(f"[red]ERROR:[/red] {result.error}")
+            else:
+                console.print("[red]ERROR: Script execution failed[/red]")
+            return
+
+        # Display success message
+        if result.error:
+            # result.error contains the summary message even on success
+            # Check if it's just an informational message (like "No statements found")
+            error_lower = result.error.lower()
+            if "no statements found" in error_lower:
+                console.print(f"[yellow]{result.error}[/yellow]")
+                return
+            summary = result.error.split("\n")[0] if "\n" in result.error else result.error
+        else:
+            summary = "Query OK"
+
+        if result.execution_time is not None:
+            time_text = f" ({result.execution_time:.3f} sec)"
+        else:
+            time_text = ""
+
+        console.print(f"[green]✓[/green] {summary}{time_text}")
 
     @staticmethod
     def _display_query_error(result: QueryResult) -> None:

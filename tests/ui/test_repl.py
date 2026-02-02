@@ -129,7 +129,7 @@ class TestShellREPL:
 
         repl = ShellREPL(mock_loop, db_service=mock_db_service, query_history=mock_query_history)
         with (
-            patch("ui.formatters.database_formatter.format_and_display_result") as mock_format,
+            patch("ui.repl.format_and_display_result") as mock_format,
             patch("database.service.get_service") as mock_get_service,
         ):
             mock_get_service.return_value = mock_db_service
@@ -155,7 +155,7 @@ class TestShellREPL:
 
         repl = ShellREPL(mock_loop, db_service=mock_db_service, query_history=mock_query_history)
         with (
-            patch("ui.formatters.database_formatter.format_and_display_result") as mock_format,
+            patch("ui.repl.format_and_display_result") as mock_format,
             patch("database.service.get_service") as mock_get_service,
         ):
             mock_get_service.return_value = mock_db_service
@@ -173,7 +173,7 @@ class TestShellREPL:
 
         repl = ShellREPL(mock_loop, db_service=mock_db_service, query_history=mock_query_history)
         with (
-            patch("ui.formatters.database_formatter.display_database_error") as mock_display,
+            patch("ui.repl.display_database_error") as mock_display,
             patch("database.service.get_service") as mock_get_service,
         ):
             mock_get_service.return_value = mock_db_service
