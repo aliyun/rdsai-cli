@@ -24,7 +24,7 @@ def exit(app: ShellREPL, args: list[str]):
     raise NotImplementedError
 
 
-@meta_command(aliases=["h", "?"])
+@meta_command(aliases=["h"])
 def help(app: ShellREPL, args: list[str]):
     """Show help information"""
     from rich.table import Table
@@ -39,7 +39,7 @@ def help(app: ShellREPL, args: list[str]):
     for cmd in get_meta_commands():
         if cmd.name in ("setup", "exit", "help", "version", "reload", "upgrade"):
             general_cmds.append(cmd)
-        elif cmd.name in ("model", "clear", "yolo"):
+        elif cmd.name in ("model", "clear", "yolo", "mcp"):
             ai_cmds.append(cmd)
         else:
             db_cmds.append(cmd)
