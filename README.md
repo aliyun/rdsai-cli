@@ -37,7 +37,7 @@ execution plan analysis, and multi-source data connections.
 ## Requirements
 
 - Python 3.13+
-- Network access to RDS instance (MySQL)
+- Network access to MySQL
 - API access to LLM provider
 
 ## Installation
@@ -127,13 +127,6 @@ mysql> why this query is slow: SELECT * FROM users WHERE name LIKE '%john%'
 
 We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## Star History
-
-<div align="center">
-
-[![Star History Chart](https://api.star-history.com/svg?repos=aliyun/rdsai-cli&type=Date)](https://star-history.com/#aliyun/rdsai-cli&Date)
-
-</div>
 
 ## License
 
