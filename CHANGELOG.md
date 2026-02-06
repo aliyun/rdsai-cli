@@ -13,6 +13,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security enhancements
 - Diagnostic report export
 
+## [v0.1.9] - 2026-02-06
+
+### Added
+- **SQL Script Execution**: SOURCE command support for executing SQL script files
+  - Execute SQL scripts from files using `SOURCE <filename>` or `\. <filename>`
+  - Support for quoted file paths with spaces
+  - Support for relative paths, absolute paths, and home directory expansion (`~/`)
+  - MySQL-compatible output format with "Query OK" messages
+  - Proper error handling and display for script execution failures
+  - Comprehensive test coverage for SOURCE command functionality
+- **DuckDB Performance**: Persistent database path support for large files
+  - Automatic persistent database creation for large files (>= threshold)
+  - Improved performance when loading and analyzing large data files
+  - Efficient memory usage for large file operations
+
+### Fixed
+- **Installation**: Fixed message display issues in installation script
+  - Improved error message formatting and display
+  - Better user feedback during installation process
+
+### Changed
+- **Tool Architecture**: Refactored MySQL tools into general-purpose database tools
+  - Renamed MySQL-specific tools to generic database tools
+  - Improved tool organization and maintainability
+  - Better support for multi-database scenarios (MySQL, DuckDB)
+- **UI**: Removed compact command and related functionality
+  - Simplified command interface by removing `/compact` command
+  - Streamlined context management workflow
+
+### Documentation
+- **README**: Updated project documentation and release status
+  - Improved README styling and formatting
+  - Added CLAUDE.md documentation
+  - Updated project descriptions and usage examples
+
+### Testing
+- **Test Coverage**: Enhanced test suite for new features
+  - Added comprehensive tests for SOURCE command execution
+  - Added tests for SOURCE command callback functionality
+  - Added integration tests for REPL with SOURCE command
+  - Improved test infrastructure and coverage
+
 ## [v0.1.8] - 2026-01-18
 
 ### Added
