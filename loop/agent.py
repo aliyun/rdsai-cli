@@ -13,6 +13,7 @@ from config import Config, Session
 from loop.agentspec import ResolvedAgentSpec, load_agent_spec
 from loop.runtime import BuiltinSystemPromptArgs, Runtime
 from loop.toolset import BaseTool, DynamicToolset
+from memory.manager import MemoryManager
 from utils.logging import logger
 
 
@@ -64,6 +65,7 @@ async def load_agent(
         Config: runtime.config,
         BuiltinSystemPromptArgs: runtime.builtin_args,
         Session: runtime.session,
+        MemoryManager: runtime.memory_manager,
     }
     tools = agent_spec.tools
     if agent_spec.exclude_tools:

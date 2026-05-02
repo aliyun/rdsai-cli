@@ -8,6 +8,7 @@ This module implements a layered context injection strategy:
 Context Types:
 - DATABASE: Database connection information (host, port, user, current database)
 - QUERY: Recent SQL execution results
+- MEMORY: Relevant memories from previous sessions
 
 Injection Strategies:
 - DATABASE: Full connection info first time, reminder afterwards
@@ -39,12 +40,14 @@ class ContextType(Enum):
 
     DATABASE = auto()  # Database connection info (highest priority in Layer 2)
     QUERY = auto()  # Recent SQL query results
+    MEMORY = auto()  # Retrieved memories from previous sessions
 
 
 # Default XML-like tags for each context type
 CONTEXT_TAGS: dict[ContextType, str] = {
     ContextType.DATABASE: "database_context",
     ContextType.QUERY: "query_context",
+    ContextType.MEMORY: "memory_context",
 }
 
 
@@ -291,6 +294,10 @@ class ContextManager:
         """
         return self.add(ContextType.QUERY, content)
 
+    def set_memory_context(self, content: str) -> ContextManager:
+        """Set memory context (retrieved memories from previous sessions)."""
+        return self.add(ContextType.MEMORY, content)
+
     # =========================================================================
     # Session Management
     # =========================================================================
@@ -379,6 +386,10 @@ class ContextManager:
             elif context_type == ContextType.QUERY:
                 if not self._session.is_content_changed(ContextType.QUERY, entry.content):
                     # Content unchanged - skip injection
+                    continue
+
+            elif context_type == ContextType.MEMORY:
+                if not entry.content or not entry.content.strip():
                     continue
 
             parts.append(entry.format())

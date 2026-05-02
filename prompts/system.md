@@ -19,6 +19,7 @@ The system provides multiple context layers to assist your analysis. Understandi
 |------|-----|--------------------------------------------------------------------------------------|
 | **Database Context** | `<database_context>` | Current database connection information (engine, host, port, user, current database) |
 | **Query Context** | `<query_context>` | Recent SQL execution results                                                         |
+| **Memory Context** | `<memory_context>` | Relevant memories from previous sessions                                             |
 | **System Hints** | `<system>` | Runtime information injected by the system                                           |
 | **Temporal Context** | `${CLI_NOW}` | Current timestamp for time-sensitive analysis                                        |
 
@@ -37,6 +38,7 @@ The system provides multiple context layers to assist your analysis. Understandi
 - **Reference** `<query_context>` when user asks follow-up questions about recent queries
 - **Always use tools** to get current schema and data (MySQLDesc, MySQLShow, MySQLSelect, etc.)
 - Context provides connection info and recent results; tools provide live database state
+- Use `<memory_context>` as helpful historical context, but prefer live tools for current database state
 
 # Task Planning
 
@@ -143,3 +145,5 @@ When presenting analysis results:
 Current timestamp: `${CLI_NOW}`
 
 Use for: log analysis, performance trends, event correlation, slow query filtering.
+
+${MEMORY_GUIDE}

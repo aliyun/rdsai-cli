@@ -29,7 +29,7 @@ from loop import (
 )
 from loop.agent import Agent
 from loop.compaction import ChainCompaction
-from loop.context import ContextManager
+from loop.context import ContextManager, ContextType
 from loop.types import ContentPart
 from loop.runtime import Runtime
 from database import format_query_context_for_agent
@@ -203,6 +203,19 @@ class NeoLoop(Loop):
             query_context_str = format_query_context_for_agent(query_context)
             self._context_manager.set_query_context(query_context_str)
 
+        if self._runtime.memory_manager:
+            try:
+                search_query = self._extract_memory_query(user_input)
+                memories = await self._runtime.memory_manager.search(search_query, top_k=3)
+                memory_context = self._runtime.memory_manager.format_for_context(memories)
+                if memory_context:
+                    self._context_manager.set_memory_context(memory_context)
+                else:
+                    self._context_manager.remove(ContextType.MEMORY)
+            except Exception as e:
+                logger.warning("Memory retrieval failed: {error}", error=e)
+                self._context_manager.remove(ContextType.MEMORY)
+
         # Build context and wrap user input
         if isinstance(user_input, str):
             content = self._context_manager.wrap_user_input(user_input)
@@ -303,6 +316,12 @@ class NeoLoop(Loop):
             except Exception as e:
                 stream_send(StepInterrupted())
                 raise
+
+    def _extract_memory_query(self, user_input: str | list[ContentPart]) -> str:
+        """Extract a search query for memory retrieval from user input."""
+        if isinstance(user_input, str):
+            return user_input
+        return " ".join(p.text for p in user_input if hasattr(p, "text"))
 
     async def _handle_approval(self, interrupt_value: dict[str, Any]) -> str:
         """Handle an approval request from the graph.

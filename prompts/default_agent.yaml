@@ -14,3 +14,7 @@ agent:
     - "tools.database.data_analyzer:DataAnalyzer"
     # Subagent Tool
     - "tools.subagent.subagent:Subagent"
+    # Memory Tools
+    - "tools.memory.save:MemorySave"
+    - "tools.memory.search:MemorySearch"
+    - "tools.memory.delete:MemoryDelete"

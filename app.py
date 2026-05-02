@@ -191,6 +191,9 @@ class Application:
         await self._mcp_pool.shutdown()
         await shutdown_connection_pool()
 
+        if self._runtime.memory_manager:
+            self._runtime.memory_manager.close()
+
     # --- Main Run Method ---
 
     async def run(self) -> bool:
